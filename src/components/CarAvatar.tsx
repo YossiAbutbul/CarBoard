@@ -11,8 +11,8 @@ type Toy = 'car' | 'suv' | 'pickup' | 'van'
 
 /**
  * Which pixels are body paint, per toy. Hue picks the body colour; saturation and lightness
- * keep out the glass (the jeep's glass is the same blue, but far more saturated), the tyres
- * (too dark) and the minibus's white sides (too light). `guard` keeps a window's glint out.
+ * keep out the glass (the jeep's glass is the same blue, but far more saturated) and the tyres
+ * (too dark). `guard` keeps a window's glint out.
  */
 interface PaintRule {
   hues: [number, number][]
@@ -29,7 +29,8 @@ const TOYS: Record<Toy, { label: string; src: string; rule: PaintRule }> = {
     rule: { hues: [[200, 235]], s: [0.3, 0.82], l: [0.24, 0.8], guard: { box: [55, 80, 121, 137], lMax: 0.47 } },
   },
   pickup: { label: 'טנדר', src: '/cars/pickup.png', rule: { hues: [[325, 360], [0, 12]], s: [0.35, 1], l: [0.22, 0.82] } },
-  van: { label: 'מיני-בוס', src: '/cars/van.png', rule: { hues: [[258, 295]], s: [0.3, 1], l: [0.4, 0.8] } },
+  // the minibus body is a pale lavender; painting it with the stripe keeps the stripe as a darker tone
+  van: { label: 'מיני-בוס', src: '/cars/van.png', rule: { hues: [[248, 296]], s: [0.15, 1], l: [0.45, 0.97] } },
 }
 
 export const BODY_TYPES: BodyType[] = ['car', 'suv', 'pickup', 'van']
