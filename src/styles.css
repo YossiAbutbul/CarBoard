@@ -289,3 +289,8 @@ html, body { overscroll-behavior-y: none; }
 .hero .bar .title { display: grid; justify-items: center; color: #fff; }
 .hero .bar .title .caret { font-size: 10px; opacity: 0.7; }
 .hero .bar .title { width: auto; height: auto; opacity: 1; padding: 2px 0; }
+
+/* close buttons: no background, the icon changes colour on hover */
+.drawer-head button, .sheet-head button { background: none; color: var(--muted); transition: color 0.15s; }
+.drawer-head button:hover, .sheet-head button:hover, .drawer-head button:focus-visible, .sheet-head button:focus-visible { color: var(--ink); }
+.drawer-head button svg.i, .sheet-head button svg.i { width: 20px; height: 20px; }
