@@ -6,6 +6,7 @@ import 'react-day-picker/style.css'
 import { addDays, addMonths, parseIso, toIso, todayIso } from '../lib/dates'
 import { fmtDate } from '../lib/i18n'
 import { Icon } from './Icon'
+import { useSwipeClose } from './ui'
 
 type Kind = 'future' | 'past'
 
@@ -93,16 +94,20 @@ function CalendarSheet({
     return () => window.removeEventListener('keydown', onKey)
   }, [onClose])
 
+  const { sheet, handle } = useSwipeClose(onClose)
   const now = new Date()
   const maxDate = max ? parseIso(max) : undefined
   return createPortal(
     <div className="cal-overlay" onClick={onClose}>
-      <div className="cal-sheet" role="dialog" aria-modal="true" aria-label={title} onClick={e => e.stopPropagation()}>
-        <div className="cal-head">
-          <b>{title}</b>
-          <button onClick={onClose} aria-label="סגירה">
-            <Icon name="close" />
-          </button>
+      <div className="cal-sheet" ref={sheet} role="dialog" aria-modal="true" aria-label={title} onClick={e => e.stopPropagation()}>
+        <div className="drag-zone" {...handle}>
+          <div className="grab" />
+          <div className="cal-head">
+            <b>{title}</b>
+            <button onClick={onClose} aria-label="סגירה">
+              <Icon name="close" />
+            </button>
+          </div>
         </div>
         <div className="chips cal-quick">
           {QUICK[kind]

@@ -1,4 +1,4 @@
-import { useEffect, useState, type ReactNode } from 'react'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
 import type { Car } from '../types'
 import { useApp } from '../data/AppData'
@@ -75,6 +75,51 @@ export function Drawer({ title, side, onClose, children }: { title: string; side
   )
 }
 
+/**
+ * Drag a bottom sheet down by its handle to close it. Spread `handle` on the drag area
+ * (the handle and title) and put `sheet` on the panel. Buttons inside the area still click.
+ */
+export function useSwipeClose(onClose: () => void) {
+  const sheet = useRef<HTMLDivElement>(null)
+  const drag = useRef<{ y: number; t: number; dy: number } | null>(null)
+  const backdrop = (o: string) => {
+    const b = sheet.current?.parentElement
+    if (b) b.style.background = o
+  }
+  const handle = {
+    onPointerDown(e: React.PointerEvent<HTMLElement>) {
+      if ((e.target as Element).closest('button, input')) return
+      drag.current = { y: e.clientY, t: Date.now(), dy: 0 }
+      e.currentTarget.setPointerCapture(e.pointerId)
+      if (sheet.current) sheet.current.style.transition = 'none'
+    },
+    onPointerMove(e: React.PointerEvent<HTMLElement>) {
+      const d = drag.current
+      if (!d || !sheet.current) return
+      d.dy = Math.max(0, e.clientY - d.y)
+      sheet.current.style.transform = `translateY(${d.dy}px)`
+      backdrop(`rgba(11, 22, 38, ${0.45 * Math.max(0, 1 - d.dy / sheet.current.offsetHeight)})`)
+    },
+    onPointerUp() {
+      const d = drag.current
+      drag.current = null
+      const el = sheet.current
+      if (!d || !el) return
+      const fast = d.dy / Math.max(1, Date.now() - d.t) > 0.5 // a quick flick also closes
+      el.style.transition = 'transform 0.22s cubic-bezier(0.2, 0.8, 0.2, 1)'
+      if (d.dy > el.offsetHeight * 0.25 || (fast && d.dy > 30)) {
+        el.style.transform = 'translateY(100%)'
+        backdrop('rgba(11, 22, 38, 0)')
+        setTimeout(onClose, 200)
+      } else {
+        el.style.transform = ''
+        backdrop('')
+      }
+    },
+  }
+  return { sheet, handle: { ...handle, onPointerCancel: handle.onPointerUp } }
+}
+
 export function Sheet({ title, onClose, children }: { title: string; onClose(): void; children: ReactNode }) {
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => e.key === 'Escape' && onClose()
@@ -85,15 +130,18 @@ export function Sheet({ title, onClose, children }: { title: string; onClose(): 
       document.body.style.overflow = ''
     }
   }, [onClose])
+  const { sheet, handle } = useSwipeClose(onClose)
   return (
     <div className="overlay" onClick={onClose}>
-      <div className="sheet" role="dialog" aria-modal="true" aria-label={title} onClick={e => e.stopPropagation()}>
-        <div className="grab" />
-        <div className="sheet-head">
-          <h2>{title}</h2>
-          <button onClick={onClose} aria-label="סגירה">
-            <Icon name="close" />
-          </button>
+      <div className="sheet" ref={sheet} role="dialog" aria-modal="true" aria-label={title} onClick={e => e.stopPropagation()}>
+        <div className="drag-zone" {...handle}>
+          <div className="grab" />
+          <div className="sheet-head">
+            <h2>{title}</h2>
+            <button onClick={onClose} aria-label="סגירה">
+              <Icon name="close" />
+            </button>
+          </div>
         </div>
         {children}
       </div>

@@ -29,6 +29,8 @@ export function CarSheet({ car, onClose }: { car?: Car; onClose(): void }) {
   const color = info?.color ?? car?.color ?? null
   const shownPaint = paint ?? paintFromRegistry(color)
   const shownBody: BodyType = body === 'small' || body === 'family' || body === 'sport' ? 'car' : (body ?? guessBody(model))
+  const swipeX = useRef(0)
+  const stepBody = (d: number) => setBody(BODY_TYPES[(BODY_TYPES.indexOf(shownBody) + d + BODY_TYPES.length) % BODY_TYPES.length])
 
   // Look the plate up once typing stops; a reply for an older number is ignored.
   const asked = useRef(0)
@@ -135,39 +137,48 @@ export function CarSheet({ car, onClose }: { car?: Car; onClose(): void }) {
           )}
         </div>
 
-        <div className="avatar-stage stage-3d">
-          <ToyCar body={shownBody} paint={shownPaint} className="preview-toy" />
-        </div>
-        <label className="lbl">סוג רכב</label>
-        <div className="body-grid">
-          {BODY_TYPES.map(b => (
-            <button key={b} className={shownBody === b ? 'on' : ''} onClick={() => setBody(b)} aria-pressed={shownBody === b}>
-              <ToyCar body={b} paint={shownPaint} />
-              <span>{bodyLabel(b)}</span>
-            </button>
-          ))}
-        </div>
-        <label className="lbl">צבע</label>
-        <div className="paints">
-          <button
-            className={`paint auto ${paint === null ? 'on' : ''}`}
-            onClick={() => setPaint(null)}
-            aria-label="צבע לפי משרד הרישוי"
-            title={color ? `לפי הרישוי: ${color}` : 'אוטומטי'}
-            style={{ '--p': paintFromRegistry(color) } as React.CSSProperties}
-          >
-            <span>אוטו׳</span>
-          </button>
-          {PAINTS.map(p => (
+        <label className="lbl">בחר אווטאר</label>
+        <div className="studio">
+          <div className="studio-top">
+            <div
+              className="studio-stage"
+              onTouchStart={e => (swipeX.current = e.touches[0].clientX)}
+              onTouchEnd={e => {
+                const dx = e.changedTouches[0].clientX - swipeX.current
+                if (Math.abs(dx) > 40) stepBody(dx > 0 ? 1 : -1) // RTL: a swipe to the right shows the next one
+              }}
+            >
+              <ToyCar key={shownBody} body={shownBody} paint={shownPaint} className="studio-toy" />
+            </div>
+            <div className="studio-types" role="radiogroup" aria-label="סוג רכב">
+              {BODY_TYPES.map(b => (
+                <button key={b} role="radio" aria-checked={shownBody === b} className={shownBody === b ? 'on' : ''} onClick={() => setBody(b)}>
+                  {bodyLabel(b)}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div className="studio-paints paints" role="radiogroup" aria-label="צבע">
             <button
-              key={p.hex}
-              className={`paint ${paint === p.hex ? 'on' : ''}`}
-              onClick={() => setPaint(p.hex)}
-              aria-label={p.name}
-              title={p.name}
-              style={{ '--p': p.hex } as React.CSSProperties}
-            />
-          ))}
+              className={`paint auto ${paint === null ? 'on' : ''}`}
+              onClick={() => setPaint(null)}
+              aria-label="צבע לפי משרד הרישוי"
+              title={color ? `לפי הרישוי: ${color}` : 'אוטומטי'}
+              style={{ '--p': paintFromRegistry(color) } as React.CSSProperties}
+            >
+              <span>מקורי</span>
+            </button>
+            {PAINTS.map(p => (
+              <button
+                key={p.hex}
+                className={`paint ${paint === p.hex ? 'on' : ''}`}
+                onClick={() => setPaint(p.hex)}
+                aria-label={p.name}
+                title={p.name}
+                style={{ '--p': p.hex } as React.CSSProperties}
+              />
+            ))}
+          </div>
         </div>
 
         <div className={editing ? '' : 'row2'}>
