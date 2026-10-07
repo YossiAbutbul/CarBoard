@@ -35,7 +35,7 @@ export function firebaseStore(userId: string): Store {
       await deleteDoc(row(t, id))
     },
     async upload(name, blob) {
-      const ext = blob.type === 'image/png' ? 'png' : blob.type === 'application/pdf' ? 'pdf' : 'jpg'
+      const ext = ({ 'image/png': 'png', 'image/webp': 'webp', 'application/pdf': 'pdf' } as Record<string, string>)[blob.type] ?? 'jpg'
       const path = `users/${userId}/files/${name}-${uid()}.${ext}`
       await uploadBytes(fileRef(st, path), blob, { contentType: blob.type })
       return `fb:${path}`

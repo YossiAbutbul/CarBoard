@@ -23,6 +23,8 @@ export function carFiles(data: Data, carId: string): AppFile[] {
   return [...docs, ...receipts].sort((a, b) => (a.date < b.date ? 1 : -1))
 }
 
+const extOf = (type: string) => ({ 'application/pdf': 'pdf', 'image/webp': 'webp', 'image/png': 'png' })[type] ?? 'jpg'
+
 /** Resolves a file ref to a URL and tells whether it is a PDF. */
 export function useFile(ref: string | null) {
   const { actions } = useApp()
@@ -77,7 +79,7 @@ export function FileViewer({ files, start = 0, onClose }: { files: AppFile[]; st
     if (!f) return
     try {
       const blob = await (await fetch(f.url)).blob()
-      const name = `${file.title}.${f.pdf ? 'pdf' : 'jpg'}`
+      const name = `${file.title}.${extOf(blob.type)}`
       const asFile = new File([blob], name, { type: blob.type })
       if (navigator.canShare?.({ files: [asFile] })) await navigator.share({ files: [asFile], title: file.title })
       else download()
@@ -85,11 +87,12 @@ export function FileViewer({ files, start = 0, onClose }: { files: AppFile[]; st
       // the user closed the share sheet
     }
   }
-  function download() {
+  async function download() {
     if (!f) return
+    const type = f.pdf ? 'application/pdf' : (await (await fetch(f.url)).blob()).type
     const a = document.createElement('a')
     a.href = f.url
-    a.download = `${file.title}.${f.pdf ? 'pdf' : 'jpg'}`
+    a.download = `${file.title}.${extOf(type)}`
     a.click()
   }
 
