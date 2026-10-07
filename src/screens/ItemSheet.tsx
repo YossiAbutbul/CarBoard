@@ -2,7 +2,7 @@ import { ConfirmButton } from '../components/ConfirmButton'
 import { useState } from 'react'
 import type { Item, ItemKind } from '../types'
 import { FileThumb, Lightbox, Sheet } from '../components/ui'
-import { useApp } from '../data/AppData'
+import { REQUIRED, useApp } from '../data/AppData'
 import { dueInfo } from '../domain/due'
 import { INSURERS, KIND, STATUS_TEXT } from '../domain/labels'
 import { compressImage } from '../lib/image'
@@ -270,7 +270,7 @@ export function ItemSheet({ item, onClose, onDone }: { item?: Item; onClose(): v
         <button className="btn pri" style={{ marginTop: 16 }} disabled={busy || uploading} onClick={save}>
           שמירה
         </button>
-        {item && (
+        {item && !REQUIRED.includes(item.kind) && (
           <ConfirmButton className="btn danger" style={{ marginTop: 8 }} onConfirm={remove}>
             מחיקת תזכורת
           </ConfirmButton>

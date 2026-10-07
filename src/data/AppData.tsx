@@ -1,5 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
-import type { Car, Data } from '../types'
+import type { Car, Data, Item } from '../types'
 import { emptyData, type Store } from './store'
 import { makeActions, type Actions } from './actions'
 import { estimateKm, type KmEstimate } from '../domain/odometer'
@@ -21,6 +21,9 @@ interface Ctx {
 
 const C = createContext<Ctx | null>(null)
 
+/** Reminders every car always has: the home header shows service and test, and oil was added later. */
+export const REQUIRED: Item['kind'][] = ['service', 'test', 'oil']
+
 let backfill: Promise<number> | null = null
 /** One run at a time, so two quick refreshes cannot add the same reminder twice. */
 function addMissingDefaults(store: Store, d: Data) {
@@ -34,7 +37,7 @@ async function addMissing(store: Store, d: Data) {
     const have = new Set(d.items.filter(i => i.car_id === car.id).map(i => i.kind))
     const km = estimateKm(d.readings.filter(r => r.car_id === car.id)).value
     for (const it of defaultItems(car.id, km, null))
-      if (!have.has(it.kind) && it.kind === 'oil') {
+      if (!have.has(it.kind) && REQUIRED.includes(it.kind)) {
         await store.insert('items', it)
         added++
       }
@@ -59,7 +62,7 @@ export function AppDataProvider({ store, children }: { store: Store; children: R
   const refresh = useCallback(async () => {
     try {
       let d = await store.loadAll()
-      // Cars made before a default reminder existed (e.g. oil) get it now.
+      // A car missing a required reminder (made before it existed, or deleted earlier) gets it back.
       const added = await addMissingDefaults(store, d)
       if (added) d = await store.loadAll()
       dataRef.current = d
