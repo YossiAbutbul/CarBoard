@@ -39,8 +39,18 @@ function shade(hex: string, amt: number) {
   return '#' + [n >> 16, (n >> 8) & 255, n & 255].map(f).map(c => c.toString(16).padStart(2, '0')).join('')
 }
 
-/** imagin.studio renders a transparent PNG per make/model/year. Needs VITE_IMAGIN_KEY. */
-export function modelImageUrl(c: Pick<Car, 'make' | 'model' | 'year'>, angle = '01') {
+const PAINT_EN: [string, string][] = [
+  ['לבן', 'white'], ['שחור', 'black'], ['כסוף', 'silver'], ['אפור', 'grey'], ['אדום', 'red'], ['כחול', 'blue'],
+  ['ירוק', 'green'], ['צהוב', 'yellow'], ['כתום', 'orange'], ['חום', 'brown'], ['בז', 'beige'], ['זהב', 'gold'],
+  ['בורדו', 'burgundy'], ['טורקיז', 'turquoise'], ['סגול', 'purple'],
+]
+
+/**
+ * imagin.studio studio render: transparent PNG for make / model / year / colour.
+ * Needs VITE_IMAGIN_KEY. Licence: serve from their CDN only, never store a copy.
+ * angle 01 = front three-quarter.
+ */
+export function modelImageUrl(c: Pick<Car, 'make' | 'model' | 'year'> & { color?: string | null }, angle = '01') {
   const key = import.meta.env.VITE_IMAGIN_KEY
   const make = makeToEn(c.make)
   if (!key || !make || !c.model) return null
@@ -48,10 +58,13 @@ export function modelImageUrl(c: Pick<Car, 'make' | 'model' | 'year'>, angle = '
     customer: key,
     make,
     modelFamily: c.model.toLowerCase().split(' ')[0],
-    modelYear: String(c.year ?? ''),
     angle,
     zoomType: 'fullscreen',
+    width: '1200',
   })
+  if (c.year) q.set('modelYear', String(c.year))
+  const paint = c.color ? PAINT_EN.find(([he]) => c.color!.includes(he))?.[1] : null
+  if (paint) q.set('paintDescription', paint)
   return `https://cdn.imagin.studio/getImage?${q}`
 }
 

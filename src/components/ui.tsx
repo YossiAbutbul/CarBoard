@@ -1,6 +1,6 @@
 import { useEffect, useId, useState, type ReactNode } from 'react'
 import type { Car } from '../types'
-import { colorHex } from '../lib/carImage'
+import { colorHex, modelImageUrl } from '../lib/carImage'
 import { useApp } from '../data/AppData'
 import type { Status } from '../domain/due'
 import { Icon } from './Icon'
@@ -92,8 +92,11 @@ export function useFileUrl(ref: string | null | undefined) {
   return url
 }
 
-export function CarImage({ car, className }: { car: Pick<Car, 'image_url' | 'color'>; className?: string }) {
-  const url = useFileUrl(car.image_url)
+/** The car's own photo, else its studio render, else a drawing in its colour. */
+export function CarImage({ car, className }: { car: Pick<Car, 'image_url' | 'color' | 'make' | 'model' | 'year'>; className?: string }) {
+  const own = useFileUrl(car.image_url)
+  const render = car.image_url ? null : modelImageUrl(car)
+  const url = own ?? render
   const [broken, setBroken] = useState(false)
   useEffect(() => setBroken(false), [url])
   if (url && !broken) return <img className={className} src={url} alt="" onError={() => setBroken(true)} />

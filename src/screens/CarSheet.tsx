@@ -20,8 +20,8 @@ export function CarSheet({ car, onClose }: { car?: Car; onClose(): void }) {
   const [lookErr, setLookErr] = useState<string | null>(null)
   const [name, setName] = useState(car?.name ?? '')
   const [kmNow, setKmNow] = useState(editing ? String(km.value) : '')
-  const [mode, setMode] = useState<PhotoMode>(car?.image_url ? (car.image_url.startsWith('http') ? 'model' : 'own') : 'model')
-  const [ownRef, setOwnRef] = useState<string | null>(car?.image_url && !car.image_url.startsWith('http') ? car.image_url : null)
+  const [mode, setMode] = useState<PhotoMode>(car?.image_url ? 'own' : 'model')
+  const [ownRef, setOwnRef] = useState<string | null>(car?.image_url ?? null)
   const [cutting, setCutting] = useState(false)
   const [err, setErr] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
@@ -31,7 +31,7 @@ export function CarSheet({ car, onClose }: { car?: Car; onClose(): void }) {
   const model = info?.model ?? car?.model ?? null
   const year = info?.year ?? car?.year ?? null
   const color = info?.color ?? car?.color ?? null
-  const modelUrl = modelImageUrl({ make, model, year })
+  const modelUrl = modelImageUrl({ make, model, year, color })
   const [modelBroken, setModelBroken] = useState(false)
   useEffect(() => setModelBroken(false), [modelUrl])
 
@@ -69,7 +69,8 @@ export function CarSheet({ car, onClose }: { car?: Car; onClose(): void }) {
     }
   }
 
-  const image_url = mode === 'model' ? (modelUrl && !modelBroken ? modelUrl : null) : mode === 'own' ? ownRef : null
+  // Model renders are never stored: CarImage builds the CDN URL from make/model/year/colour each time.
+  const image_url = mode === 'own' ? ownRef : null
 
   async function save() {
     const kmN = Number(kmNow.replace(/\D/g, ''))

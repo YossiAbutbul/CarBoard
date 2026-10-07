@@ -3,6 +3,7 @@ import { CarArt, CarImage } from '../components/ui'
 import { Icon, kindIcon } from '../components/Icon'
 import { useApp } from '../data/AppData'
 import { STATUS_TEXT } from '../domain/labels'
+import { modelImageUrl } from '../lib/carImage'
 import type { Reminder } from '../domain/reminders'
 import { agoText, fmtNum } from '../lib/i18n'
 import type { OpenSheet } from '../App'
@@ -83,10 +84,10 @@ export function HomeScreen({ open, goSettings }: { open: OpenSheet; goSettings()
           {urgent.length > 0 && <span style={{ fontSize: 30, marginTop: 6 }}>לטפל בהם</span>}
           <div className="sm">{subline}</div>
         </div>
-        <div className={`car ${car.image_url ? '' : 'drawn'}`}>
+        <div className={`car ${car.image_url || modelImageUrl(car) ? '' : 'drawn'}`}>
           <CarImage car={car} />
         </div>
-        {!car.image_url && (
+        {!car.image_url && !modelImageUrl(car) && (
           <button className="add-photo" onClick={() => open({ t: 'car', car })}>
             <Icon name="camera" /> תמונה של הרכב
           </button>

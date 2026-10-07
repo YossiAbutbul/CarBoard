@@ -36,9 +36,14 @@ supabase functions deploy read-odometer
 
 The function sends the photo to Claude (`claude-opus-5-5`, low effort, structured JSON output) and returns `{ km }`. The photo is not stored.
 
-### Model photos (optional)
+### Studio renders of the car (recommended)
 
-Put an [imagin.studio](https://www.imagin.studio) customer key in `VITE_IMAGIN_KEY`. Without it the app uses your own photo, or a drawing of the car in its colour.
+The home screen shows a studio render of each car, built from the make, model, year and colour that the plate lookup returns.
+
+1. Get a customer key from [imagin.studio](https://www.imagin.studio) (contact sales for a trial).
+2. Put it in `.env` as `VITE_IMAGIN_KEY=...`.
+
+The licence says images must load from their CDN and must never be stored, so the app builds the URL each time and keeps no copy. Each image load counts as one licence use. Without a key the app shows the user's own photo (background removed on the phone), or a drawing of the car in its colour.
 
 ## Stack
 
