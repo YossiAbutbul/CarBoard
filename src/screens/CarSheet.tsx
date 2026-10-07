@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState } from 'react'
-import { HexColorInput, HexColorPicker } from 'react-colorful'
 import type { BodyType, Car } from '../types'
 import { Sheet } from '../components/ui'
 import { useApp } from '../data/AppData'
@@ -31,8 +30,6 @@ export function CarSheet({ car, onClose }: { car?: Car; onClose(): void }) {
   const shownPaint = paint ?? paintFromRegistry(color)
   const shownBody: BodyType = body === 'small' || body === 'family' || body === 'sport' ? 'car' : (body ?? guessBody(model))
   const swipeX = useRef(0)
-  const [picking, setPicking] = useState(false)
-  const custom = paint !== null && !PAINTS.some(p => p.hex === paint)
   const stepBody = (d: number) => setBody(BODY_TYPES[(BODY_TYPES.indexOf(shownBody) + d + BODY_TYPES.length) % BODY_TYPES.length])
 
   // Look the plate up once typing stops; a reply for an older number is ignored.
@@ -171,16 +168,6 @@ export function CarSheet({ car, onClose }: { car?: Car; onClose(): void }) {
             >
               <span>מקורי</span>
             </button>
-            <button
-              className={`paint custom ${custom ? 'on' : ''}`}
-              onClick={() => {
-                if (!custom) setPaint(shownPaint)
-                setPicking(true)
-              }}
-              aria-label="צבע אחר"
-              title="צבע אחר"
-              style={custom ? ({ '--p': paint } as React.CSSProperties) : undefined}
-            />
             {PAINTS.map(p => (
               <button
                 key={p.hex}
@@ -194,37 +181,22 @@ export function CarSheet({ car, onClose }: { car?: Car; onClose(): void }) {
           </div>
         </div>
 
-        {picking ? (
-          <div className="color-pick" role="dialog" aria-label="צבע אחר">
-            <HexColorPicker color={shownPaint} onChange={setPaint} />
-            <div className="color-pick-row">
-              <span className="color-pick-dot" style={{ background: shownPaint }} />
-              <HexColorInput color={shownPaint} onChange={setPaint} prefixed className="in" dir="ltr" aria-label="קוד צבע" />
-              <button className="btn pri" onClick={() => setPicking(false)}>
-                אישור
-              </button>
-            </div>
+        <div className={editing ? '' : 'row2'}>
+          <div>
+            <label className="lbl">שם לרכב</label>
+            <input className="in" value={name} onChange={e => setName(e.target.value)} placeholder="הקיה של אבא" />
           </div>
-        ) : (
-          <>
-            <div className={editing ? '' : 'row2'}>
-              <div>
-                <label className="lbl">שם לרכב</label>
-                <input className="in" value={name} onChange={e => setName(e.target.value)} placeholder="הקיה של אבא" />
-              </div>
-              {!editing && (
-                <div>
-                  <label className="lbl">ק״מ היום</label>
-                  <input className="in" inputMode="numeric" value={kmNow ? Number(kmNow).toLocaleString('he-IL') : ''} onChange={e => setKmNow(e.target.value.replace(/\D/g, ''))} placeholder="48,230" />
-                </div>
-              )}
+          {!editing && (
+            <div>
+              <label className="lbl">ק״מ היום</label>
+              <input className="in" inputMode="numeric" value={kmNow ? Number(kmNow).toLocaleString('he-IL') : ''} onChange={e => setKmNow(e.target.value.replace(/\D/g, ''))} placeholder="48,230" />
             </div>
-            {err && <div className="err">{err}</div>}
-            <button className="btn pri" style={{ marginTop: 16 }} disabled={busy} onClick={save}>
-              {busy ? <span className="spin" /> : editing ? 'שמירה' : 'הוספת רכב'}
-            </button>
-          </>
-        )}
+          )}
+        </div>
+        {err && <div className="err">{err}</div>}
+        <button className="btn pri" style={{ marginTop: 16 }} disabled={busy} onClick={save}>
+          {busy ? <span className="spin" /> : editing ? 'שמירה' : 'הוספת רכב'}
+        </button>
       </div>
     </Sheet>
   )

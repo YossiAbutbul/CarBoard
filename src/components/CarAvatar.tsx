@@ -61,6 +61,7 @@ export const PAINTS: { name: string; hex: string }[] = [
   { name: 'כתום', hex: '#e5702a' },
   { name: 'חום', hex: '#6b4a33' },
   { name: 'בז׳', hex: '#cbb592' },
+  { name: 'סגול', hex: '#5b3f8c' },
 ]
 
 /** The registry colour ("כסוף כהה", "לבן שנהב") as a paint hex. */
