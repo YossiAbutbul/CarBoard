@@ -47,10 +47,10 @@ export function ConfirmButton({
     return (
       <button className={`icon-btn confirm-icon ${armed ? 'armed' : ''} ${className}`} style={style} onClick={click} aria-label={armed ? confirmText : label} disabled={busy}>
         <Icon name="trash" />
-        {/* floats above the button, so arming it does not move anything around it */}
+        {/* a tooltip above the button, so arming it does not move anything around it */}
         {armed && (
           <span className="confirm-tip" role="status">
-            <Icon name="trash" /> למחוק?
+            לחצו שוב
           </span>
         )}
       </button>

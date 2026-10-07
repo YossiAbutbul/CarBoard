@@ -117,12 +117,11 @@
 /* in-place delete confirmation */
 .btn.danger.armed { background: var(--overdue); color: #fff; animation: pop 0.3s var(--ease); }
 .confirm-icon { position: relative; display: inline-grid; place-items: center; transition: color 0.15s, background 0.15s, transform 0.15s; }
-.confirm-icon.armed { color: transparent; }
-/* grows from the button over the text beside it, so nothing around it moves */
-.confirm-tip { position: absolute; left: 0; top: 50%; z-index: 3; display: inline-flex; align-items: center; gap: 5px; height: 30px; padding: 0 11px 0 9px; border-radius: 99px; white-space: nowrap;
-  background: var(--overdue); color: #fff; font-size: 12.5px; font-weight: 600; box-shadow: 0 4px 14px rgba(214, 50, 43, 0.35); transform: translateY(-50%); transform-origin: left center; animation: tip-in 0.22s var(--ease) both; }
-.confirm-tip svg.i { width: 15px; height: 15px; }
-@keyframes tip-in { from { opacity: 0; transform: translateY(-50%) scaleX(0.4); } }
+.confirm-icon.armed { color: #fff; background: var(--overdue); border-radius: 50%; animation: pop 0.3s var(--ease); }
+.confirm-tip { position: absolute; bottom: calc(100% + 7px); left: 50%; z-index: 3; white-space: nowrap; padding: 5px 10px; border-radius: 8px; background: var(--ink); color: #fff; font-size: 12px; font-weight: 600; pointer-events: none;
+  box-shadow: 0 6px 16px rgba(15, 23, 32, 0.28); transform: translateX(-50%); animation: tip-in 0.2s var(--ease) both; }
+.confirm-tip::after { content: ''; position: absolute; top: 100%; left: 50%; margin-left: -5px; border: 5px solid transparent; border-top-color: var(--ink); }
+@keyframes tip-in { from { opacity: 0; transform: translate(-50%, 4px); } }
 .tl-card { cursor: pointer; }
 .plate-status { display: flex; align-items: center; justify-content: center; gap: 6px; height: 22px; margin-top: 8px; font-size: 13px; font-weight: 500; color: var(--muted); white-space: nowrap; overflow: hidden; }
 .plate-status > span:not(.spin) { overflow: hidden; text-overflow: ellipsis; }
@@ -131,4 +130,4 @@
 .plate-status small { font-size: inherit; font-weight: 400; opacity: 0.8; }
 .plate-status.ok { color: #146b3f; font-weight: 600; animation: fade 0.25s ease-out; }
 .plate-status.bad { color: var(--overdue); animation: fade 0.25s ease-out; }
-.confirm-icon.armed:hover { color: transparent; }
+.confirm-icon.armed:hover { color: #fff; }
