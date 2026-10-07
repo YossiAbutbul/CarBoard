@@ -4,8 +4,7 @@ import { Plate } from '../components/Chrome'
 import { CarToy } from '../components/CarAvatar'
 import { Icon } from '../components/Icon'
 import { useApp } from '../data/AppData'
-import { supabase } from '../data/supabase'
-import { wipeLocal } from '../data/localStore'
+import { signOut } from '../data/firebase'
 import { downloadIcs } from '../lib/ics'
 import { fmtNum } from '../lib/i18n'
 import type { OpenSheet } from '../App'
@@ -127,12 +126,12 @@ export function SettingsDrawer({
             <div>
               <div className="t">{store.mode === 'cloud' ? 'מסונכרן לענן' : 'שמור במכשיר הזה'}</div>
               <div className="s">
-                {store.mode === 'cloud' ? email : 'כדי לסנכרן בין מכשירים ולהתחבר עם Google, צריך לחבר Supabase (ראה README).'}
+                {store.mode === 'cloud' ? email : 'כדי לסנכרן בין מכשירים ולהתחבר עם Google, צריך לחבר Firebase (ראה README).'}
               </div>
             </div>
           </div>
           {store.mode === 'cloud' && (
-            <button className="btn" style={{ marginTop: 14, background: '#fff' }} onClick={() => supabase?.auth.signOut()}>
+            <button className="btn" style={{ marginTop: 14, background: '#fff' }} onClick={() => signOut()}>
               התנתקות
             </button>
           )}
@@ -151,7 +150,7 @@ export function SettingsDrawer({
               confirmText="לחצו שוב: הכל יימחק"
               onConfirm={async () => {
                 await actions.resetAll()
-                if (store.mode === 'local') await wipeLocal()
+                await store.wipeFiles?.().catch(() => {}) // a file that is already gone must not stop the reset
                 try {
                   for (const k of Object.keys(localStorage)) if (k.startsWith('car-records:')) localStorage.removeItem(k)
                 } catch {

@@ -1,10 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import type { Session } from '@supabase/supabase-js'
+import { onAuthStateChanged, type User } from 'firebase/auth'
 import type { Car, CarDocument, Item, ItemKind, ServiceRecord } from './types'
 import { AppDataProvider, useApp } from './data/AppData'
 import { localStore } from './data/localStore'
-import { supabaseStore } from './data/supabaseStore'
-import { cloudEnabled, supabase } from './data/supabase'
+import { firebaseStore } from './data/firebaseStore'
+import { auth, cloudEnabled, signInWithGoogle } from './data/firebase'
 import { Icon, type IconName } from './components/Icon'
 import { Splash } from './components/Chrome'
 import { HomeScreen } from './screens/HomeScreen'
@@ -29,30 +29,25 @@ export type OpenSheet = (s: SheetState) => void
 type Tab = 'home' | 'services' | 'docs'
 
 export default function App() {
-  const [session, setSession] = useState<Session | null>(null)
+  const [user, setUser] = useState<User | null>(null)
   const [authReady, setAuthReady] = useState(!cloudEnabled)
 
   useEffect(() => {
-    if (!supabase) return
-    supabase.auth.getSession().then(({ data }) => {
-      setSession(data.session)
+    if (!auth) return
+    return onAuthStateChanged(auth, u => {
+      setUser(u)
       setAuthReady(true)
     })
-    const { data } = supabase.auth.onAuthStateChange((_e, s) => setSession(s))
-    return () => data.subscription.unsubscribe()
   }, [])
 
-  const userId = session?.user.id ?? null
-  const store = useMemo(() => (cloudEnabled ? (userId ? supabaseStore(userId) : null) : localStore), [userId])
+  const userId = user?.uid ?? null
+  const store = useMemo(() => (cloudEnabled ? (userId ? firebaseStore(userId) : null) : localStore), [userId])
 
   if (!authReady) return <Splash />
   if (!store) return <Login />
   return (
     <AppDataProvider key={userId ?? 'local'} store={store}>
-      <Main
-        email={session?.user.email ?? null}
-        accountName={(session?.user.user_metadata?.full_name ?? session?.user.user_metadata?.name ?? null) as string | null}
-      />
+      <Main email={user?.email ?? null} accountName={user?.displayName ?? null} />
     </AppDataProvider>
   )
 }
@@ -195,13 +190,7 @@ function Login() {
         <button
           className="btn"
           style={{ background: '#fff' }}
-          onClick={async () => {
-            const { error } = await supabase!.auth.signInWithOAuth({
-              provider: 'google',
-              options: { redirectTo: window.location.origin },
-            })
-            if (error) setErr(error.message)
-          }}
+          onClick={() => signInWithGoogle().catch(e => setErr(e instanceof Error ? e.message : String(e)))}
         >
           <svg width="18" height="18" viewBox="0 0 48 48" aria-hidden="true">
             <path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.7 32.7 29.3 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.6-.4-3.5z" />

@@ -1,4 +1,4 @@
-import { get, set, del, clear } from 'idb-keyval'
+import { get, set, del, delMany, keys } from 'idb-keyval'
 import type { Data, Table } from '../types'
 import { emptyData, type Store } from './store'
 import { uid } from '../lib/uid'
@@ -43,8 +43,10 @@ export const localStore: Store = {
     urls.set(ref, url)
     return url
   },
+  async wipeFiles() {
+    await delMany((await keys()).filter(k => String(k).startsWith('idb:')))
+    urls.clear()
+  },
 }
 
 export const clearLocal = () => del(KEY)
-/** Everything in this browser's store, uploaded files included. */
-export const wipeLocal = () => clear()

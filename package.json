@@ -10,8 +10,8 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@supabase/supabase-js": "^2.117.3",
     "date-fns": "^4.4.0",
+    "firebase": "^13.0.0",
     "idb-keyval": "^6.3.0",
     "lucide-react": "^1.52.0",
     "react": "^19.3.0",

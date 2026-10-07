@@ -5,7 +5,7 @@ A Hebrew (RTL) PWA that keeps everything about your cars in one place: km, servi
 - **Smart km.** The app estimates today's km from your last reading and your own daily average. A weekly card asks “is it about right?”.
 - **Plate lookup.** Type the plate number and make, model, year, colour and the test expiry come from the Ministry of Transport open data (data.gov.il).
 - **Reminders.** Each item (service, test, insurance, tyres, brakes, battery, custom) is due at a km limit or a date, whichever comes first. You can export them to the phone calendar (.ics) with an alert 7 days before.
-- **Cloud.** Supabase with Google login and row level security. Without Supabase settings the app runs in local demo mode, with the data in the browser.
+- **Cloud.** Firebase: Google login, Firestore (works offline and syncs) and Storage for photos and receipts. Each user can reach only their own data. Without Firebase settings the app runs in local mode, with the data in the browser.
 
 The plan this was built from: [docs/PLAN.html](docs/PLAN.html).
 
@@ -18,29 +18,37 @@ npm run dev
 
 With no `.env`, the app runs in **local mode**. That is enough to try everything.
 
-## Connect the cloud (Supabase + Google login)
+## Connect the cloud (Firebase + Google login)
 
-1. Create a project at [supabase.com](https://supabase.com).
-2. Run [`supabase/migrations/0001_init.sql`](supabase/migrations/0001_init.sql) in the SQL editor, or use `supabase db push`.
-3. **Authentication → Providers → Google:** enable it and paste a Google OAuth client ID and secret. In Google Cloud, add `https://<project>.supabase.co/auth/v1/callback` as a redirect URI.
-4. **Authentication → URL configuration:** add your site URL, for example `http://localhost:5173`.
-5. Copy `.env.example` to `.env` and fill in `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY`.
+1. Create a project at [console.firebase.google.com](https://console.firebase.google.com).
+2. **Build → Authentication → Sign-in method:** enable **Google**.
+3. **Build → Firestore Database:** create a database (production mode, a region near you, e.g. `eur3`).
+4. **Build → Storage:** get started (the Blaze plan is needed for Storage on new projects).
+5. **Project settings → Your apps → Web (`</>`):** register an app and copy its config into `.env` (see [`.env.example`](.env.example)).
+6. Deploy the security rules:
 
-### Car avatar columns
+   ```bash
+   firebase use --add
+   firebase deploy --only firestore:rules,storage
+   ```
 
-Also run [`supabase/migrations/0002_car_avatar.sql`](supabase/migrations/0002_car_avatar.sql). It adds the optional `body` and `paint` columns for the car avatar.
+Data layout: `users/<uid>/<table>/<id>` in Firestore and `users/<uid>/files/` in Storage. [`firestore.rules`](firestore.rules) and [`storage.rules`](storage.rules) let each user reach only their own folder.
+
+## Deploy (Vercel)
+
+1. Import the GitHub repo at [vercel.com/new](https://vercel.com/new). [`vercel.json`](vercel.json) sets the Vite build.
+2. **Settings → Environment Variables:** add the six `VITE_FIREBASE_*` values.
+3. In Firebase, **Authentication → Settings → Authorized domains:** add your Vercel domain (e.g. `car-records.vercel.app`).
 
 ## Stack
 
-React 19 + TypeScript + Vite, `vite-plugin-pwa`, Supabase (Postgres, Auth, Storage), plain CSS with Noto Sans Hebrew, Lucide icons (`lucide-react`).
+React 19 + TypeScript + Vite, `vite-plugin-pwa`, Firebase (Auth, Firestore, Storage), plain CSS with Noto Sans Hebrew, Lucide icons (`lucide-react`).
 
 ```
 src/
   domain/    km estimate, due logic, reminders, default items
-  data/      Store interface: localStore (IndexedDB) and supabaseStore
+  data/      Store interface: localStore (IndexedDB) and firebaseStore
   lib/       plate lookup, .ics export, Hebrew formatting
   screens/   Home, Services, Documents, Settings + sheets
-supabase/
-  migrations/0001_init.sql
-  functions/read-odometer/
+firestore.rules, storage.rules   per-user access
 ```
