@@ -6,6 +6,7 @@ import { KIND, SERVICE_KINDS } from '../domain/labels'
 import { compressImage } from '../lib/image'
 import { fmtNum } from '../lib/i18n'
 import { todayIso } from '../lib/dates'
+import { Icon, kindIcon } from '../components/Icon'
 
 export function ServiceSheet({ onClose, kind = 'service' }: { onClose(): void; kind?: ItemKind }) {
   const { car, km, data, actions } = useApp()
@@ -59,7 +60,7 @@ export function ServiceSheet({ onClose, kind = 'service' }: { onClose(): void; k
         <div className="chips">
           {SERVICE_KINDS.map(k => (
             <button key={k} className={type === k ? 'on' : ''} onClick={() => setType(k)}>
-              {KIND[k].icon} {KIND[k].label}
+              <Icon name={kindIcon(k)} /> {KIND[k].label}
             </button>
           ))}
         </div>
@@ -89,7 +90,7 @@ export function ServiceSheet({ onClose, kind = 'service' }: { onClose(): void; k
         <textarea className="in" value={notes} onChange={e => setNotes(e.target.value)} placeholder="מה הוחלף, מה המליצו…" />
         <label className="lbl">קבלה</label>
         <label className="file-btn">
-          {receipt ? '✓ צולמה קבלה' : '📷 צילום קבלה'}
+          <Icon name={receipt ? 'check' : 'camera'} /> {receipt ? 'צולמה קבלה' : 'צילום קבלה'}
           <input type="file" accept="image/*" capture="environment" onChange={e => setReceipt(e.target.files?.[0] ?? null)} />
         </label>
         {err && <div className="err">{err}</div>}

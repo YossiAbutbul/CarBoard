@@ -6,6 +6,7 @@ import { formatPlate, lookupPlate, plateDigits, type PlateInfo } from '../lib/go
 import { hasModelImages, modelImageUrl } from '../lib/carImage'
 import { cutoutCar } from '../lib/cutout'
 import { fmtDate } from '../lib/i18n'
+import { Icon } from '../components/Icon'
 
 type PhotoMode = 'model' | 'own' | 'none'
 
@@ -119,13 +120,16 @@ export function CarSheet({ car, onClose }: { car?: Car; onClose(): void }) {
         />
         {looking && (
           <div className="hint center" style={{ marginTop: 8 }}>
-            <span className="spin dark" style={{ width: 14, height: 14, verticalAlign: 'middle' }} /> מחפש במשרד התחבורה…
+            <span className="spin" style={{ width: 14, height: 14, verticalAlign: 'middle' }} /> מחפש במשרד התחבורה…
           </div>
         )}
         {info && (
           <div className="found">
-            ✓ {info.make} {info.model} · {info.year} · {info.color}
-            {info.licenceUntil && <div>טסט בתוקף עד {fmtDate(info.licenceUntil)}</div>}
+            <Icon name="check" />
+            <div>
+              {info.make} {info.model} · {info.year} · {info.color}
+              {info.licenceUntil && <div className="hint">טסט בתוקף עד {fmtDate(info.licenceUntil)}</div>}
+            </div>
           </div>
         )}
         {lookErr && <div className="err">{lookErr}</div>}
@@ -133,7 +137,7 @@ export function CarSheet({ car, onClose }: { car?: Car; onClose(): void }) {
         <div className="checker">
           {mode === 'own' && cutting ? (
             <div className="hint">
-              <span className="spin dark" /> <div style={{ marginTop: 8 }}>מסיר את הרקע… (בפעם הראשונה זה לוקח רגע)</div>
+              <span className="spin" /> <div style={{ marginTop: 8 }}>מסיר את הרקע… (בפעם הראשונה זה לוקח רגע)</div>
             </div>
           ) : mode === 'own' && ownUrl ? (
             <img src={ownUrl} alt="" />
@@ -148,11 +152,11 @@ export function CarSheet({ car, onClose }: { car?: Car; onClose(): void }) {
             תמונת דגם
           </button>
           <label className={mode === 'own' ? 'on' : ''}>
-            📷 צילום שלי
+            צילום שלי
             <input type="file" accept="image/*" onChange={e => onOwnPhoto(e.target.files?.[0])} />
           </label>
           <button className={mode === 'none' ? 'on' : ''} onClick={() => setMode('none')}>
-            איור בלבד
+            ללא תמונה
           </button>
         </div>
         {mode === 'model' && !modelUrl && (
@@ -162,7 +166,7 @@ export function CarSheet({ car, onClose }: { car?: Car; onClose(): void }) {
         )}
 
         <label className="lbl">שם לרכב</label>
-        <input className="in" value={name} onChange={e => setName(e.target.value)} placeholder="למשל: המאזדה של אבא" />
+        <input className="in" value={name} onChange={e => setName(e.target.value)} placeholder="למשל: הקיה של אבא" />
         {!editing && (
           <>
             <label className="lbl">כמה ק״מ יש לרכב היום?</label>

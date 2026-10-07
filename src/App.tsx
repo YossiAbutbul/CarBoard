@@ -6,6 +6,7 @@ import { localStore } from './data/localStore'
 import { supabaseStore } from './data/supabaseStore'
 import { cloudEnabled, supabase } from './data/supabase'
 import { CarArt } from './components/ui'
+import { Icon, type IconName } from './components/Icon'
 import { HomeScreen } from './screens/HomeScreen'
 import { ServicesScreen } from './screens/ServicesScreen'
 import { DocumentsScreen } from './screens/DocumentsScreen'
@@ -63,7 +64,7 @@ function Main({ email }: { email: string | null }) {
     <div className="shell">
       {error && <div className="banner">שגיאה בטעינת הנתונים: {error}</div>}
       {tab === 'home' || !car ? (
-        <HomeScreen open={setSheet} />
+        <HomeScreen open={setSheet} goSettings={() => setTab('settings')} />
       ) : tab === 'services' ? (
         <ServicesScreen open={setSheet} />
       ) : tab === 'docs' ? (
@@ -73,27 +74,33 @@ function Main({ email }: { email: string | null }) {
       )}
 
       {car && tab === 'services' && (
-        <button className="fab" onClick={() => setSheet({ t: 'service' })} aria-label="טיפול חדש">＋</button>
+        <button className="fab" onClick={() => setSheet({ t: 'service' })} aria-label="טיפול חדש">
+          <Icon name="plus" />
+        </button>
       )}
       {car && tab === 'docs' && (
-        <button className="fab" onClick={() => setSheet({ t: 'doc' })} aria-label="מסמך חדש">＋</button>
+        <button className="fab" onClick={() => setSheet({ t: 'doc' })} aria-label="מסמך חדש">
+          <Icon name="plus" />
+        </button>
       )}
 
       {car && (
         <nav className="nav">
+          <div>
           {(
             [
-              ['home', '⌂', 'בית'],
-              ['services', '🔧', 'טיפולים'],
-              ['docs', '📄', 'מסמכים'],
-              ['settings', '⚙️', 'הגדרות'],
-            ] as [Tab, string, string][]
+              ['home', 'car', 'הרכב שלי'],
+              ['services', 'service', 'טיפולים'],
+              ['docs', 'docs', 'מסמכים'],
+              ['settings', 'settings', 'הגדרות'],
+            ] as [Tab, IconName, string][]
           ).map(([id, icon, label]) => (
             <button key={id} className={tab === id ? 'on' : ''} onClick={() => setTab(id)}>
-              <b>{icon}</b>
+              <Icon name={icon} />
               {label}
             </button>
           ))}
+          </div>
         </nav>
       )}
 
@@ -111,7 +118,7 @@ function Main({ email }: { email: string | null }) {
 function Splash() {
   return (
     <div className="login">
-      <span className="spin dark" />
+      <span className="spin" />
     </div>
   )
 }
@@ -119,13 +126,19 @@ function Splash() {
 function Login() {
   const [err, setErr] = useState<string | null>(null)
   return (
-    <div className="login">
-      <div className="box">
-        <CarArt className="art" color="אדום" />
-        <h1 style={{ fontSize: 28, fontWeight: 800, margin: '18px 0 6px' }}>הרכב שלי</h1>
-        <p className="hint" style={{ fontSize: 15, marginBottom: 26 }}>טיפולים, ק״מ, טסט וביטוח. הכל במקום אחד, מסונכרן בין המכשירים.</p>
+    <div className="shell">
+      <div className="welcome reveal">
+        <div className="eyebrow" style={{ color: 'rgba(255,255,255,.7)' }}>הרכב שלי</div>
+        <div className="status">
+          <span>כל</span>
+          <span>הרכב.</span>
+          <span>במקום</span>
+          <span>אחד.</span>
+        </div>
+        <CarArt className="art" color="לבן" />
         <button
-          className="btn google"
+          className="btn"
+          style={{ background: '#fff' }}
           onClick={async () => {
             const { error } = await supabase!.auth.signInWithOAuth({
               provider: 'google',
@@ -142,7 +155,7 @@ function Login() {
           </svg>
           התחברות עם Google
         </button>
-        {err && <div className="err">{err}</div>}
+        {err && <div className="banner">{err}</div>}
       </div>
     </div>
   )

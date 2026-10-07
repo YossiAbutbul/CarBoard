@@ -4,6 +4,7 @@ import { FileThumb, Lightbox, Sheet } from '../components/ui'
 import { useApp } from '../data/AppData'
 import { DOC_KIND } from '../domain/labels'
 import { compressImage } from '../lib/image'
+import { Icon, docIcon } from '../components/Icon'
 import { uid } from '../lib/uid'
 
 export function DocumentSheet({ doc, onClose }: { doc?: CarDocument; onClose(): void }) {
@@ -66,7 +67,7 @@ export function DocumentSheet({ doc, onClose }: { doc?: CarDocument; onClose(): 
         <div className="chips">
           {(Object.keys(DOC_KIND) as DocKind[]).map(k => (
             <button key={k} className={kind === k ? 'on' : ''} onClick={() => setKind(k)}>
-              {DOC_KIND[k].icon} {DOC_KIND[k].label}
+              <Icon name={docIcon(k)} /> {DOC_KIND[k].label}
             </button>
           ))}
         </div>
@@ -96,7 +97,13 @@ export function DocumentSheet({ doc, onClose }: { doc?: CarDocument; onClose(): 
           </div>
         )}
         <label className="file-btn">
-          {uploading ? <span className="spin dark" /> : '📷 הוספת צילום'}
+          {uploading ? (
+            <span className="spin" />
+          ) : (
+            <>
+              <Icon name="camera" /> הוספת צילום
+            </>
+          )}
           <input type="file" accept="image/*,application/pdf" multiple onChange={e => addFiles(e.target.files)} />
         </label>
         {err && <div className="err">{err}</div>}

@@ -5,6 +5,7 @@ import { readOdometer } from '../data/functions'
 import { cloudEnabled } from '../data/supabase'
 import { readingError } from '../domain/odometer'
 import { agoText, fmtNum } from '../lib/i18n'
+import { Icon } from '../components/Icon'
 
 export function OdometerSheet({ onClose, startWithPhoto = false }: { onClose(): void; startWithPhoto?: boolean }) {
   const { car, km, data, actions } = useApp()
@@ -92,7 +93,7 @@ export function OdometerSheet({ onClose, startWithPhoto = false }: { onClose(): 
           {last
             ? `קודם: ${fmtNum(last.km)} · ${agoText(km.checkedDaysAgo ?? 0)}${n > last.km ? ` · +${fmtNum(n - last.km)} ק״מ` : ''}`
             : 'הקריאה הראשונה של הרכב'}
-          {source === 'photo' && !reading && ' · זוהה מהתמונה ✓'}
+          {source === 'photo' && !reading && ' · זוהה מהתמונה'}
         </div>
         <div className="chips" style={{ justifyContent: 'center', marginTop: 12 }}>
           <button onClick={() => bump(100)}>+100</button>
@@ -105,7 +106,7 @@ export function OdometerSheet({ onClose, startWithPhoto = false }: { onClose(): 
             {busy ? <span className="spin" /> : 'שמירה'}
           </button>
           <label className="file-btn" style={{ opacity: cloudEnabled ? 1 : 0.6 }}>
-            📷 צילום לוח המחוונים
+            <Icon name="camera" /> צילום לוח המחוונים
             <input ref={fileRef} type="file" accept="image/*" capture="environment" onChange={e => onPhoto(e.target.files?.[0])} />
           </label>
           {!cloudEnabled && <div className="hint center">קריאה מתמונה פועלת אחרי חיבור לענן</div>}

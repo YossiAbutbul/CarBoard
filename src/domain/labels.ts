@@ -1,23 +1,23 @@
 import type { DocKind, ItemKind } from '../types'
 
-export const KIND: Record<ItemKind, { label: string; icon: string }> = {
-  service: { label: 'טיפול תקופתי', icon: '🔧' },
-  oil: { label: 'שמן ומסננים', icon: '🛢️' },
-  tyres: { label: 'צמיגים', icon: '🛞' },
-  brakes: { label: 'בלמים', icon: '🛑' },
-  battery: { label: 'מצבר', icon: '🔋' },
-  test: { label: 'טסט (רישיון רכב)', icon: '🪪' },
-  insurance: { label: 'ביטוח', icon: '🛡️' },
-  custom: { label: 'אחר', icon: '🧰' },
+export const KIND: Record<ItemKind, { label: string }> = {
+  service: { label: 'טיפול תקופתי' },
+  oil: { label: 'שמן ומסננים' },
+  tyres: { label: 'צמיגים' },
+  brakes: { label: 'בלמים' },
+  battery: { label: 'מצבר' },
+  test: { label: 'טסט (רישיון רכב)' },
+  insurance: { label: 'ביטוח' },
+  custom: { label: 'אחר' },
 }
 
 export const SERVICE_KINDS: ItemKind[] = ['service', 'oil', 'tyres', 'brakes', 'battery', 'test', 'custom']
 
-export const DOC_KIND: Record<DocKind, { label: string; icon: string }> = {
-  licence: { label: 'רישיון רכב', icon: '🪪' },
-  insurance: { label: 'ביטוח', icon: '🛡️' },
-  driver: { label: 'רישיון נהיגה', icon: '📄' },
-  other: { label: 'מסמך אחר', icon: '📎' },
+export const DOC_KIND: Record<DocKind, { label: string }> = {
+  licence: { label: 'רישיון רכב' },
+  insurance: { label: 'ביטוח' },
+  driver: { label: 'רישיון נהיגה' },
+  other: { label: 'מסמך אחר' },
 }
 
 export const STATUS_TEXT = {

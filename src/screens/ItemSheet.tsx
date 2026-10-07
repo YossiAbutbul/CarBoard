@@ -5,6 +5,7 @@ import { useApp } from '../data/AppData'
 import { dueInfo } from '../domain/due'
 import { KIND, STATUS_TEXT } from '../domain/labels'
 import { uid } from '../lib/uid'
+import { Icon } from '../components/Icon'
 
 const numOrNull = (s: string) => (s.trim() ? Number(s.replace(/\D/g, '')) : null)
 
@@ -51,12 +52,14 @@ export function ItemSheet({ item, onClose, onDone }: { item?: Item; onClose(): v
   }
 
   return (
-    <Sheet title={item ? `${KIND[item.kind].icon} ${item.label}` : 'תזכורת חדשה'} onClose={onClose}>
+    <Sheet title={item ? item.label : 'תזכורת חדשה'} onClose={onClose}>
       <div className="card">
         {item && (
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
             <span className={`chip ${preview.status}`}>{STATUS_TEXT[preview.status]}</span>
-            <button className="pill dark" onClick={() => onDone(item)}>✓ בוצע עכשיו</button>
+            <button className="pill" onClick={() => onDone(item)}>
+              <Icon name="check" /> בוצע עכשיו
+            </button>
           </div>
         )}
         <label className="lbl">שם</label>

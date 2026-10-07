@@ -14,8 +14,8 @@ export default defineConfig({
         lang: 'he',
         dir: 'rtl',
         display: 'standalone',
-        background_color: '#f2f1ed',
-        theme_color: '#18213b',
+        background_color: '#eef0f3',
+        theme_color: '#0b1626',
         icons: [{ src: 'icon.svg', sizes: 'any', type: 'image/svg+xml', purpose: 'any' }],
       },
       // The background-removal model (onnxruntime) loads on demand, so keep it out of the precache.

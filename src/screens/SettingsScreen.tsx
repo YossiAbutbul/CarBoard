@@ -1,4 +1,5 @@
 import { CarImage } from '../components/ui'
+import { Icon } from '../components/Icon'
 import { useApp } from '../data/AppData'
 import { supabase } from '../data/supabase'
 import { downloadIcs } from '../lib/ics'
@@ -9,70 +10,97 @@ export function SettingsScreen({ open, email }: { open: OpenSheet; email: string
   const { data, car, km, reminders, store, setCarId, actions } = useApp()
 
   return (
-    <>
-      <div className="top">
-        <h1>הגדרות</h1>
-      </div>
-
-      <div className="sec">הרכבים שלי</div>
-      {data.cars.map(c => (
-        <div className="item" key={c.id}>
-          <span style={{ width: 72, flex: 'none' }}>
-            <CarImage car={c} />
-          </span>
-          <button style={{ textAlign: 'right', minWidth: 0 }} onClick={() => setCarId(c.id)}>
-            <div className="t">
-              {c.name} {c.id === car?.id && <span className="chip ok">נבחר</span>}
-            </div>
-            <div className="s">{[c.plate, c.make, c.model, c.year].filter(Boolean).join(' · ')}</div>
-          </button>
-          <div className="e" style={{ display: 'flex', gap: 10 }}>
-            <button onClick={() => open({ t: 'car', car: c })} aria-label="עריכה">✎</button>
-            <button
-              onClick={() => confirm(`למחוק את ${c.name} וכל הנתונים שלו?`) && actions.deleteCar(c.id)}
-              aria-label="מחיקה"
-            >
-              🗑
-            </button>
-          </div>
+    <div className="reveal">
+      <header className="top">
+        <div>
+          <div className="eyebrow">חשבון ורכבים</div>
+          <h1>הגדרות</h1>
         </div>
-      ))}
-      <button className="btn" onClick={() => open({ t: 'car' })}>＋ הוספת רכב</button>
+      </header>
+
+      <div className="sec">
+        <h2>הרכבים שלי</h2>
+        <button onClick={() => open({ t: 'car' })}>
+          <Icon name="plus" /> רכב
+        </button>
+      </div>
+      <div className="list">
+        {data.cars.map(c => (
+          <div className="item" key={c.id}>
+            <span style={{ width: 76, flex: 'none' }}>
+              <CarImage car={c} />
+            </span>
+            <button style={{ textAlign: 'right', minWidth: 0 }} onClick={() => setCarId(c.id)}>
+              <div className="t">
+                {c.name}
+                {c.id === car?.id && <span className="tag">נבחר</span>}
+              </div>
+              <div className="s">{[c.plate, c.year].filter(Boolean).join(' · ')}</div>
+            </button>
+            <div className="e">
+              <button className="icon-btn" onClick={() => open({ t: 'car', car: c })} aria-label="עריכה">
+                <Icon name="edit" />
+              </button>
+              <button
+                className="icon-btn"
+                onClick={() => confirm(`למחוק את ${c.name} וכל הנתונים שלו?`) && actions.deleteCar(c.id)}
+                aria-label="מחיקה"
+              >
+                <Icon name="trash" />
+              </button>
+            </div>
+          </div>
+        ))}
+      </div>
 
       {car && (
         <>
-          <div className="sec">תזכורות</div>
+          <div className="sec">
+            <h2>יומן</h2>
+          </div>
           <div className="card">
-            <div className="t" style={{ fontWeight: 700 }}>📅 הוספה ליומן של הטלפון</div>
-            <div className="hint" style={{ margin: '4px 0 12px' }}>
-              כל תזכורת הופכת לאירוע עם התראה 7 ימים לפני. מועדי ק״מ מחושבים לפי ממוצע של {fmtNum(km.perDay)} ק״מ ביום.
-              אחרי שינוי מועדים, ייצא שוב.
+            <div className="item" style={{ border: 0, padding: 0 }}>
+              <span className="ic">
+                <Icon name="calendar" />
+              </span>
+              <div>
+                <div className="t">הוספה ליומן של הטלפון</div>
+                <div className="s">התראה 7 ימים לפני כל מועד. מועדי ק״מ לפי {fmtNum(km.perDay)} ק״מ ביום.</div>
+              </div>
             </div>
-            <button className="btn pri" onClick={() => downloadIcs(car, reminders.filter(r => r.status !== 'unset'))}>
+            <button
+              className="btn"
+              style={{ marginTop: 16 }}
+              onClick={() => downloadIcs(car, reminders.filter(r => r.status !== 'unset'))}
+            >
               ייצוא ליומן
             </button>
           </div>
         </>
       )}
 
-      <div className="sec">חשבון</div>
+      <div className="sec">
+        <h2>חשבון</h2>
+      </div>
       <div className="card">
-        {store.mode === 'cloud' ? (
-          <>
-            <div className="t" style={{ fontWeight: 700 }}>☁️ מחובר לענן</div>
-            <div className="hint" style={{ margin: '4px 0 12px' }}>{email}</div>
-            <button className="btn" onClick={() => supabase?.auth.signOut()}>התנתקות</button>
-          </>
-        ) : (
-          <>
-            <div className="t" style={{ fontWeight: 700 }}>📱 מצב מקומי</div>
-            <div className="hint" style={{ marginTop: 4 }}>
-              הנתונים נשמרים רק בדפדפן הזה. כדי לסנכרן בין מכשירים ולהתחבר עם Google, צריך להגדיר את Supabase (ראה README).
+        <div className="item" style={{ border: 0, padding: 0 }}>
+          <span className="ic">
+            <Icon name={store.mode === 'cloud' ? 'cloud' : 'device'} />
+          </span>
+          <div>
+            <div className="t">{store.mode === 'cloud' ? 'מסונכרן לענן' : 'שמור במכשיר הזה'}</div>
+            <div className="s">
+              {store.mode === 'cloud' ? email : 'כדי לסנכרן בין מכשירים ולהתחבר עם Google, צריך לחבר Supabase (ראה README).'}
             </div>
-          </>
+          </div>
+        </div>
+        {store.mode === 'cloud' && (
+          <button className="btn" style={{ marginTop: 16 }} onClick={() => supabase?.auth.signOut()}>
+            התנתקות
+          </button>
         )}
       </div>
-      <div className="hint center" style={{ marginTop: 20 }}>הרכב שלי · גרסה 0.1</div>
-    </>
+      <div className="foot">הרכב שלי</div>
+    </div>
   )
 }

@@ -1,28 +1,35 @@
 import { useState } from 'react'
-import { CarArt, CarImage, Ring, statusColor } from '../components/ui'
+import { CarArt, CarImage } from '../components/ui'
+import { Icon, kindIcon } from '../components/Icon'
 import { useApp } from '../data/AppData'
-import { KIND } from '../domain/labels'
+import { STATUS_TEXT } from '../domain/labels'
 import type { Reminder } from '../domain/reminders'
-import { agoText, fmtNum, greeting } from '../lib/i18n'
+import { agoText, fmtNum } from '../lib/i18n'
 import type { OpenSheet } from '../App'
 
 const weekKey = (carId: string) => `car-records:confirm:${carId}:${Math.floor(Date.now() / (7 * 86_400_000))}`
 
-export function HomeScreen({ open }: { open: OpenSheet }) {
+export function HomeScreen({ open, goSettings }: { open: OpenSheet; goSettings(): void }) {
   const { data, car, km, reminders, setCarId, actions } = useApp()
   const [hidden, setHidden] = useState(false)
 
   if (!car)
     return (
-      <div className="empty">
-        <CarArt className="art" color="אדום" />
-        <h2>ברוך הבא לרכב שלך</h2>
-        <p>כל הטיפולים, הק״מ, הטסט והביטוח במקום אחד. מתחילים במספר הרכב.</p>
-        <button className="btn pri" onClick={() => open({ t: 'car' })}>＋ הוספת רכב</button>
+      <div className="welcome reveal">
+        <div className="eyebrow" style={{ color: 'rgba(255,255,255,.7)' }}>הרכב שלי</div>
+        <div className="status">
+          <span>כל</span>
+          <span>הרכב.</span>
+          <span>במקום</span>
+          <span>אחד.</span>
+        </div>
+        <CarArt className="art" color="לבן" />
+        <button className="btn pri" onClick={() => open({ t: 'car' })}>
+          <Icon name="plus" /> הוספת רכב לפי מספר רישוי
+        </button>
       </div>
     )
 
-  const service = reminders.find(r => r.item.kind === 'service' && r.status !== 'unset')
   const stale = km.checkedDaysAgo != null && km.checkedDaysAgo >= 7
   let dismissed = false
   try {
@@ -30,8 +37,6 @@ export function HomeScreen({ open }: { open: OpenSheet }) {
   } catch {
     // storage blocked
   }
-  const showConfirm = stale && !dismissed && !hidden
-
   const dismiss = () => {
     try {
       localStorage.setItem(weekKey(car.id), '1')
@@ -42,76 +47,84 @@ export function HomeScreen({ open }: { open: OpenSheet }) {
   }
 
   const cars = data.cars
-  const nextCar = () => {
-    const i = cars.findIndex(c => c.id === car.id)
-    setCarId(cars[(i + 1) % cars.length].id)
-  }
+  const nextCar = () => setCarId(cars[(cars.findIndex(c => c.id === car.id) + 1) % cars.length].id)
+  const urgent = reminders.filter(r => r.status === 'due' || r.status === 'overdue')
+  const soon = reminders.filter(r => r.status === 'soon')
+  const service = reminders.find(r => r.item.kind === 'service')
+  const others = reminders.filter(r => r !== service)
 
-  const attention = reminders.filter(r => r.status !== 'ok' && r.status !== 'unset')
-  const rest = reminders.filter(r => r.status === 'ok' || r.status === 'unset')
+  const [line1, line2] = urgent.length
+    ? [urgent.length === 1 ? 'דבר' : `${urgent.length}`, urgent.length === 1 ? 'אחד' : 'דברים']
+    : ['הכל', 'תקין']
+  const subline = urgent.length
+    ? urgent.map(r => r.item.label).join(' · ')
+    : soon.length
+      ? `בקרוב: ${soon[0].item.label}, ${soon[0].headline}`
+      : 'אין משהו שדורש טיפול'
 
   return (
-    <>
-      <div className="top">
-        <div>
-          <h1>{greeting()}</h1>
-          <div className="sub">{attention.length ? `${attention.length} דברים דורשים תשומת לב` : 'הכל מסודר ✓'}</div>
-        </div>
-        {cars.length > 1 ? (
-          <button className="pill" onClick={nextCar}>
-            🚗 {car.name} · {cars.length} רכבים ⇄
+    <div className="reveal">
+      <section className="hero">
+        <div className="bar">
+          <button onClick={cars.length > 1 ? nextCar : () => open({ t: 'car' })} aria-label={cars.length > 1 ? 'החלפת רכב' : 'הוספת רכב'}>
+            <Icon name={cars.length > 1 ? 'swap' : 'plus'} />
           </button>
-        ) : (
-          <button className="pill" onClick={() => open({ t: 'car' })}>＋ רכב</button>
-        )}
-      </div>
-
-      <div className="hero-wrap">
-        <div className="hero-car">
+          <div className="title">
+            {car.name}
+            {car.plate && <small>{car.plate}</small>}
+          </div>
+          <button onClick={goSettings} aria-label="הגדרות">
+            <Icon name="settings" />
+          </button>
+        </div>
+        <div className="status">
+          <span>{line1}</span>
+          <span>{line2}</span>
+          {urgent.length > 0 && <span style={{ fontSize: 30, marginTop: 6 }}>לטפל בהם</span>}
+          <div className="sm">{subline}</div>
+        </div>
+        <div className="car">
           <CarImage car={car} />
         </div>
-        <div className="hero">
-          <div className="head">
-            <div className="meta">{[car.make, car.year, car.color].filter(Boolean).join(' · ')}</div>
-            <div className="name">{car.name}</div>
-            {car.plate && <span className="plate">{car.plate}</span>}
+      </section>
+
+      <div className="tiles">
+        <button className="tile" onClick={() => open({ t: 'odo' })}>
+          <div className="l">ק״מ</div>
+          <div className="s">{km.checkedDaysAgo ? `הערכה · אומת ${agoText(km.checkedDaysAgo)}` : 'מעודכן היום'}</div>
+          <div className="v">
+            {fmtNum(km.value)}
+            <small>ק״מ</small>
           </div>
-          <div className="kmrow">
-            <button style={{ color: '#fff', textAlign: 'right' }} onClick={() => open({ t: 'odo' })} aria-label="עדכון ק״מ">
-              <div className="km-big">
-                {fmtNum(km.value)}
-                {km.checkedDaysAgo ? <span style={{ opacity: 0.55, fontWeight: 600, marginInlineStart: 4 }}>≈</span> : null}
-                <small>ק״מ</small>
-              </div>
-              <div className="est">
-                <i className={stale ? 'stale' : ''} />
-                {km.checkedDaysAgo ? 'הערכה חכמה' : 'מעודכן'} · אומת {agoText(km.checkedDaysAgo ?? 0)}
-              </div>
-            </button>
-            {service && service.kmLeft != null && (
-              <Ring progress={service.progress} color={service.status === 'ok' ? 'var(--amber)' : statusColor(service.status)}>
-                <span>
-                  <b>{service.kmLeft < 0 ? 'עבר' : fmtNum(service.kmLeft)}</b>
-                  {service.kmLeft < 0 ? 'מועד טיפול' : 'ק״מ לטיפול'}
-                </span>
-              </Ring>
-            )}
-          </div>
-          <div className="hero-acts">
-            <button className="pri" onClick={() => open({ t: 'odo' })}>עדכון ק״מ</button>
-            <button onClick={() => open({ t: 'service' })}>＋ טיפול</button>
-            <button onClick={() => open({ t: 'odo', photo: true })}>📷 צילום</button>
-          </div>
-        </div>
+        </button>
+        {service && <Tile r={service} open={open} />}
       </div>
 
-      {showConfirm && (
+      <div className="actions">
+        <button onClick={() => open({ t: 'odo' })}>
+          <Icon name="gauge" />
+          עדכון ק״מ
+        </button>
+        <button onClick={() => open({ t: 'odo', photo: true })}>
+          <Icon name="camera" />
+          צילום לוח
+        </button>
+        <button onClick={() => open({ t: 'service' })}>
+          <Icon name="service" />
+          טיפול
+        </button>
+        <button onClick={() => open({ t: 'doc' })}>
+          <Icon name="docs" />
+          מסמך
+        </button>
+      </div>
+
+      {stale && !dismissed && !hidden && (
         <div className="card confirm">
-          <div className="hint">בדיקה שבועית</div>
-          <div className="q">הרכב על בערך</div>
+          <div className="q">בדיקה שבועית: הרכב עומד בערך על</div>
           <div className="num">{fmtNum(km.value)} ק״מ?</div>
-          <div className="hint" style={{ marginBottom: 12 }}>
-            לפי ממוצע של {fmtNum(km.perDay)} ק״מ ביום{km.learned ? '' : ' (ממוצע ארצי, עד שנלמד את שלך)'}
+          <div className="hint" style={{ marginBottom: 10 }}>
+            {km.learned ? `לפי הממוצע שלך, ${fmtNum(km.perDay)} ק״מ ביום` : 'לפי ממוצע ארצי, עד שנלמד את שלך'}
           </div>
           <div className="row2">
             <button
@@ -121,50 +134,47 @@ export function HomeScreen({ open }: { open: OpenSheet }) {
                 dismiss()
               }}
             >
-              ✓ כן, בערך
+              <Icon name="check" /> נכון
             </button>
-            <button className="btn" onClick={() => open({ t: 'odo' })}>✎ לעדכן</button>
+            <button className="btn" onClick={() => open({ t: 'odo' })}>
+              לעדכן
+            </button>
           </div>
-          <button className="hint" style={{ display: 'block', margin: '10px auto 0' }} onClick={dismiss}>
+          <button className="hint" style={{ marginTop: 6 }} onClick={dismiss}>
             לא עכשיו
           </button>
         </div>
       )}
 
-      {attention.length > 0 && (
-        <>
-          <div className="sec">דורש תשומת לב</div>
-          <Tiles list={attention} open={open} />
-        </>
-      )}
       <div className="sec">
-        <span>{attention.length ? 'שאר הרכב' : 'מצב הרכב'}</span>
-        <button onClick={() => open({ t: 'item' })}>＋ תזכורת</button>
+        <h2>מצב הרכב</h2>
+        <button onClick={() => open({ t: 'item' })}>
+          <Icon name="plus" /> תזכורת
+        </button>
       </div>
-      <Tiles list={rest} open={open} />
-    </>
+      <div className="tiles" style={{ marginTop: 0 }}>
+        {others.map(r => (
+          <Tile key={r.item.id} r={r} open={open} />
+        ))}
+      </div>
+    </div>
   )
 }
 
-function Tiles({ list, open }: { list: Reminder[]; open: OpenSheet }) {
+function Tile({ r, open }: { r: Reminder; open: OpenSheet }) {
   return (
-    <div className="grid">
-      {list.map(r => (
-        <button key={r.item.id} className={`tile ${r.status}`} onClick={() => open({ t: 'item', item: r.item })}>
-          <div className="l">
-            <span className={`dot ${r.status}`} />
-            {r.item.label}
-          </div>
-          <div className="v">{r.headline}</div>
-          <div className="d">{r.detail}</div>
-          {r.status !== 'unset' && (
-            <div className="bar">
-              <i style={{ width: `${Math.max(6, r.progress * 100)}%`, background: statusColor(r.status) }} />
-            </div>
-          )}
-          <span style={{ position: 'absolute', top: 12, left: 12, fontSize: 16, opacity: 0.5 }}>{KIND[r.item.kind].icon}</span>
-        </button>
-      ))}
-    </div>
+    <button className="tile" data-s={r.status} onClick={() => open({ t: 'item', item: r.item })}>
+      <div className="l">{r.item.label}</div>
+      <span className="state">{STATUS_TEXT[r.status]}</span>
+      <div className="row">
+        <Icon name={kindIcon(r.item.kind)} />
+        <b style={{ fontSize: 15 }}>{r.headline}</b>
+      </div>
+      {r.status !== 'unset' && (
+        <div className="meter">
+          <i style={{ width: `${Math.max(3, r.progress * 100)}%` }} />
+        </div>
+      )}
+    </button>
   )
 }
