@@ -120,3 +120,10 @@
 .confirm-icon.armed { color: #fff; background: var(--overdue); padding: 5px 8px; border-radius: 99px; font-size: 12px; font-weight: 600; }
 .confirm-icon.armed svg.i { width: 15px; height: 15px; }
 .tl-card { cursor: pointer; }
+.plate-status { display: flex; align-items: center; justify-content: center; gap: 6px; height: 22px; margin-top: 8px; font-size: 13px; font-weight: 500; color: var(--muted); white-space: nowrap; overflow: hidden; }
+.plate-status > span:not(.spin) { overflow: hidden; text-overflow: ellipsis; }
+.plate-status .spin { width: 13px; height: 13px; flex: none; }
+.plate-status svg.i { width: 16px; height: 16px; flex: none; }
+.plate-status small { font-size: inherit; font-weight: 400; opacity: 0.8; }
+.plate-status.ok { color: #146b3f; font-weight: 600; animation: fade 0.25s ease-out; }
+.plate-status.bad { color: var(--overdue); animation: fade 0.25s ease-out; }

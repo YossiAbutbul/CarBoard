@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import type { BodyType, Car } from '../types'
 import { Sheet } from '../components/ui'
 import { useApp } from '../data/AppData'
@@ -30,24 +30,33 @@ export function CarSheet({ car, onClose }: { car?: Car; onClose(): void }) {
   const shownPaint = paint ?? paintFromRegistry(color)
   const shownBody: BodyType = body === 'small' || body === 'family' || body === 'sport' ? 'car' : (body ?? guessBody(model))
 
-  async function lookup(p = plate) {
-    if (plateDigits(p).length < 7) return
-    setLooking(true)
+  // Look the plate up once typing stops; a reply for an older number is ignored.
+  const asked = useRef(0)
+  const digits = plateDigits(plate)
+  useEffect(() => {
+    if (editing && digits === plateDigits(car?.plate ?? '')) return
     setLookErr(null)
-    try {
-      const r = await lookupPlate(p)
-      if (!r) setLookErr('הרכב לא נמצא במאגר משרד התחבורה. אפשר להמשיך ידנית.')
-      else {
-        setInfo(r)
-        setPlate(r.plate)
-        if (!name) setName(`${r.make} ${r.model}`.trim())
+    if (digits.length < 7 || info) return setLooking(false)
+    setLooking(true)
+    const n = ++asked.current
+    const t = setTimeout(async () => {
+      try {
+        const r = await lookupPlate(digits)
+        if (n !== asked.current) return
+        if (!r) setLookErr('לא נמצא במאגר משרד התחבורה. אפשר להמשיך ידנית.')
+        else {
+          setInfo(r)
+          setPlate(r.plate)
+          setName(prev => prev || `${r.make} ${r.model}`.trim())
+        }
+      } catch {
+        if (n === asked.current) setLookErr('אין חיבור למשרד התחבורה כרגע. אפשר להמשיך ידנית.')
+      } finally {
+        if (n === asked.current) setLooking(false)
       }
-    } catch {
-      setLookErr('אין חיבור למאגר משרד התחבורה כרגע. אפשר להמשיך ידנית.')
-    } finally {
-      setLooking(false)
-    }
-  }
+    }, 700)
+    return () => clearTimeout(t)
+  }, [digits]) // eslint-disable-line react-hooks/exhaustive-deps
 
   async function save() {
     const kmN = Number(kmNow.replace(/\D/g, ''))
@@ -102,29 +111,29 @@ export function CarSheet({ car, onClose }: { car?: Car; onClose(): void }) {
             value={plate}
             onChange={e => {
               setPlate(e.target.value)
-              setInfo(null)
-              const d = plateDigits(e.target.value)
-              if (d.length === 7 || d.length === 8) lookup(e.target.value)
+              if (plateDigits(e.target.value) !== plateDigits(plate)) setInfo(null)
             }}
-            onBlur={() => !info && lookup()}
             aria-label="מספר רכב"
           />
         </label>
-        {looking && (
-          <div className="hint center" style={{ marginTop: 8 }}>
-            <span className="spin" style={{ width: 14, height: 14, verticalAlign: 'middle' }} /> מחפש במשרד התחבורה…
-          </div>
-        )}
-        {info && (
-          <div className="found">
-            <Icon name="check" />
-            <div>
-              {info.make} {info.model} · {info.year} · {info.color}
-              {info.licenceUntil && <div className="hint">טסט בתוקף עד {fmtDate(info.licenceUntil)}</div>}
-            </div>
-          </div>
-        )}
-        {lookErr && <div className="err">{lookErr}</div>}
+        {/* one short status line in a fixed slot, so the sheet does not jump */}
+        <div className={`plate-status ${info ? 'ok' : lookErr ? 'bad' : ''}`} aria-live="polite">
+          {looking ? (
+            <>
+              <span className="spin" /> מחפש במשרד התחבורה…
+            </>
+          ) : info ? (
+            <>
+              <Icon name="check" />
+              <span>
+                {info.make} {info.model} · {info.year} · {info.color}
+                {info.licenceUntil && <small> · טסט עד {fmtDate(info.licenceUntil)}</small>}
+              </span>
+            </>
+          ) : (
+            lookErr
+          )}
+        </div>
 
         <div className="avatar-stage stage-3d">
           <ToyCar body={shownBody} paint={shownPaint} className="preview-toy" />
