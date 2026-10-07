@@ -83,9 +83,14 @@ export function HomeScreen({ open, goSettings }: { open: OpenSheet; goSettings()
           {urgent.length > 0 && <span style={{ fontSize: 30, marginTop: 6 }}>לטפל בהם</span>}
           <div className="sm">{subline}</div>
         </div>
-        <div className="car">
+        <div className={`car ${car.image_url ? '' : 'drawn'}`}>
           <CarImage car={car} />
         </div>
+        {!car.image_url && (
+          <button className="add-photo" onClick={() => open({ t: 'car', car })}>
+            <Icon name="camera" /> תמונה של הרכב
+          </button>
+        )}
       </section>
 
       <div className="tiles">
@@ -164,17 +169,12 @@ export function HomeScreen({ open, goSettings }: { open: OpenSheet; goSettings()
 function Tile({ r, open }: { r: Reminder; open: OpenSheet }) {
   return (
     <button className="tile" data-s={r.status} onClick={() => open({ t: 'item', item: r.item })}>
-      <div className="l">{r.item.label}</div>
-      <span className="state">{STATUS_TEXT[r.status]}</span>
-      <div className="row">
+      <div className="l" style={{ display: 'flex', justifyContent: 'space-between' }}>
+        {r.item.label}
         <Icon name={kindIcon(r.item.kind)} />
-        <b style={{ fontSize: 15 }}>{r.headline}</b>
       </div>
-      {r.status !== 'unset' && (
-        <div className="meter">
-          <i style={{ width: `${Math.max(3, r.progress * 100)}%` }} />
-        </div>
-      )}
+      <span className="state">{STATUS_TEXT[r.status]}</span>
+      <div className="v" style={{ fontSize: 20 }}>{r.headline}</div>
     </button>
   )
 }

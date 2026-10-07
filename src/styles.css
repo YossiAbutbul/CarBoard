@@ -2,13 +2,13 @@
    Font: Assistant (Hebrew + Latin). */
 
 :root {
-  --bg: #eef0f3;
-  --card: #ffffff;
+  --bg: #ffffff;
+  --card: #f3f4f6;
   --ink: #0f1720;
   --ink-2: #3c4653;
   --muted: #7a8491;
   --line: #e1e5ea;
-  --soft: #f5f6f8;
+  --soft: #e9ebee;
   --blue: #1c69d4;
   --blue-ink: #0a4fb0;
   --hero-1: #0b1626;
@@ -42,29 +42,30 @@ svg.i { width: 20px; height: 20px; flex: none; stroke: currentColor; fill: none;
 /* ─── hero ─── */
 .hero {
   position: relative; margin: 0 -16px; padding: max(14px, env(safe-area-inset-top)) 18px 0; color: #fff; overflow: hidden;
-  background: linear-gradient(180deg, var(--hero-1) 0%, var(--hero-2) 45%, var(--hero-3) 78%, var(--bg) 100%);
-  min-height: 430px;
+  background: linear-gradient(180deg, var(--hero-1) 0%, var(--hero-2) 42%, #6f86a6 74%, #dfe5ec 92%, var(--bg) 100%);
+  min-height: 470px;
 }
 .hero .bar { display: grid; grid-template-columns: 40px 1fr 40px; align-items: center; text-align: center; }
 .hero .bar .title { font-size: 14px; font-weight: 600; letter-spacing: 0.01em; }
 .hero .bar .title small { display: block; font-size: 11.5px; font-weight: 400; opacity: 0.7; direction: ltr; }
 .hero .bar button { width: 40px; height: 40px; display: grid; place-items: center; color: #fff; opacity: 0.9; }
-.status { position: relative; z-index: 1; margin-top: 26px; font-weight: 800; font-size: 64px; line-height: 0.92; letter-spacing: -0.02em; text-transform: uppercase; }
+.status { position: relative; z-index: 1; margin-top: 30px; font-weight: 700; font-size: 58px; line-height: 0.95; letter-spacing: -0.02em; }
 .status span { display: block; }
 .status .sm { font-size: 15px; font-weight: 500; letter-spacing: 0; text-transform: none; opacity: 0.8; margin-top: 12px; line-height: 1.3; }
-.hero .car { position: absolute; z-index: 2; left: -6%; bottom: 18px; width: 92%; height: 230px; display: flex; align-items: flex-end; justify-content: flex-start; pointer-events: none; }
-.hero .car img, .hero .car svg { max-height: 220px; max-width: 100%; width: auto; filter: drop-shadow(0 22px 18px rgba(5, 12, 24, 0.45)); animation: arrive 1s var(--ease) both; }
-.hero .car::after { content: ''; position: absolute; left: 8%; right: 18%; bottom: -4px; height: 18px; border-radius: 50%; background: radial-gradient(closest-side, rgba(5, 12, 24, 0.35), transparent); z-index: -1; }
+.hero .car { position: absolute; z-index: 2; left: 16px; right: 16px; bottom: 6px; height: 200px; display: flex; align-items: flex-end; justify-content: center; pointer-events: none; }
+.hero .car img, .hero .car svg { max-height: 190px; max-width: 92%; width: auto; height: auto; object-fit: contain; filter: drop-shadow(0 18px 14px rgba(5, 12, 24, 0.35)); animation: arrive 1s var(--ease) both; }
+.hero .car::after { content: ''; position: absolute; left: 14%; right: 14%; bottom: 0; height: 16px; border-radius: 50%; background: radial-gradient(closest-side, rgba(5, 12, 24, 0.4), transparent); z-index: -1; }
 @keyframes arrive { from { opacity: 0; transform: translateX(-24px); } }
 
 /* ─── tiles ─── */
-.tiles { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: -6px; position: relative; z-index: 3; }
-.tile { background: var(--card); border-radius: var(--r); padding: 13px 14px; text-align: right; width: 100%; min-height: 92px; display: flex; flex-direction: column; transition: transform 0.12s; }
+.tiles { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 14px; position: relative; z-index: 3; }
+.tile { background: var(--card); border-radius: var(--r); padding: 14px 15px; text-align: right; width: 100%; min-height: 104px; display: flex; flex-direction: column; transition: transform 0.12s, background 0.15s; }
+.tile:hover { background: var(--soft); }
 .tile:active { transform: scale(0.98); }
 .tile.wide { grid-column: 1 / -1; }
 .tile .l { font-size: 13px; font-weight: 600; color: var(--ink); }
 .tile .s { font-size: 12.5px; color: var(--muted); margin-top: 1px; }
-.tile .v { font-size: 22px; font-weight: 700; letter-spacing: -0.01em; margin-top: auto; padding-top: 10px; font-variant-numeric: tabular-nums; display: flex; align-items: baseline; gap: 5px; }
+.tile .v { font-size: 24px; font-weight: 400; letter-spacing: -0.01em; margin-top: auto; padding-top: 10px; font-variant-numeric: tabular-nums; display: flex; align-items: baseline; gap: 5px; }
 .tile .v small { font-size: 13px; font-weight: 500; color: var(--muted); }
 .tile .row { display: flex; align-items: center; gap: 8px; margin-top: auto; padding-top: 10px; color: var(--ink-2); }
 .tile .row svg.i { width: 18px; height: 18px; }
@@ -76,14 +77,14 @@ svg.i { width: 20px; height: 20px; flex: none; stroke: currentColor; fill: none;
 
 /* remote-style action buttons */
 .actions { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-top: 8px; }
-.actions button { background: var(--card); border-radius: var(--r); padding: 14px 4px 11px; display: grid; justify-items: center; gap: 7px; font-size: 12px; color: var(--ink-2); transition: background 0.15s, color 0.15s; }
+.actions button { background: var(--card); font-weight: 600; border-radius: var(--r); padding: 14px 4px 11px; display: grid; justify-items: center; gap: 7px; font-size: 12px; color: var(--ink-2); transition: background 0.15s, color 0.15s; }
 .actions button svg.i { width: 22px; height: 22px; color: var(--ink); }
 .actions button:active, .actions button.on { background: var(--ink); color: #fff; }
 .actions button:active svg.i, .actions button.on svg.i { color: #fff; }
 
 /* ─── section titles ─── */
 .sec { display: flex; justify-content: space-between; align-items: baseline; margin: 24px 2px 10px; }
-.sec h2 { font-size: 17px; font-weight: 700; margin: 0; }
+.sec h2 { font-size: 18px; font-weight: 700; margin: 0; letter-spacing: -0.01em; }
 .sec button, .link { font-size: 13px; font-weight: 600; color: var(--blue); display: inline-flex; align-items: center; gap: 4px; }
 .sec button svg.i { width: 15px; height: 15px; }
 
@@ -100,9 +101,9 @@ svg.i { width: 20px; height: 20px; flex: none; stroke: currentColor; fill: none;
 .hint { font-size: 12.5px; color: var(--muted); }
 .center { text-align: center; }
 .list { background: var(--card); border-radius: var(--r); overflow: hidden; }
-.item { display: flex; gap: 12px; align-items: center; width: 100%; text-align: right; padding: 14px; background: var(--card); }
+.item { display: flex; gap: 12px; align-items: center; width: 100%; text-align: right; padding: 15px 14px; background: var(--card); }
 .list .item + .item { border-top: 1px solid var(--line); }
-.ic { width: 40px; height: 40px; border-radius: 10px; background: var(--soft); display: grid; place-items: center; flex: none; color: var(--ink); }
+.ic { width: 40px; height: 40px; border-radius: 10px; background: #fff; display: grid; place-items: center; flex: none; color: var(--ink); }
 .item .t { font-size: 15px; font-weight: 600; }
 .item .s { font-size: 12.5px; color: var(--muted); margin-top: 1px; }
 .item .e { margin-inline-start: auto; text-align: left; white-space: nowrap; font-weight: 700; font-variant-numeric: tabular-nums; }
@@ -133,7 +134,7 @@ svg.i { width: 20px; height: 20px; flex: none; stroke: currentColor; fill: none;
 
 /* ─── forms ─── */
 .lbl { display: block; font-size: 12.5px; font-weight: 600; color: var(--muted); margin: 14px 0 6px; }
-.in { width: 100%; border: 0; border-radius: 12px; padding: 12px 13px; font-size: 15px; background: var(--card); box-shadow: inset 0 0 0 1px var(--line); outline: none; transition: box-shadow 0.15s; }
+.in { width: 100%; border: 0; border-radius: 12px; padding: 12px 13px; font-size: 15px; background: #fff; box-shadow: inset 0 0 0 1px var(--line); outline: none; transition: box-shadow 0.15s; }
 .in::placeholder { color: #b3bac3; }
 .in:focus { box-shadow: inset 0 0 0 2px var(--blue); }
 .in.plate-in { direction: ltr; text-align: center; font-size: 24px; font-weight: 800; letter-spacing: 0.08em; background: #f7d117; color: #111; box-shadow: inset 0 0 0 2px #111; padding: 14px; }
@@ -174,11 +175,11 @@ textarea.in { min-height: 76px; resize: vertical; }
 
 /* ─── sheet ─── */
 .overlay { position: fixed; inset: 0; z-index: 50; display: flex; align-items: flex-end; justify-content: center; background: rgba(11, 22, 38, 0.45); animation: fade 0.2s ease-out; }
-.sheet { width: 100%; max-width: 460px; max-height: 92dvh; overflow: auto; background: var(--bg); border-radius: 20px 20px 0 0; padding: 8px 16px calc(20px + env(safe-area-inset-bottom)); animation: up 0.3s var(--ease); }
+.sheet { width: 100%; max-width: 460px; max-height: 92dvh; overflow: auto; background: var(--card); border-radius: 20px 20px 0 0; padding: 8px 16px calc(20px + env(safe-area-inset-bottom)); animation: up 0.3s var(--ease); }
 .sheet .grab { width: 36px; height: 4px; border-radius: 9px; background: #c9cfd6; margin: 2px auto 12px; }
 .sheet-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
 .sheet-head h2 { margin: 0; font-size: 22px; font-weight: 800; letter-spacing: -0.01em; }
-.sheet-head button { width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center; background: var(--card); color: var(--ink-2); }
+.sheet-head button { width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center; background: #fff; color: var(--ink-2); }
 .sheet-head button svg.i { width: 16px; height: 16px; }
 .sheet .card { background: none; padding: 0; }
 @keyframes up { from { transform: translateY(50px); opacity: 0.4; } }
@@ -207,3 +208,8 @@ textarea.in { min-height: 76px; resize: vertical; }
 .lightbox { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.92); z-index: 60; display: grid; place-items: center; padding: 16px; }
 .lightbox img { max-height: 90dvh; border-radius: 10px; }
 .foot { text-align: center; margin-top: 30px; font-size: 12px; color: var(--unset); font-weight: 600; letter-spacing: 0.08em; }
+
+.hero .add-photo { position: absolute; z-index: 3; left: 18px; bottom: 18px; display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; font-weight: 600; color: var(--ink); background: rgba(255, 255, 255, 0.85); padding: 7px 12px; border-radius: 99px; backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); }
+.hero .add-photo svg.i { width: 16px; height: 16px; }
+.hero .car.drawn svg { opacity: 0.92; max-height: 150px; }
+.tile .l svg.i { width: 18px; height: 18px; color: var(--muted); }
