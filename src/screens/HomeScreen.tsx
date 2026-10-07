@@ -1,7 +1,6 @@
 import { useState } from 'react'
 import { Icon, kindIcon } from '../components/Icon'
 import { Glance, GlanceCell, PageHero, TopBar, useCountUp } from '../components/Chrome'
-import { CarToy } from '../components/CarAvatar'
 import { useApp } from '../data/AppData'
 import { STATUS_TEXT } from '../domain/labels'
 import type { Reminder } from '../domain/reminders'
@@ -78,9 +77,6 @@ export function HomeScreen({
           <div className="state-pill" data-s={state}>
             {stateText}
           </div>
-        </div>
-        <div className="hero-stage">
-          <CarToy car={car} className="hero-toy" />
         </div>
         <Glance>
           <GlanceCell

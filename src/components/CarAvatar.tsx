@@ -9,11 +9,27 @@ import type { BodyType, Car } from '../types'
 
 type Toy = 'car' | 'suv' | 'pickup' | 'van'
 
-const TOYS: Record<Toy, { label: string; src: string; hues: [number, number][] }> = {
-  car: { label: 'רכב', src: '/cars/car.png', hues: [[315, 360], [0, 12]] },
-  suv: { label: 'ג׳יפ', src: '/cars/suv.png', hues: [[204, 232]] },
-  pickup: { label: 'טנדר', src: '/cars/pickup.png', hues: [[325, 360], [0, 12]] },
-  van: { label: 'מיני-בוס', src: '/cars/van.png', hues: [[262, 292]] },
+/**
+ * Which pixels are body paint, per toy. Hue picks the body colour; saturation and lightness
+ * keep out the glass (the jeep's glass is the same blue, but far more saturated), the tyres
+ * (too dark) and the minibus's white sides (too light). `guard` keeps a window's glint out.
+ */
+interface PaintRule {
+  hues: [number, number][]
+  s: [number, number]
+  l: [number, number]
+  guard?: { box: [number, number, number, number]; lMax: number }
+}
+
+const TOYS: Record<Toy, { label: string; src: string; rule: PaintRule }> = {
+  car: { label: 'רכב', src: '/cars/car.png', rule: { hues: [[315, 360], [0, 12]], s: [0.35, 1], l: [0.22, 0.82] } },
+  suv: {
+    label: 'ג׳יפ',
+    src: '/cars/suv.png',
+    rule: { hues: [[200, 235]], s: [0.3, 0.82], l: [0.24, 0.8], guard: { box: [55, 80, 121, 137], lMax: 0.47 } },
+  },
+  pickup: { label: 'טנדר', src: '/cars/pickup.png', rule: { hues: [[325, 360], [0, 12]], s: [0.35, 1], l: [0.22, 0.82] } },
+  van: { label: 'מיני-בוס', src: '/cars/van.png', rule: { hues: [[258, 295]], s: [0.3, 1], l: [0.4, 0.8] } },
 }
 
 export const BODY_TYPES: BodyType[] = ['car', 'suv', 'pickup', 'van']
@@ -119,7 +135,18 @@ async function paintToy(toy: Toy, paint: string): Promise<string> {
   ctx.drawImage(img, 0, 0)
   const im = ctx.getImageData(0, 0, c.width, c.height)
   const d = im.data
-  const inBody = (h: number, s: number, l: number) => s > 0.25 && l > 0.18 && TOYS[toy].hues.some(([a, b]) => h >= a && h <= b)
+  const r = TOYS[toy].rule
+  const inBody = (h: number, s: number, l: number, px: number) => {
+    if (s < r.s[0] || s > r.s[1] || l < r.l[0] || l > r.l[1]) return false
+    if (!r.hues.some(([a, b]) => h >= a && h <= b)) return false
+    if (r.guard) {
+      const x = px % c.width
+      const y = (px / c.width) | 0
+      const [x0, y0, x1, y1] = r.guard.box
+      if (x >= x0 && x <= x1 && y >= y0 && y <= y1 && l > r.guard.lMax) return false
+    }
+    return true
+  }
 
   // the body's average lightness, so light and shade carry over to the new paint
   let sum = 0
@@ -127,7 +154,7 @@ async function paintToy(toy: Toy, paint: string): Promise<string> {
   for (let i = 0; i < d.length; i += 4) {
     if (d[i + 3] < 128) continue
     const [h, s, l] = rgb2hsl(d[i], d[i + 1], d[i + 2])
-    if (inBody(h, s, l)) {
+    if (inBody(h, s, l, i / 4)) {
       sum += l
       n++
     }
@@ -139,7 +166,7 @@ async function paintToy(toy: Toy, paint: string): Promise<string> {
   for (let i = 0; i < d.length; i += 4) {
     if (!d[i + 3]) continue
     const [h, s, l] = rgb2hsl(d[i], d[i + 1], d[i + 2])
-    if (!inBody(h, s, l)) continue
+    if (!inBody(h, s, l, i / 4)) continue
     const nl = Math.min(0.97, Math.max(0.04, pl + (l - mean) * contrast))
     const [r, g, b] = hsl2rgb(ph, ps * Math.min(1, s / 0.75 + 0.1), nl)
     d[i] = r
