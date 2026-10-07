@@ -144,7 +144,10 @@ export function Splash() {
   return (
     <div className="splash">
       <Dial className="splash-dial" />
-      <div className="splash-name">הרכב שלי</div>
+      <div className="splash-name" dir="ltr">
+        CarBoard
+        <small>הרכב שלי</small>
+      </div>
     </div>
   )
 }

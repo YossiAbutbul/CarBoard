@@ -185,7 +185,7 @@ export function SettingsDrawer({
           </div>
         </section>
       )}
-      <div className="foot">הרכב שלי · 0.1</div>
+      <div className="foot" dir="ltr">CarBoard · v{__APP_VERSION__}</div>
       <div className="credit" dir="ltr">
         © {new Date().getFullYear()} Yossi Abutbul. All rights reserved.
       </div>

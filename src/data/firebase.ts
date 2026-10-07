@@ -1,7 +1,6 @@
 import { initializeApp } from 'firebase/app'
 import { GoogleAuthProvider, getAuth, signInWithPopup, signInWithRedirect, signOut as fbSignOut } from 'firebase/auth'
 import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager } from 'firebase/firestore'
-import { getStorage } from 'firebase/storage'
 
 const env = import.meta.env
 const config = {
@@ -22,7 +21,6 @@ export const auth = app ? getAuth(app) : null
 export const db = app
   ? initializeFirestore(app, { ignoreUndefinedProperties: true, localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() }) })
   : null
-export const storage = app ? getStorage(app) : null
 
 export async function signInWithGoogle() {
   if (!auth) return

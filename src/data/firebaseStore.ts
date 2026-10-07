@@ -1,23 +1,25 @@
-import { collection, deleteDoc, doc, getDocs, setDoc, updateDoc } from 'firebase/firestore'
-import { deleteObject, getDownloadURL, listAll, ref as fileRef, uploadBytes } from 'firebase/storage'
+import { collection, deleteDoc, doc, getDoc, getDocs, setDoc, updateDoc } from 'firebase/firestore'
 import type { Data, Table } from '../types'
 import type { Store } from './store'
-import { db, storage } from './firebase'
+import { db } from './firebase'
 import { uid } from '../lib/uid'
+import { blobToBase64, compressImage } from '../lib/image'
 
 const TABLES: Table[] = ['cars', 'readings', 'items', 'services', 'documents']
 const urls = new Map<string, string>()
+// A Firestore document holds at most 1 MiB, and base64 adds a third.
+const MAX_FILE = 700 * 1024
 
 /**
- * Cloud mode. Firestore: users/<uid>/<table>/<row id>. Storage: users/<uid>/files/<name>.
- * The security rules (firestore.rules, storage.rules) let each user reach only their own folder.
+ * Cloud mode, all in Firestore (the free Spark plan has no Storage):
+ * rows in users/<uid>/<table>/<row id>, photos and receipts in users/<uid>/files/<file id>.
+ * The rules in firestore.rules let each user reach only their own folder.
  */
 export function firebaseStore(userId: string): Store {
-  if (!db || !storage) throw new Error('Firebase is not configured')
+  if (!db) throw new Error('Firebase is not configured')
   const fs = db
-  const st = storage
-  const table = (t: Table) => collection(fs, 'users', userId, t)
-  const row = (t: Table, id: string) => doc(fs, 'users', userId, t, id)
+  const table = (t: Table | 'files') => collection(fs, 'users', userId, t)
+  const row = (t: Table | 'files', id: string) => doc(fs, 'users', userId, t, id)
 
   return {
     mode: 'cloud',
@@ -35,21 +37,28 @@ export function firebaseStore(userId: string): Store {
       await deleteDoc(row(t, id))
     },
     async upload(name, blob) {
-      const ext = ({ 'image/png': 'png', 'image/webp': 'webp', 'application/pdf': 'pdf' } as Record<string, string>)[blob.type] ?? 'jpg'
-      const path = `users/${userId}/files/${name}-${uid()}.${ext}`
-      await uploadBytes(fileRef(st, path), blob, { contentType: blob.type })
-      return `fb:${path}`
+      let file = blob
+      // a photo still too big after the usual compression gets one stronger pass
+      if (file.size > MAX_FILE && file.type.startsWith('image/')) file = await compressImage(file, 1100, 0.6)
+      if (file.size > MAX_FILE) throw new Error('הקובץ גדול מדי (עד 700KB). אפשר לצלם אותו במקום להעלות PDF.')
+      const id = uid()
+      await setDoc(row('files', id), { name, type: file.type, size: file.size, data: await blobToBase64(file), created: Date.now() })
+      return `fs:${id}`
     },
     async fileUrl(ref) {
-      if (!ref.startsWith('fb:')) return ref
+      if (!ref.startsWith('fs:')) return ref
       if (urls.has(ref)) return urls.get(ref)!
-      const url = await getDownloadURL(fileRef(st, ref.slice(3)))
+      const snap = await getDoc(row('files', ref.slice(3)))
+      if (!snap.exists()) return ''
+      const { type, data } = snap.data() as { type: string; data: string }
+      const bytes = Uint8Array.from(atob(data), c => c.charCodeAt(0))
+      const url = URL.createObjectURL(new Blob([bytes], { type }))
       urls.set(ref, url)
       return url
     },
     async wipeFiles() {
-      const all = await listAll(fileRef(st, `users/${userId}/files`))
-      await Promise.all(all.items.map(i => deleteObject(i)))
+      const all = await getDocs(table('files'))
+      await Promise.all(all.docs.map(d => deleteDoc(d.ref)))
       urls.clear()
     },
   }

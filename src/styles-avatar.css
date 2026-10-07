@@ -319,3 +319,4 @@
 .scene.lite .streak { opacity: 0; height: 1.5px; }
 .scene.lite .s1 { top: 70%; } .scene.lite .s2 { top: 78%; } .scene.lite .s3 { top: 86%; } .scene.lite .s4 { top: 62%; }
 .scene.lite .grain { opacity: 0.05; }
+.splash-name small { display: block; margin-top: 4px; font-size: 13px; font-weight: 500; letter-spacing: 0; opacity: 0.6; text-align: center; }

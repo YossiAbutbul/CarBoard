@@ -41,7 +41,7 @@ export function Intro({ name, onName, onAddCar }: { name: string; onName(n: stri
 
       {step === 0 && (
         <div className="onb-step" key="0">
-          <div className="eyebrow">הרכב שלי</div>
+          <div className="eyebrow" dir="ltr">CarBoard</div>
           <h1>
             כל הרכב.
             <br />
