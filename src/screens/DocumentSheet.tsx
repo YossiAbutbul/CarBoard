@@ -1,3 +1,4 @@
+import { DateField } from '../components/DateField'
 import { ConfirmButton } from '../components/ConfirmButton'
 import { useState } from 'react'
 import type { CarDocument, DocKind } from '../types'
@@ -87,7 +88,7 @@ export function DocumentSheet({ doc, onClose }: { doc?: CarDocument; onClose(): 
           </div>
         )}
         <label className="lbl">בתוקף עד</label>
-        <input className="in" type="date" value={expiry} onChange={e => setExpiry(e.target.value)} />
+        <DateField value={expiry} onChange={setExpiry} label="בתוקף עד" />
         {(kind === 'licence' || kind === 'insurance') && <div className="hint" style={{ marginTop: 6 }}>התאריך יעדכן גם את התזכורת.</div>}
         <label className="lbl">צילומים</label>
         {files.length > 0 && (

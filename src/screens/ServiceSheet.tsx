@@ -1,3 +1,4 @@
+import { DateField } from '../components/DateField'
 import { useMemo, useState } from 'react'
 import type { ItemKind, ServiceRecord } from '../types'
 import { Sheet } from '../components/ui'
@@ -70,7 +71,7 @@ export function ServiceSheet({ onClose, kind = 'service', record }: { onClose():
         <div className="row2">
           <div>
             <label className="lbl">תאריך</label>
-            <input className="in" type="date" value={date} max={todayIso()} onChange={e => setDate(e.target.value)} />
+            <DateField value={date} onChange={setDate} kind="past" max={todayIso()} clearable={false} label="תאריך הטיפול" />
           </div>
           <div>
             <label className="lbl">ק״מ</label>

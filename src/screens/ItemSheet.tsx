@@ -1,3 +1,4 @@
+import { DateField } from '../components/DateField'
 import { ConfirmButton } from '../components/ConfirmButton'
 import { useState } from 'react'
 import type { Item, ItemKind } from '../types'
@@ -184,7 +185,7 @@ export function ItemSheet({ item, onClose, onDone }: { item?: Item; onClose(): v
         {byDate ? (
           <>
             <label className="lbl">{isInsurance ? 'בתוקף עד' : 'המועד הבא'}</label>
-            <input className="in" type="date" value={dueDate} onChange={e => setDueDate(e.target.value)} />
+            <DateField value={dueDate} onChange={setDueDate} label={isInsurance ? 'בתוקף עד' : 'המועד הבא'} />
             <label className="lbl">מתחדש כל (חודשים)</label>
             <input className="in" inputMode="numeric" placeholder="12" value={everyMonths} onChange={e => setEveryMonths(digits(e.target.value))} />
           </>
@@ -193,7 +194,7 @@ export function ItemSheet({ item, onClose, onDone }: { item?: Item; onClose(): v
             <label className="lbl">המועד הבא</label>
             <div className="row2">
               <input className="in" inputMode="numeric" placeholder="בק״מ" value={dueKm} onChange={e => setDueKm(digits(e.target.value))} />
-              <input className="in" type="date" value={dueDate} onChange={e => setDueDate(e.target.value)} />
+              <DateField value={dueDate} onChange={setDueDate} placeholder="בתאריך" label="המועד הבא" />
             </div>
             <div className="hint" style={{ marginTop: 6 }}>מה שמגיע קודם קובע. אפשר למלא רק אחד.</div>
             <label className="lbl">חוזר כל</label>
