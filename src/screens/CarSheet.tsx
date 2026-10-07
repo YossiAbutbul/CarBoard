@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import type { Car } from '../types'
 import { Sheet, useFileUrl } from '../components/ui'
-import { CarDrop, useCarPhotoUpload } from '../components/CarPhoto'
+import { CarDrop, CarProcessing, useCarPhotoUpload } from '../components/CarPhoto'
 import { useApp } from '../data/AppData'
 import { formatPlate, lookupPlate, plateDigits, type PlateInfo } from '../lib/govil'
 import { fmtDate } from '../lib/i18n'
@@ -111,7 +111,9 @@ export function CarSheet({ car, onClose }: { car?: Car; onClose(): void }) {
         {lookErr && <div className="err">{lookErr}</div>}
 
         <label className="lbl">תמונה</label>
-        {imageUrl ? (
+        {imageUrl && photo.progress ? (
+          <CarProcessing progress={photo.progress} />
+        ) : imageUrl ? (
           <>
             <div className="checker">
               <img src={imageUrl} alt="" />
@@ -127,7 +129,7 @@ export function CarSheet({ car, onClose }: { car?: Car; onClose(): void }) {
             </div>
           </>
         ) : (
-          <CarDrop busy={photo.busy} error={photo.error} onFile={async f => setImageRef(await photo.upload(f))} />
+          <CarDrop progress={photo.progress} error={photo.error} onFile={async f => setImageRef(await photo.upload(f))} />
         )}
 
         <label className="lbl">שם לרכב</label>

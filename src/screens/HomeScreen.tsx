@@ -5,12 +5,22 @@ import { Icon, kindIcon } from '../components/Icon'
 import { useApp } from '../data/AppData'
 import { STATUS_TEXT } from '../domain/labels'
 import type { Reminder } from '../domain/reminders'
-import { agoText, fmtNum } from '../lib/i18n'
+import { agoText, fmtNum, greeting } from '../lib/i18n'
 import type { OpenSheet } from '../App'
 
 const weekKey = (carId: string) => `car-records:confirm:${carId}:${Math.floor(Date.now() / (7 * 86_400_000))}`
 
-export function HomeScreen({ open, openCars, openSettings }: { open: OpenSheet; openCars(): void; openSettings(): void }) {
+export function HomeScreen({
+  open,
+  openCars,
+  openSettings,
+  userName,
+}: {
+  open: OpenSheet
+  openCars(): void
+  openSettings(): void
+  userName: string | null
+}) {
   const { car, km, reminders, actions } = useApp()
   const [hidden, setHidden] = useState(false)
   const photo = useCarPhotoUpload()
@@ -52,14 +62,14 @@ export function HomeScreen({ open, openCars, openSettings }: { open: OpenSheet; 
   const service = reminders.find(r => r.item.kind === 'service')
   const others = reminders.filter(r => r !== service)
 
-  const [line1, line2] = urgent.length
-    ? [urgent.length === 1 ? 'דבר' : `${urgent.length}`, urgent.length === 1 ? 'אחד' : 'דברים']
-    : ['הכל', 'תקין']
-  const subline = urgent.length
-    ? urgent.map(r => r.item.label).join(' · ')
+  // Greeting first, like the BMW app; the car's state sits under it as one short line.
+  const [line1, line2] = userName ? ['שלום,', userName] : greeting().split(' ')
+  const state = urgent.length ? (urgent.some(r => r.status === 'overdue') ? 'overdue' : 'due') : soon.length ? 'soon' : 'ok'
+  const stateText = urgent.length
+    ? `${urgent.length === 1 ? 'דבר אחד' : `${urgent.length} דברים`} לטפל בהם: ${urgent.map(r => r.item.label).join(', ')}`
     : soon.length
-      ? `בקרוב: ${soon[0].item.label}, ${soon[0].headline}`
-      : 'אין משהו שדורש טיפול'
+      ? `הכל תקין · בקרוב ${soon[0].item.label}, ${soon[0].headline}`
+      : 'הכל תקין'
 
   return (
     <div className="reveal">
@@ -81,8 +91,9 @@ export function HomeScreen({ open, openCars, openSettings }: { open: OpenSheet; 
         <div className="status">
           <span>{line1}</span>
           <span>{line2}</span>
-          {urgent.length > 0 && <span style={{ fontSize: 30, marginTop: 6 }}>לטפל בהם</span>}
-          <div className="sm">{subline}</div>
+          <div className="sm state-line" data-s={state}>
+            {stateText}
+          </div>
         </div>
         <div className="car">
           <CarImage
@@ -90,7 +101,7 @@ export function HomeScreen({ open, openCars, openSettings }: { open: OpenSheet; 
             empty={
               <CarDrop
                 dark
-                busy={photo.busy}
+                progress={photo.progress}
                 error={photo.error}
                 onFile={async f => {
                   const ref = await photo.upload(f)

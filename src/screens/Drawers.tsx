@@ -67,10 +67,25 @@ export function CarsDrawer({ open, onClose }: { open: OpenSheet; onClose(): void
 }
 
 /** Settings: opens from the right. */
-export function SettingsDrawer({ email, onClose }: { email: string | null; onClose(): void }) {
+export function SettingsDrawer({
+  email,
+  name,
+  onName,
+  onClose,
+}: {
+  email: string | null
+  name: string
+  onName(n: string): void
+  onClose(): void
+}) {
   const { car, km, reminders, store } = useApp()
   return (
     <Drawer title="הגדרות" side="start" onClose={onClose}>
+      <section className="drawer-sec">
+        <div className="drawer-label">השם שלך</div>
+        <input className="in" defaultValue={name} placeholder="למשל: יוסי" onBlur={e => onName(e.target.value.trim())} onKeyDown={e => e.key === 'Enter' && (e.target as HTMLInputElement).blur()} />
+        <div className="hint" style={{ marginTop: 6 }}>מופיע בברכה במסך הבית.</div>
+      </section>
       {car && (
         <section className="drawer-sec">
           <div className="drawer-label">יומן</div>

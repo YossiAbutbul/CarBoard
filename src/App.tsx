@@ -10,6 +10,7 @@ import { HomeScreen } from './screens/HomeScreen'
 import { ServicesScreen } from './screens/ServicesScreen'
 import { DocumentsScreen } from './screens/DocumentsScreen'
 import { CarsDrawer, SettingsDrawer } from './screens/Drawers'
+import { getLocalName, storeLocalName } from './lib/profile'
 import { OdometerSheet } from './screens/OdometerSheet'
 import { ServiceSheet } from './screens/ServiceSheet'
 import { ItemSheet } from './screens/ItemSheet'
@@ -46,12 +47,21 @@ export default function App() {
   if (!store) return <Login />
   return (
     <AppDataProvider key={userId ?? 'local'} store={store}>
-      <Main email={session?.user.email ?? null} />
+      <Main
+        email={session?.user.email ?? null}
+        accountName={(session?.user.user_metadata?.full_name ?? session?.user.user_metadata?.name ?? null) as string | null}
+      />
     </AppDataProvider>
   )
 }
 
-function Main({ email }: { email: string | null }) {
+function Main({ email, accountName }: { email: string | null; accountName: string | null }) {
+  const [localName, setLocalName] = useState(getLocalName)
+  const userName = localName || accountName?.split(' ')[0] || null
+  const saveName = (n: string) => {
+    setLocalName(n)
+    storeLocalName(n)
+  }
   const { car, loading, error } = useApp()
   const [tab, setTab] = useState<Tab>('home')
   const [sheet, setSheet] = useState<SheetState | null>(null)
@@ -64,7 +74,7 @@ function Main({ email }: { email: string | null }) {
     <div className="shell">
       {error && <div className="banner">שגיאה בטעינת הנתונים: {error}</div>}
       {tab === 'home' || !car ? (
-        <HomeScreen open={setSheet} openCars={() => setDrawer('cars')} openSettings={() => setDrawer('settings')} />
+        <HomeScreen open={setSheet} openCars={() => setDrawer('cars')} openSettings={() => setDrawer('settings')} userName={userName} />
       ) : tab === 'services' ? (
         <ServicesScreen open={setSheet} />
       ) : (
@@ -116,7 +126,7 @@ function Main({ email }: { email: string | null }) {
       {sheet?.t === 'doc' && <DocumentSheet doc={sheet.doc} onClose={close} />}
       {sheet?.t === 'car' && <CarSheet car={sheet.car} onClose={close} />}
       {drawer === 'cars' && <CarsDrawer open={setSheet} onClose={() => setDrawer(null)} />}
-      {drawer === 'settings' && <SettingsDrawer email={email} onClose={() => setDrawer(null)} />}
+      {drawer === 'settings' && <SettingsDrawer email={email} name={userName ?? ''} onName={saveName} onClose={() => setDrawer(null)} />}
     </div>
   )
 }
