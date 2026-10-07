@@ -2,35 +2,44 @@ import { useEffect, useState } from 'react'
 import type { BodyType, Car } from '../types'
 
 /*
- * Toy-style 3D car images (Microsoft Fluent Emoji, MIT, in /public/cars), repainted in the
- * car's colour. Each image's body is found by its hue range; only those pixels get the paint,
- * keeping their light and shade, so the glass, tyres and lights stay as they are.
+ * Toy-style 3D car pictures (Microsoft Fluent Emoji "Color" SVGs, MIT, in /public/cars),
+ * repainted in the car's colour. Each car's body is a known list of colour codes in its SVG;
+ * we swap exactly those for shades of the paint, so the glass, wheels and lights stay as
+ * drawn and the edges stay sharp.
  */
 
 type Toy = 'car' | 'suv' | 'pickup' | 'van'
 
-/**
- * Which pixels are body paint, per toy. Hue picks the body colour; saturation and lightness
- * keep out the glass (the jeep's glass is the same blue, but far more saturated) and the tyres
- * (too dark). `guard` keeps a window's glint out.
- */
-interface PaintRule {
-  hues: [number, number][]
-  s: [number, number]
-  l: [number, number]
-  guard?: { box: [number, number, number, number]; lMax: number }
-}
-
-const TOYS: Record<Toy, { label: string; src: string; rule: PaintRule }> = {
-  car: { label: 'רכב', src: '/cars/car.png', rule: { hues: [[315, 360], [0, 12]], s: [0.35, 1], l: [0.22, 0.82] } },
+const TOYS: Record<Toy, { label: string; src: string; viewBox: string; body: string[] }> = {
+  car: {
+    label: 'רכב',
+    src: '/cars/car.svg',
+    viewBox: '1.4 9.4 29.2 20.2',
+    body: ['#94154B', '#DF378A', '#ED334E', '#FF4D5A', '#64023B', '#7E0B55', '#D32374', '#B60160'],
+  },
   suv: {
     label: 'ג׳יפ',
-    src: '/cars/suv.png',
-    rule: { hues: [[200, 235]], s: [0.3, 0.82], l: [0.24, 0.8], guard: { box: [55, 80, 121, 137], lMax: 0.47 } },
+    src: '/cars/suv.svg',
+    viewBox: '1.4 6.4 29.2 24.2',
+    // #0369DA is the top of the glass gradient, so it stays out
+    body: ['#4A8FD6', '#4377DA', '#4379D8', '#131D7E', '#26439E', '#3C6FA9', '#5190E3', '#122773', '#355FC4', '#4283D7', '#3A74BE'],
   },
-  pickup: { label: 'טנדר', src: '/cars/pickup.png', rule: { hues: [[325, 360], [0, 12]], s: [0.35, 1], l: [0.22, 0.82] } },
-  // the minibus body is a pale lavender; painting it with the stripe keeps the stripe as a darker tone
-  van: { label: 'מיני-בוס', src: '/cars/van.png', rule: { hues: [[248, 296]], s: [0.15, 1], l: [0.45, 0.97] } },
+  pickup: {
+    label: 'טנדר',
+    src: '/cars/pickup.svg',
+    viewBox: '1.4 10.5 29.2 20.1',
+    body: [
+      '#F95963', '#D8445D', '#E24658', '#D82533', '#DF1A39', '#C7385B', '#E5393E', '#C92725', '#923545', '#7A174D', '#FF5755', '#530817',
+      '#6D1727', '#DB4663', '#F94947', '#7F0D28', '#4D0615', '#6C1828', '#FF406D', '#D61049', '#AC2038', '#FC5760', '#D31D2F',
+    ],
+  },
+  van: {
+    label: 'מיני-בוס',
+    src: '/cars/van.svg',
+    viewBox: '1.5 10.5 29 20.1',
+    // body and stripe; the wheel centres (#E8E4EF, #CABFD4) stay out
+    body: ['#CFC0DB', '#E7D6F4', '#E0C7F5', '#5A5080', '#8169C1', '#9A6FE2', '#B288FA'],
+  },
 }
 
 export const BODY_TYPES: BodyType[] = ['car', 'suv', 'pickup', 'van']
@@ -88,10 +97,10 @@ function shade(hex: string, amt: number) {
 
 /* ─── repainting ─── */
 
-function rgb2hsl(r: number, g: number, b: number): [number, number, number] {
-  r /= 255
-  g /= 255
-  b /= 255
+function hexToHsl(hex: string): [number, number, number] {
+  const r = parseInt(hex.slice(1, 3), 16) / 255
+  const g = parseInt(hex.slice(3, 5), 16) / 255
+  const b = parseInt(hex.slice(5, 7), 16) / 255
   const mx = Math.max(r, g, b)
   const mn = Math.min(r, g, b)
   const l = (mx + mn) / 2
@@ -102,104 +111,53 @@ function rgb2hsl(r: number, g: number, b: number): [number, number, number] {
   return [h * 60, s, l]
 }
 
-function hsl2rgb(h: number, s: number, l: number): [number, number, number] {
-  if (!s) return [l * 255, l * 255, l * 255]
+function hslToHex(h: number, s: number, l: number) {
   const k = (n: number) => (n + h / 30) % 12
   const a = s * Math.min(l, 1 - l)
-  const f = (n: number) => l - a * Math.max(-1, Math.min(k(n) - 3, Math.min(9 - k(n), 1)))
-  return [f(0) * 255, f(8) * 255, f(4) * 255]
+  const f = (n: number) => Math.round(255 * (l - a * Math.max(-1, Math.min(k(n) - 3, Math.min(9 - k(n), 1)))))
+  return '#' + [f(0), f(8), f(4)].map(v => v.toString(16).padStart(2, '0')).join('')
 }
 
-const images = new Map<Toy, Promise<HTMLImageElement>>()
+const sources = new Map<Toy, Promise<string>>()
 const painted = new Map<string, Promise<string>>()
 
-function loadImage(toy: Toy) {
-  if (!images.has(toy))
-    images.set(
-      toy,
-      new Promise((res, rej) => {
-        const img = new Image()
-        img.onload = () => res(img)
-        img.onerror = rej
-        img.src = TOYS[toy].src
-      }),
-    )
-  return images.get(toy)!
+const loadSvg = (toy: Toy) => {
+  if (!sources.has(toy)) sources.set(toy, fetch(TOYS[toy].src).then(r => r.text()))
+  return sources.get(toy)!
 }
 
+/** The toy's SVG with its body colours swapped for shades of `paint`, as a data URL. */
 async function paintToy(toy: Toy, paint: string): Promise<string> {
-  const img = await loadImage(toy)
-  const c = document.createElement('canvas')
-  c.width = img.naturalWidth
-  c.height = img.naturalHeight
-  const ctx = c.getContext('2d', { willReadFrequently: true })!
-  ctx.drawImage(img, 0, 0)
-  const im = ctx.getImageData(0, 0, c.width, c.height)
-  const d = im.data
-  const r = TOYS[toy].rule
-  const inBody = (h: number, s: number, l: number, px: number) => {
-    if (s < r.s[0] || s > r.s[1] || l < r.l[0] || l > r.l[1]) return false
-    if (!r.hues.some(([a, b]) => h >= a && h <= b)) return false
-    if (r.guard) {
-      const x = px % c.width
-      const y = (px / c.width) | 0
-      const [x0, y0, x1, y1] = r.guard.box
-      if (x >= x0 && x <= x1 && y >= y0 && y <= y1 && l > r.guard.lMax) return false
-    }
-    return true
-  }
+  const t = TOYS[toy]
+  let svg = (await loadSvg(toy)).replace(/viewBox="[^"]*"/, `viewBox="${t.viewBox}"`)
+  // keep the body's light and shade: each colour keeps its distance from the body's average lightness
+  const shades = t.body.map(hexToHsl)
+  const mean = shades.reduce((n, [, , l]) => n + l, 0) / shades.length
+  const [ph, ps, pl] = hexToHsl(paint)
+  const contrast = pl < 0.15 || pl > 0.85 ? 0.55 : 0.85 // keep very dark and very light paints from clipping
+  const repaint = (s: number, l: number) => hslToHex(ph, ps * Math.min(1, 0.55 + s * 0.5), Math.min(0.96, Math.max(0.05, pl + (l - mean) * contrast)))
+  t.body.forEach((hex, i) => {
+    const [, s, l] = shades[i]
+    svg = svg.replace(new RegExp(hex, 'gi'), repaint(s, l))
+  })
 
-  // the body's average lightness, so light and shade carry over to the new paint
-  let sum = 0
-  let n = 0
-  for (let i = 0; i < d.length; i += 4) {
-    if (d[i + 3] < 128) continue
-    const [h, s, l] = rgb2hsl(d[i], d[i + 1], d[i + 2])
-    if (inBody(h, s, l, i / 4)) {
-      sum += l
-      n++
-    }
-  }
-  const mean = n ? sum / n : 0.5
-  const [ph, ps, pl] = rgb2hsl(parseInt(paint.slice(1, 3), 16), parseInt(paint.slice(3, 5), 16), parseInt(paint.slice(5, 7), 16))
-  const contrast = pl < 0.15 || pl > 0.85 ? 0.55 : 0.9 // keep very dark and very light paints from clipping
-
-  for (let i = 0; i < d.length; i += 4) {
-    if (!d[i + 3]) continue
-    const [h, s, l] = rgb2hsl(d[i], d[i + 1], d[i + 2])
-    if (!inBody(h, s, l, i / 4)) continue
-    const nl = Math.min(0.97, Math.max(0.04, pl + (l - mean) * contrast))
-    const [r, g, b] = hsl2rgb(ph, ps * Math.min(1, s / 0.75 + 0.1), nl)
-    d[i] = r
-    d[i + 1] = g
-    d[i + 2] = b
-  }
-  ctx.putImageData(im, 0, 0)
-  return trimmed(c, d)
-}
-
-/** Crop to the car itself (the source images have wide empty margins), keeping a small border. */
-function trimmed(c: HTMLCanvasElement, d: Uint8ClampedArray) {
-  let x0 = c.width, y0 = c.height, x1 = 0, y1 = 0
-  for (let y = 0; y < c.height; y++)
-    for (let x = 0; x < c.width; x++)
-      if (d[(y * c.width + x) * 4 + 3] > 10) {
-        if (x < x0) x0 = x
-        if (x > x1) x1 = x
-        if (y < y0) y0 = y
-        if (y > y1) y1 = y
-      }
-  if (x1 <= x0) return c.toDataURL('image/png')
-  const m = 2
-  x0 = Math.max(0, x0 - m)
-  y0 = Math.max(0, y0 - m)
-  x1 = Math.min(c.width - 1, x1 + m)
-  y1 = Math.min(c.height - 1, y1 + m)
-  const out = document.createElement('canvas')
-  out.width = x1 - x0 + 1
-  out.height = y1 - y0 + 1
-  out.getContext('2d')!.drawImage(c, x0, y0, out.width, out.height, 0, 0, out.width, out.height)
-  return out.toDataURL('image/png')
+  // The soft inner shadows and rim glows are filters whose colour is written as numbers
+  // ("0 0 0 0 R  0 0 0 0 G  0 0 0 0 B  0 0 0 A 0"). Tint the ones in the body's hue range too.
+  const hues = shades.filter(([, s]) => s > 0.2).map(([h]) => h)
+  const inBodyHue = (h: number) => hues.some(b => Math.min(Math.abs(h - b), 360 - Math.abs(h - b)) < 22)
+  svg = svg.replace(/(<feColorMatrix[^>]*values=")([^"]+)(")/g, (all, pre: string, values: string, post: string) => {
+    const v = values.trim().split(/[\s,]+/).map(Number)
+    if (v.length !== 20 || v[0] || v[1] || v[2] || v[3]) return all // only flat-colour matrices
+    const hex = '#' + [v[4], v[9], v[14]].map(c => Math.round(Math.min(1, Math.max(0, c)) * 255).toString(16).padStart(2, '0')).join('')
+    const [h, s, l] = hexToHsl(hex)
+    if (s < 0.2 || !inBodyHue(h)) return all
+    const [r, g, b] = [1, 3, 5].map(k => parseInt(repaint(s, l).slice(k, k + 2), 16) / 255)
+    v[4] = +r.toFixed(4)
+    v[9] = +g.toFixed(4)
+    v[14] = +b.toFixed(4)
+    return pre + v.join(' ') + post
+  })
+  return 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg)
 }
 
 /** A toy car of `body` type painted `paint`. */
@@ -213,7 +171,7 @@ export function ToyCar({ body, paint, className }: { body: BodyType; paint: stri
     painted
       .get(key)!
       .then(u => live && setUrl(u))
-      .catch(() => live && setUrl(TOYS[toy].src))
+      .catch(() => live && setUrl(null))
     return () => {
       live = false
     }
