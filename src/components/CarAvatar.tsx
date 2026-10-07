@@ -174,7 +174,31 @@ async function paintToy(toy: Toy, paint: string): Promise<string> {
     d[i + 2] = b
   }
   ctx.putImageData(im, 0, 0)
-  return c.toDataURL('image/png')
+  return trimmed(c, d)
+}
+
+/** Crop to the car itself (the source images have wide empty margins), keeping a small border. */
+function trimmed(c: HTMLCanvasElement, d: Uint8ClampedArray) {
+  let x0 = c.width, y0 = c.height, x1 = 0, y1 = 0
+  for (let y = 0; y < c.height; y++)
+    for (let x = 0; x < c.width; x++)
+      if (d[(y * c.width + x) * 4 + 3] > 10) {
+        if (x < x0) x0 = x
+        if (x > x1) x1 = x
+        if (y < y0) y0 = y
+        if (y > y1) y1 = y
+      }
+  if (x1 <= x0) return c.toDataURL('image/png')
+  const m = 2
+  x0 = Math.max(0, x0 - m)
+  y0 = Math.max(0, y0 - m)
+  x1 = Math.min(c.width - 1, x1 + m)
+  y1 = Math.min(c.height - 1, y1 + m)
+  const out = document.createElement('canvas')
+  out.width = x1 - x0 + 1
+  out.height = y1 - y0 + 1
+  out.getContext('2d')!.drawImage(c, x0, y0, out.width, out.height, 0, 0, out.width, out.height)
+  return out.toDataURL('image/png')
 }
 
 /** A toy car of `body` type painted `paint`. */
