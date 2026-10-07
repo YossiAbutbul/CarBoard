@@ -5,7 +5,6 @@ import { AppDataProvider, useApp } from './data/AppData'
 import { localStore } from './data/localStore'
 import { supabaseStore } from './data/supabaseStore'
 import { cloudEnabled, supabase } from './data/supabase'
-import { CarArt } from './components/ui'
 import { Icon, type IconName } from './components/Icon'
 import { HomeScreen } from './screens/HomeScreen'
 import { ServicesScreen } from './screens/ServicesScreen'
@@ -89,14 +88,16 @@ function Main({ email }: { email: string | null }) {
           <div>
           {(
             [
-              ['home', 'car', 'הרכב שלי'],
+              ['home', 'car', 'הרכב'],
               ['services', 'service', 'טיפולים'],
               ['docs', 'docs', 'מסמכים'],
               ['settings', 'settings', 'הגדרות'],
             ] as [Tab, IconName, string][]
           ).map(([id, icon, label]) => (
             <button key={id} className={tab === id ? 'on' : ''} onClick={() => setTab(id)}>
-              <Icon name={icon} />
+              <span className="ico">
+                <Icon name={icon} />
+              </span>
               {label}
             </button>
           ))}
@@ -135,7 +136,7 @@ function Login() {
           <span>במקום</span>
           <span>אחד.</span>
         </div>
-        <CarArt className="art" color="לבן" />
+        <div style={{ flex: 1 }} />
         <button
           className="btn"
           style={{ background: '#fff' }}

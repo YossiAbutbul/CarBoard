@@ -1,14 +1,11 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import type { Car } from '../types'
-import { CarArt, Sheet, useFileUrl } from '../components/ui'
+import { Sheet, useFileUrl } from '../components/ui'
+import { CarDrop, useCarPhotoUpload } from '../components/CarPhoto'
 import { useApp } from '../data/AppData'
 import { formatPlate, lookupPlate, plateDigits, type PlateInfo } from '../lib/govil'
-import { hasModelImages, modelImageUrl } from '../lib/carImage'
-import { cutoutCar } from '../lib/cutout'
 import { fmtDate } from '../lib/i18n'
 import { Icon } from '../components/Icon'
-
-type PhotoMode = 'model' | 'own' | 'none'
 
 /** Add a new car (car = undefined) or edit an existing one. */
 export function CarSheet({ car, onClose }: { car?: Car; onClose(): void }) {
@@ -20,20 +17,16 @@ export function CarSheet({ car, onClose }: { car?: Car; onClose(): void }) {
   const [lookErr, setLookErr] = useState<string | null>(null)
   const [name, setName] = useState(car?.name ?? '')
   const [kmNow, setKmNow] = useState(editing ? String(km.value) : '')
-  const [mode, setMode] = useState<PhotoMode>(car?.image_url ? 'own' : 'model')
-  const [ownRef, setOwnRef] = useState<string | null>(car?.image_url ?? null)
-  const [cutting, setCutting] = useState(false)
+  const [imageRef, setImageRef] = useState<string | null>(car?.image_url ?? null)
+  const photo = useCarPhotoUpload()
   const [err, setErr] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
-  const ownUrl = useFileUrl(ownRef)
+  const imageUrl = useFileUrl(imageRef)
 
   const make = info?.make ?? car?.make ?? null
   const model = info?.model ?? car?.model ?? null
   const year = info?.year ?? car?.year ?? null
   const color = info?.color ?? car?.color ?? null
-  const modelUrl = modelImageUrl({ make, model, year, color })
-  const [modelBroken, setModelBroken] = useState(false)
-  useEffect(() => setModelBroken(false), [modelUrl])
 
   async function lookup(p = plate) {
     if (plateDigits(p).length < 7) return
@@ -54,24 +47,6 @@ export function CarSheet({ car, onClose }: { car?: Car; onClose(): void }) {
     }
   }
 
-  async function onOwnPhoto(f: File | undefined) {
-    if (!f) return
-    setCutting(true)
-    setErr(null)
-    try {
-      const png = await cutoutCar(f)
-      setOwnRef(await actions.upload('car', png))
-      setMode('own')
-    } catch {
-      setErr('לא הצלחנו להסיר את הרקע. נסה תמונה אחרת, מהצד ועם רקע פשוט.')
-    } finally {
-      setCutting(false)
-    }
-  }
-
-  // Model renders are never stored: CarImage builds the CDN URL from make/model/year/colour each time.
-  const image_url = mode === 'own' ? ownRef : null
-
   async function save() {
     const kmN = Number(kmNow.replace(/\D/g, ''))
     if (!plateDigits(plate) && !name.trim()) return setErr('צריך מספר רכב או שם')
@@ -88,7 +63,7 @@ export function CarSheet({ car, onClose }: { car?: Car; onClose(): void }) {
         color,
         fuel: info?.fuel ?? car?.fuel ?? null,
         tyres: info?.tyres ?? car?.tyres ?? null,
-        image_url,
+        image_url: imageRef,
       }
       if (car) await actions.updateCar(car.id, fields)
       else setCarId(await actions.addCar(fields, kmN, info?.licenceUntil ?? null))
@@ -135,35 +110,24 @@ export function CarSheet({ car, onClose }: { car?: Car; onClose(): void }) {
         )}
         {lookErr && <div className="err">{lookErr}</div>}
 
-        <div className="checker">
-          {mode === 'own' && cutting ? (
-            <div className="hint">
-              <span className="spin" /> <div style={{ marginTop: 8 }}>מסיר את הרקע… (בפעם הראשונה זה לוקח רגע)</div>
+        <label className="lbl">תמונה</label>
+        {imageUrl ? (
+          <>
+            <div className="checker">
+              <img src={imageUrl} alt="" />
             </div>
-          ) : mode === 'own' && ownUrl ? (
-            <img src={ownUrl} alt="" />
-          ) : mode === 'model' && modelUrl && !modelBroken ? (
-            <img src={modelUrl} alt="" onError={() => setModelBroken(true)} />
-          ) : (
-            <CarArt color={color} />
-          )}
-        </div>
-        <div className="pick">
-          <button className={mode === 'model' ? 'on' : ''} onClick={() => setMode('model')}>
-            תמונת דגם
-          </button>
-          <label className={mode === 'own' ? 'on' : ''}>
-            צילום שלי
-            <input type="file" accept="image/*" onChange={e => onOwnPhoto(e.target.files?.[0])} />
-          </label>
-          <button className={mode === 'none' ? 'on' : ''} onClick={() => setMode('none')}>
-            ללא תמונה
-          </button>
-        </div>
-        {mode === 'model' && !modelUrl && (
-          <div className="hint" style={{ marginTop: 6 }}>
-            {hasModelImages() ? 'לא נמצאה תמונת דגם. מוצג איור בצבע הרכב.' : 'תמונות דגם דורשות מפתח imagin.studio. בינתיים מוצג איור בצבע הרכב.'}
-          </div>
+            <div className="row2" style={{ marginTop: 8 }}>
+              <label className="file-btn">
+                <Icon name="camera" /> החלפה
+                <input type="file" accept="image/*" onChange={async e => setImageRef((await photo.upload(e.target.files?.[0])) ?? imageRef)} />
+              </label>
+              <button className="btn" onClick={() => setImageRef(null)}>
+                <Icon name="trash" /> הסרה
+              </button>
+            </div>
+          </>
+        ) : (
+          <CarDrop busy={photo.busy} error={photo.error} onFile={async f => setImageRef(await photo.upload(f))} />
         )}
 
         <label className="lbl">שם לרכב</label>
@@ -175,7 +139,7 @@ export function CarSheet({ car, onClose }: { car?: Car; onClose(): void }) {
           </>
         )}
         {err && <div className="err">{err}</div>}
-        <button className="btn pri" style={{ marginTop: 16 }} disabled={busy || cutting} onClick={save}>
+        <button className="btn pri" style={{ marginTop: 16 }} disabled={busy || Boolean(photo.busy)} onClick={save}>
           {busy ? <span className="spin" /> : editing ? 'שמירה' : 'הוספת רכב'}
         </button>
       </div>

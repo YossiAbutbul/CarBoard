@@ -1,8 +1,29 @@
-/** Remove the background of a car photo on the device. Returns a trimmed transparent PNG. */
-export async function cutoutCar(file: Blob): Promise<Blob> {
+/**
+ * Turns an uploaded car image into a trimmed transparent PNG.
+ * An image that is already transparent (e.g. an AI studio render) is only trimmed;
+ * anything else gets its background removed on the device.
+ */
+export async function prepareCarImage(file: Blob): Promise<{ png: Blob; removedBackground: boolean }> {
+  if (await hasTransparency(file)) return { png: await trimTransparent(file), removedBackground: false }
   const { removeBackground } = await import('@imgly/background-removal')
   const png = await removeBackground(file, { output: { format: 'image/png' } })
-  return trimTransparent(png)
+  return { png: await trimTransparent(png), removedBackground: true }
+}
+
+/** True when at least 2% of the pixels are see-through. JPEGs never are. */
+async function hasTransparency(file: Blob): Promise<boolean> {
+  if (!/png|webp|gif|avif/.test(file.type)) return false
+  const bmp = await createImageBitmap(file)
+  const scale = Math.min(1, 200 / Math.max(bmp.width, bmp.height))
+  const c = document.createElement('canvas')
+  c.width = Math.max(1, Math.round(bmp.width * scale))
+  c.height = Math.max(1, Math.round(bmp.height * scale))
+  const ctx = c.getContext('2d')!
+  ctx.drawImage(bmp, 0, 0, c.width, c.height)
+  const { data } = ctx.getImageData(0, 0, c.width, c.height)
+  let clear = 0
+  for (let i = 3; i < data.length; i += 4) if (data[i] < 200) clear++
+  return clear / (data.length / 4) > 0.02
 }
 
 async function trimTransparent(png: Blob): Promise<Blob> {

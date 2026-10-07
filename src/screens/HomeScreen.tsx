@@ -1,9 +1,9 @@
 import { useState } from 'react'
-import { CarArt, CarImage } from '../components/ui'
+import { CarImage } from '../components/ui'
+import { CarDrop, useCarPhotoUpload } from '../components/CarPhoto'
 import { Icon, kindIcon } from '../components/Icon'
 import { useApp } from '../data/AppData'
 import { STATUS_TEXT } from '../domain/labels'
-import { modelImageUrl } from '../lib/carImage'
 import type { Reminder } from '../domain/reminders'
 import { agoText, fmtNum } from '../lib/i18n'
 import type { OpenSheet } from '../App'
@@ -13,6 +13,7 @@ const weekKey = (carId: string) => `car-records:confirm:${carId}:${Math.floor(Da
 export function HomeScreen({ open, goSettings }: { open: OpenSheet; goSettings(): void }) {
   const { data, car, km, reminders, setCarId, actions } = useApp()
   const [hidden, setHidden] = useState(false)
+  const photo = useCarPhotoUpload()
 
   if (!car)
     return (
@@ -24,7 +25,6 @@ export function HomeScreen({ open, goSettings }: { open: OpenSheet; goSettings()
           <span>במקום</span>
           <span>אחד.</span>
         </div>
-        <CarArt className="art" color="לבן" />
         <button className="btn pri" onClick={() => open({ t: 'car' })}>
           <Icon name="plus" /> הוספת רכב לפי מספר רישוי
         </button>
@@ -84,14 +84,22 @@ export function HomeScreen({ open, goSettings }: { open: OpenSheet; goSettings()
           {urgent.length > 0 && <span style={{ fontSize: 30, marginTop: 6 }}>לטפל בהם</span>}
           <div className="sm">{subline}</div>
         </div>
-        <div className={`car ${car.image_url || modelImageUrl(car) ? '' : 'drawn'}`}>
-          <CarImage car={car} />
+        <div className="car">
+          <CarImage
+            car={car}
+            empty={
+              <CarDrop
+                dark
+                busy={photo.busy}
+                error={photo.error}
+                onFile={async f => {
+                  const ref = await photo.upload(f)
+                  if (ref) await actions.updateCar(car.id, { image_url: ref })
+                }}
+              />
+            }
+          />
         </div>
-        {!car.image_url && !modelImageUrl(car) && (
-          <button className="add-photo" onClick={() => open({ t: 'car', car })}>
-            <Icon name="camera" /> תמונה של הרכב
-          </button>
-        )}
       </section>
 
       <div className="tiles">

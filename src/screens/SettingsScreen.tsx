@@ -28,7 +28,14 @@ export function SettingsScreen({ open, email }: { open: OpenSheet; email: string
         {data.cars.map(c => (
           <div className="item" key={c.id}>
             <span style={{ width: 76, flex: 'none' }}>
-              <CarImage car={c} />
+              <CarImage
+                car={c}
+                empty={
+                  <span className="ic" style={{ width: 76, height: 44 }}>
+                    <Icon name="car" />
+                  </span>
+                }
+              />
             </span>
             <button style={{ textAlign: 'right', minWidth: 0 }} onClick={() => setCarId(c.id)}>
               <div className="t">

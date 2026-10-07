@@ -4,7 +4,7 @@ A Hebrew (RTL) PWA that keeps everything about your cars in one place: km, servi
 
 - **Smart km.** The app estimates today's km from your last reading and your own daily average. A weekly card asks “is it about right?”. You can also photograph the dashboard and AI reads the number.
 - **Plate lookup.** Type the plate number and make, model, year, colour and the test expiry come from the Ministry of Transport open data (data.gov.il).
-- **Car photo with no background.** A model photo (imagin.studio, optional key), or your own photo with the background removed on the phone.
+- **Car image.** Upload a transparent PNG, or any photo and the app removes the background on the phone.
 - **Reminders.** Each item (service, test, insurance, tyres, brakes, battery, custom) is due at a km limit or a date, whichever comes first. You can export them to the phone calendar (.ics) with an alert 7 days before.
 - **Cloud.** Supabase with Google login and row level security. Without Supabase settings the app runs in local demo mode, with the data in the browser.
 
@@ -36,24 +36,22 @@ supabase functions deploy read-odometer
 
 The function sends the photo to Claude (`claude-opus-5-5`, low effort, structured JSON output) and returns `{ km }`. The photo is not stored.
 
-### Studio renders of the car (recommended)
+### Car image
 
-The home screen shows a studio render of each car, built from the make, model, year and colour that the plate lookup returns.
+Each car starts with an empty spot on the home screen. Tap it to upload an image:
 
-1. Get a customer key from [imagin.studio](https://www.imagin.studio) (contact sales for a trial).
-2. Put it in `.env` as `VITE_IMAGIN_KEY=...`.
-
-The licence says images must load from their CDN and must never be stored, so the app builds the URL each time and keeps no copy. Each image load counts as one licence use. Without a key the app shows the user's own photo (background removed on the phone), or a drawing of the car in its colour.
+- A PNG with a transparent background (for example a studio render made once with an AI image tool) is used as is, only trimmed.
+- Any other photo gets its background removed on the phone (`@imgly/background-removal`). The first time takes about 20 seconds while the model loads.
 
 ## Stack
 
-React 19 + TypeScript + Vite, `vite-plugin-pwa`, Supabase (Postgres, Auth, Storage, Edge Functions), `@imgly/background-removal` (runs on the device), plain CSS with the Assistant font.
+React 19 + TypeScript + Vite, `vite-plugin-pwa`, Supabase (Postgres, Auth, Storage, Edge Functions), `@imgly/background-removal` (runs on the device), plain CSS with Noto Sans Hebrew.
 
 ```
 src/
   domain/    km estimate, due logic, reminders, default items
   data/      Store interface: localStore (IndexedDB) and supabaseStore
-  lib/       plate lookup, car image, cutout, .ics export, Hebrew formatting
+  lib/       plate lookup, image cutout, .ics export, Hebrew formatting
   screens/   Home, Services, Documents, Settings + sheets
 supabase/
   migrations/0001_init.sql
