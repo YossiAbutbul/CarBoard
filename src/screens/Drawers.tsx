@@ -22,15 +22,16 @@ export function CarsDrawer({ open, onClose }: { open: OpenSheet; onClose(): void
                 onClose()
               }}
             >
-              <span className="car-pick-img">
-                <Icon name="swap" />
-              </span>
-              <span className="car-pick-text">
+              <span className="car-pick-head">
                 <span className="t">{c.name}</span>
-                <span className="s">{[c.make, c.year].filter(Boolean).join(' · ')}</span>
-                {c.plate && <Plate number={c.plate} size="sm" />}
+                {c.id === car?.id && (
+                  <span className="car-pick-badge">
+                    <Icon name="check" /> נבחר
+                  </span>
+                )}
               </span>
-              {c.id === car?.id && <Icon name="check" className="car-pick-check" />}
+              <span className="s">{[c.year, c.color, c.fuel].filter(Boolean).join(' · ')}</span>
+              {c.plate && <Plate number={c.plate} size="md" />}
             </button>
             <div className="car-pick-acts">
               <button

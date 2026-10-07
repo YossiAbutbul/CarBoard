@@ -79,17 +79,16 @@ function DocCard({ d, onOpen }: { d: CarDocument; onOpen(): void }) {
   const e = expiryState(d.expiry)
   return (
     <button className="doc-card" data-s={e.s} onClick={onOpen}>
-      <div className="doc-media">
-        {d.files[0] ? (
+      {d.files[0] && (
+        <div className="doc-media">
           <FileThumb fileRef={d.files[0]} />
-        ) : (
-          <span className="doc-ic">
-            <Icon name={docIcon(d.kind)} />
-          </span>
-        )}
-        {d.files.length > 1 && <span className="doc-count">+{d.files.length - 1}</span>}
-      </div>
+          {d.files.length > 1 && <span className="doc-count">+{d.files.length - 1}</span>}
+        </div>
+      )}
       <div className="doc-body">
+        <span className="doc-ic">
+          <Icon name={docIcon(d.kind)} />
+        </span>
         <div className="t">{d.title}</div>
         <div className="s">{d.provider ?? DOC_KIND[d.kind].label}</div>
         <div className="doc-foot">
