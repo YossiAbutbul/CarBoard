@@ -20,6 +20,11 @@ export const DOC_KIND: Record<DocKind, { label: string }> = {
   other: { label: 'מסמך אחר' },
 }
 
+/** Israeli car insurers, for quick pick. The field still takes free text. */
+export const INSURERS = [
+  'הראל', 'מגדל', 'הפניקס', 'כלל', 'מנורה מבטחים', 'איילון', 'הכשרה', 'ביטוח ישיר', 'AIG', 'שומרה', 'שלמה ביטוח', 'ליברה', 'WeSure', '9 מיליון', 'שירביט',
+]
+
 export const STATUS_TEXT = {
   ok: 'תקין',
   soon: 'בקרוב',

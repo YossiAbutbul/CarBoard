@@ -176,12 +176,16 @@ export function HomeScreen({ open, openCars, openSettings }: { open: OpenSheet; 
 }
 
 function Tile({ r, open }: { r: Reminder; open: OpenSheet }) {
+  const { data } = useApp()
+  const insurer =
+    r.item.kind === 'insurance' ? data.documents.find(d => d.car_id === r.item.car_id && d.kind === 'insurance')?.provider : null
   return (
     <button className="tile" data-s={r.status} onClick={() => open({ t: 'item', item: r.item })}>
       <div className="l" style={{ display: 'flex', justifyContent: 'space-between' }}>
         {r.item.label}
         <Icon name={kindIcon(r.item.kind)} />
       </div>
+      {insurer && <span className="s">{insurer}</span>}
       <span className="state">{STATUS_TEXT[r.status]}</span>
       <div className="v" style={{ fontSize: 20 }}>{r.headline}</div>
     </button>

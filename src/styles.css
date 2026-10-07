@@ -1,5 +1,9 @@
-/* BMW-inspired: deep blue-grey hero with big bold status, light grey canvas, white tiles, blue accent.
-   Font: Assistant (Hebrew + Latin). */
+/* BMW-inspired: deep blue-grey hero with big status text, white page, light grey tiles, blue accent.
+   Font: Noto Sans Hebrew. */
+
+.thumb-x { position: relative; }
+.thumb-x button { position: absolute; top: -6px; left: -6px; width: 20px; height: 20px; border-radius: 50%; display: grid; place-items: center; background: var(--ink); color: #fff; }
+.thumb-x button svg.i { width: 11px; height: 11px; stroke-width: 2.2; }
 
 :root {
   --bg: #ffffff;
