@@ -1,0 +1,9 @@
+Copyright (c) 2026 Yossi Abutbul. All rights reserved.
+
+This software and its source code are proprietary. No part of it may be copied,
+modified, distributed or used without the written permission of the copyright holder.
+
+Third-party components keep their own licences:
+- Car images in public/cars/ are based on Microsoft Fluent UI Emoji, MIT licence
+  (see public/cars/LICENSE-fluentui-emoji.txt).
+- npm dependencies are covered by the licences in their own packages.

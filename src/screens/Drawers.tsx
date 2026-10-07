@@ -187,7 +187,7 @@ export function SettingsDrawer({
       )}
       <div className="foot">הרכב שלי · 0.1</div>
       <div className="credit" dir="ltr">
-        Car images: Microsoft Fluent Emoji (MIT), recoloured.
+        © {new Date().getFullYear()} Yossi Abutbul. All rights reserved.
       </div>
     </Drawer>
   )
