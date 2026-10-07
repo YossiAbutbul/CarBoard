@@ -1,3 +1,4 @@
+import { Scene } from './Scene'
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { useApp } from '../data/AppData'
 import { Icon } from './Icon'
@@ -50,6 +51,7 @@ export function TopBar({ openCars, openSettings }: { openCars(): void; openSetti
 export function PageHero({ children, dial }: { children: ReactNode; dial?: boolean }) {
   return (
     <section className="hero">
+      <Scene lite />
       {dial && <Dial />}
       {children}
     </section>

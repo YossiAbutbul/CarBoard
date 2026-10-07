@@ -308,3 +308,14 @@
   .scene *, .scene { animation: none !important; }
   .scene-dial .arc { stroke-dashoffset: 250; }
 }
+/* lite: inside the page header, over its own gradient */
+.hero > :not(.scene):not(.dial) { position: relative; z-index: 1; }
+.scene.lite { background: none; border-radius: inherit; }
+.scene.lite::after { display: none; }
+.scene.lite .g1 { width: 240px; height: 240px; top: -110px; right: -70px; opacity: 0.45; }
+.scene.lite .g2 { width: 200px; height: 200px; bottom: -90px; left: -90px; opacity: 0.3; }
+.scene.lite .g3 { width: 160px; height: 160px; top: 30%; right: 20%; opacity: 0.18; }
+.scene.lite .road { transform: rotate(-12deg) scale(1.6); }
+.scene.lite .streak { opacity: 0; height: 1.5px; }
+.scene.lite .s1 { top: 70%; } .scene.lite .s2 { top: 78%; } .scene.lite .s3 { top: 86%; } .scene.lite .s4 { top: 62%; }
+.scene.lite .grain { opacity: 0.05; }
