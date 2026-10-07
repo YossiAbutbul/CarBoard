@@ -138,3 +138,6 @@
 /* SVG toys have no pixel size of their own: size them by width */
 .avatar-stage .toy-car.preview-toy { width: 78%; max-width: 300px; height: auto; max-height: none; }
 .body-grid button .toy-car { width: 64px; height: 44px; object-fit: contain; }
+
+/* welcome: the add button sits at the bottom, under the big title */
+.welcome > .btn { margin-top: auto; margin-bottom: max(24px, env(safe-area-inset-bottom)); }

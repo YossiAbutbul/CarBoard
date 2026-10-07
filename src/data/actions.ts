@@ -43,7 +43,8 @@ export function makeActions(store: Store, getData: () => Data, refresh: () => Pr
     async saveService(rec: Omit<ServiceRecord, 'id'>) {
       await store.insert('services', { ...rec, id: uid() })
       const later = readingsOf(rec.car_id).some(r => r.date > rec.date)
-      if (!later) {
+      const same = readingsOf(rec.car_id).some(r => r.date === rec.date && r.km === rec.km)
+      if (!later && !same) {
         try {
           await insertReading(rec.car_id, rec.km, 'service', rec.date)
         } catch {
@@ -80,7 +81,21 @@ export function makeActions(store: Store, getData: () => Data, refresh: () => Pr
       await refresh()
     },
     async updateService(id: string, patch: Partial<ServiceRecord>) {
+      const before = getData().services.find(s => s.id === id)
       await store.update('services', id, patch)
+      const rec = before && { ...before, ...patch }
+      // if this is still the latest service of its type, its (fixed) km and date set the next due point
+      const latest =
+        rec &&
+        !getData().services.some(s => s.id !== id && s.car_id === rec.car_id && s.type === rec.type && (s.date > rec.date || (s.date === rec.date && s.km > rec.km)))
+      if (rec && latest && (patch.km !== undefined || patch.date !== undefined || patch.type !== undefined)) {
+        const kinds = rec.type === 'service' ? ['service', 'oil'] : [rec.type]
+        for (const item of getData().items.filter(i => i.car_id === rec.car_id && kinds.includes(i.kind)))
+          await store.update('items', item.id, {
+            due_km: item.every_km ? rec.km + item.every_km : item.due_km,
+            due_date: item.every_months ? addMonths(rec.date, item.every_months) : item.due_date,
+          })
+      }
       await refresh()
     },
     async deleteService(id: string) {

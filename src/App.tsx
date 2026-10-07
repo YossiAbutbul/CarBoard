@@ -58,10 +58,10 @@ export default function App() {
 
 function Main({ email, accountName }: { email: string | null; accountName: string | null }) {
   const [localName, setLocalName] = useState(getLocalName)
-  const userName = localName || accountName?.split(' ')[0] || null
+  const userName = localName.trim() || accountName?.split(' ')[0] || null
   const saveName = (n: string) => {
     setLocalName(n)
-    storeLocalName(n)
+    storeLocalName(n.trim())
   }
   const { car, loading, error } = useApp()
   const [tab, setTab] = useState<Tab>('home')
@@ -139,7 +139,7 @@ function Main({ email, accountName }: { email: string | null; accountName: strin
       {sheet?.t === 'doc' && <DocumentSheet doc={sheet.doc} onClose={close} />}
       {sheet?.t === 'car' && <CarSheet car={sheet.car} onClose={close} />}
       {drawer === 'cars' && <CarsDrawer open={setSheet} onClose={() => setDrawer(null)} />}
-      {drawer === 'settings' && <SettingsDrawer email={email} name={userName ?? ''} onName={saveName} onClose={() => setDrawer(null)} />}
+      {drawer === 'settings' && <SettingsDrawer email={email} name={localName} onName={saveName} onClose={() => setDrawer(null)} />}
     </div>
   )
 }

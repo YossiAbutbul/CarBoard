@@ -1,4 +1,5 @@
 import { useEffect, useState, type ReactNode } from 'react'
+import { createPortal } from 'react-dom'
 import type { Car } from '../types'
 import { useApp } from '../data/AppData'
 import type { Status } from '../domain/due'
@@ -119,9 +120,11 @@ export function Ring({ progress, color, children }: { progress: number; color: s
 }
 
 export function Lightbox({ url, onClose }: { url: string; onClose(): void }) {
-  return (
+  // into <body>, above the bottom bar and any sheet
+  return createPortal(
     <div className="lightbox" onClick={onClose}>
       <img src={url} alt="" />
-    </div>
+    </div>,
+    document.body,
   )
 }

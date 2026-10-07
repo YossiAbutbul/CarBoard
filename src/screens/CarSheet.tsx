@@ -166,7 +166,7 @@ export function CarSheet({ car, onClose }: { car?: Car; onClose(): void }) {
         {!editing && (
           <>
             <label className="lbl">כמה ק״מ יש לרכב היום?</label>
-            <input className="in" inputMode="numeric" value={kmNow} onChange={e => setKmNow(e.target.value.replace(/\D/g, ''))} placeholder="48,230" />
+            <input className="in" inputMode="numeric" value={kmNow ? Number(kmNow).toLocaleString('he-IL') : ''} onChange={e => setKmNow(e.target.value.replace(/\D/g, ''))} placeholder="48,230" />
           </>
         )}
         {err && <div className="err">{err}</div>}

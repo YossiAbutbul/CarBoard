@@ -14,7 +14,12 @@ export const parseIso = (iso: string) => {
 export const diffDays = (a: string, b: string) =>
   Math.round((parseIso(a).getTime() - parseIso(b).getTime()) / DAY)
 
-export const addDays = (iso: string, n: number) => toIso(new Date(parseIso(iso).getTime() + n * DAY))
+/** Calendar days, not 24-hour steps: safe across daylight saving changes (e.g. 25.10.2026 in Israel). */
+export const addDays = (iso: string, n: number) => {
+  const d = parseIso(iso)
+  d.setDate(d.getDate() + n)
+  return toIso(d)
+}
 
 export const addMonths = (iso: string, n: number) => {
   const d = parseIso(iso)

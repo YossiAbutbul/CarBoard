@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { createPortal } from 'react-dom'
 import type { Data } from '../types'
 import { useApp } from '../data/AppData'
 import { fmtDate } from '../lib/i18n'
@@ -93,7 +94,8 @@ export function FileViewer({ files, start = 0, onClose }: { files: AppFile[]; st
   }
 
   if (!file) return null
-  return (
+  // Rendered into <body>, so it covers the bottom bar even when opened inside an animated page.
+  return createPortal(
     <div className="viewer" role="dialog" aria-modal="true" aria-label={file.title}>
       <div className="viewer-head">
         <button onClick={onClose} aria-label="סגירה">
@@ -135,7 +137,8 @@ export function FileViewer({ files, start = 0, onClose }: { files: AppFile[]; st
           ))}
         </div>
       )}
-    </div>
+    </div>,
+    document.body,
   )
 }
 

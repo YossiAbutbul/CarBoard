@@ -4,7 +4,7 @@ import { Glance, GlanceCell, PageHero, TopBar, useCountUp } from '../components/
 import { useApp } from '../data/AppData'
 import { STATUS_TEXT } from '../domain/labels'
 import type { Reminder } from '../domain/reminders'
-import { agoText, fmtNum, greeting, longDate } from '../lib/i18n'
+import { fmtNum, greeting, longDate } from '../lib/i18n'
 import type { OpenSheet } from '../App'
 
 const weekKey = (carId: string) => `car-records:confirm:${carId}:${Math.floor(Date.now() / (7 * 86_400_000))}`
@@ -82,7 +82,7 @@ export function HomeScreen({
           <GlanceCell
             k="ק״מ"
             v={fmtNum(kmShown)}
-            d={km.checkedDaysAgo ? `הערכה · ${agoText(km.checkedDaysAgo)}` : 'מעודכן היום'}
+            d={km.checkedDaysAgo ? `הערכה · ${km.checkedDaysAgo} ימים` : 'מעודכן היום'}
             onClick={() => open({ t: 'odo' })}
           />
           {service && <ReminderCell r={service} title="טיפול הבא" open={open} />}
@@ -155,8 +155,9 @@ function ReminderCell({ r, title, open }: { r: Reminder; title: string; open: Op
   return (
     <GlanceCell
       k={title}
-      v={r.status === 'unset' ? '—' : r.headline}
-      d={STATUS_TEXT[r.status]}
+      // the unit moves to the line below so the number fits the narrow cell
+      v={r.status === 'unset' ? '—' : r.headline.replace(' ק״מ', '')}
+      d={r.headline.endsWith('ק״מ') ? `ק״מ · ${STATUS_TEXT[r.status]}` : STATUS_TEXT[r.status]}
       s={r.status}
       onClick={() => open({ t: 'item', item: r.item })}
     />
