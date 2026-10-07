@@ -150,6 +150,13 @@ export function Tour({ name, onDone }: { name: string; onDone(): void }) {
   const list = stops(name)
   const [i, setI] = useState(0)
   const [rect, setRect] = useState<Rect | null>(null)
+  // Hidden until the first target stops moving (the home screen slides in under it),
+  // so the spotlight starts in place instead of sliding after it.
+  const [settled, setSettled] = useState(false)
+  useEffect(() => {
+    const t = setTimeout(() => setSettled(true), 1200) // never wait longer than this
+    return () => clearTimeout(t)
+  }, [])
   const stop = list[i]
   const last = i === list.length - 1
 
@@ -158,13 +165,21 @@ export function Tour({ name, onDone }: { name: string; onDone(): void }) {
     const el = stop.target ? document.querySelector<HTMLElement>(`[data-tour="${stop.target}"]`) : null
     if (!el) {
       setRect(null)
+      setSettled(true)
       return
     }
     el.scrollIntoView({ block: 'center', behavior: 'smooth' })
     let raf = 0
+    let last: Rect | null = null
+    let still = performance.now()
     const tick = () => {
       const r = el.getBoundingClientRect()
-      setRect(p => (p && p.top === r.top && p.left === r.left && p.width === r.width && p.height === r.height ? p : { top: r.top, left: r.left, width: r.width, height: r.height }))
+      const same = (p: Rect | null) => p && p.top === r.top && p.left === r.left && p.width === r.width && p.height === r.height
+      setRect(p => (same(p) ? p : { top: r.top, left: r.left, width: r.width, height: r.height }))
+      if (!same(last)) {
+        last = { top: r.top, left: r.left, width: r.width, height: r.height }
+        still = performance.now()
+      } else if (performance.now() - still > 120) setSettled(true)
       raf = requestAnimationFrame(tick)
     }
     tick()
@@ -191,7 +206,7 @@ export function Tour({ name, onDone }: { name: string; onDone(): void }) {
       : { bottom: Math.max(vh - rect.top + pad + 12, 16) }
 
   return createPortal(
-    <div className="tour" role="dialog" aria-modal="true" aria-label="סיור באפליקציה">
+    <div className={`tour ${settled ? '' : 'settling'}`} role="dialog" aria-modal="true" aria-label="סיור באפליקציה">
       <div
         className={`tour-hole ${rect ? '' : 'none'}`}
         style={rect ? { top: rect.top - pad, left: rect.left - pad, width: rect.width + pad * 2, height: rect.height + pad * 2 } : undefined}

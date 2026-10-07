@@ -333,3 +333,8 @@
 .ready-car { position: relative; }
 .ready-car::before { content: ''; position: absolute; top: -10px; left: 50%; width: 300px; height: 190px; transform: translateX(-50%); border-radius: 50%; background: radial-gradient(closest-side, rgba(150, 190, 255, 0.32), transparent); animation: fade 1s ease-out both 0.3s; pointer-events: none; }
 .ready-car > * { position: relative; }
+/* the tour waits, invisible, for its first target to stop moving, then fades in with the spotlight already in place */
+.tour { transition: opacity 0.3s ease-out; }
+.tour.settling { opacity: 0; animation: none; }
+.tour.settling .tour-hole { transition: none; }
+.tour.settling .tour-card { animation: none; }
