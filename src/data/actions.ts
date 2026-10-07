@@ -58,6 +58,10 @@ export function makeActions(store: Store, getData: () => Data, refresh: () => Pr
         })
       await refresh()
     },
+    async updateService(id: string, patch: Partial<ServiceRecord>) {
+      await store.update('services', id, patch)
+      await refresh()
+    },
     async deleteService(id: string) {
       await store.remove('services', id)
       await refresh()

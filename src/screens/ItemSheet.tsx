@@ -5,6 +5,7 @@ import { useApp } from '../data/AppData'
 import { dueInfo } from '../domain/due'
 import { INSURERS, KIND, STATUS_TEXT } from '../domain/labels'
 import { compressImage } from '../lib/image'
+import { fmtDate, fmtKm, fmtMoney } from '../lib/i18n'
 import { uid } from '../lib/uid'
 import { Icon } from '../components/Icon'
 
@@ -19,6 +20,14 @@ export function ItemSheet({ item, onClose, onDone }: { item?: Item; onClose(): v
   // To the user these reminders and their documents are one thing: insurance ↔ policy, test ↔ car licence.
   const docKind = item?.kind === 'insurance' ? 'insurance' : item?.kind === 'test' ? 'licence' : null
   const doc = docKind ? data.documents.find(d => d.car_id === car?.id && d.kind === docKind) : undefined
+  // Service-type reminders show the receipt of the last service of that type.
+  const hasRecords = Boolean(item) && !byDate && item?.kind !== 'custom'
+  const lastService = hasRecords
+    ? data.services
+        .filter(s => s.car_id === car?.id && s.type === item!.kind)
+        .sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : b.km - a.km))[0]
+    : undefined
+  const [receiptBusy, setReceiptBusy] = useState(false)
 
   const [label, setLabel] = useState(item?.label ?? '')
   const [everyKm, setEveryKm] = useState(item?.every_km?.toString() ?? '')
@@ -59,6 +68,20 @@ export function ItemSheet({ item, onClose, onDone }: { item?: Item; onClose(): v
       setErr(e instanceof Error ? e.message : String(e))
     } finally {
       setUploading(false)
+    }
+  }
+
+  async function setReceipt(file: File | undefined) {
+    if (!file || !lastService) return
+    setReceiptBusy(true)
+    setErr(null)
+    try {
+      const ref = await actions.upload('receipt', file.type.startsWith('image/') ? await compressImage(file) : file)
+      await actions.updateService(lastService.id, { receipt: ref })
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : String(e))
+    } finally {
+      setReceiptBusy(false)
     }
   }
 
@@ -179,6 +202,47 @@ export function ItemSheet({ item, onClose, onDone }: { item?: Item; onClose(): v
               )}
               <input type="file" accept="image/*,application/pdf" multiple onChange={e => addFiles(e.target.files)} />
             </label>
+          </>
+        )}
+
+        {hasRecords && (
+          <>
+            <label className="lbl">קבלה של הטיפול האחרון</label>
+            {lastService ? (
+              <div className="receipt">
+                <div className="receipt-row">
+                  {lastService.receipt ? (
+                    <FileThumb fileRef={lastService.receipt} onOpen={setView} />
+                  ) : (
+                    <span className="ic">
+                      <Icon name="other" />
+                    </span>
+                  )}
+                  <div style={{ minWidth: 0 }}>
+                    <div className="t">{lastService.title}</div>
+                    <div className="s">
+                      {[fmtDate(lastService.date), fmtKm(lastService.km), lastService.price != null && fmtMoney(lastService.price)]
+                        .filter(Boolean)
+                        .join(' · ')}
+                    </div>
+                  </div>
+                </div>
+                <label className="file-btn" style={{ marginTop: 10, background: '#fff' }}>
+                  {receiptBusy ? (
+                    <span className="spin" />
+                  ) : (
+                    <>
+                      <Icon name="camera" /> {lastService.receipt ? 'החלפת קבלה' : 'צילום או העלאת קבלה'}
+                    </>
+                  )}
+                  <input type="file" accept="image/*,application/pdf" onChange={e => setReceipt(e.target.files?.[0])} />
+                </label>
+              </div>
+            ) : (
+              <button className="file-btn" onClick={() => onDone(item!)}>
+                <Icon name="camera" /> שמירת טיפול עם קבלה
+              </button>
+            )}
           </>
         )}
 
