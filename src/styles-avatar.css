@@ -186,8 +186,7 @@
 .cal-foot .link.danger { color: var(--overdue); }
 
 /* ─── first run ─── */
-.onb { position: relative; margin: 0 -16px -88px; min-height: 100dvh; display: flex; flex-direction: column; padding: max(28px, env(safe-area-inset-top)) 24px max(24px, env(safe-area-inset-bottom)); color: #fff; overflow: hidden;
-  background: radial-gradient(120% 70% at 85% 0%, #2a4670 0%, transparent 60%), linear-gradient(180deg, var(--hero-1) 0%, #13233b 55%, #1c3150 100%); }
+.onb { position: relative; margin: 0 -16px -88px; min-height: 100dvh; display: flex; flex-direction: column; padding: max(28px, env(safe-area-inset-top)) 24px max(24px, env(safe-area-inset-bottom)); color: #fff; overflow: hidden; background: #08111f; }
 .onb-dots { position: relative; display: flex; gap: 6px; }
 .onb-dots i { width: 18px; height: 4px; border-radius: 4px; background: rgba(255, 255, 255, 0.22); transition: all 0.4s var(--ease); }
 .onb-dots i.on { width: 34px; background: #fff; }
@@ -261,5 +260,51 @@
 .welcome > .btn + .guest-btn { margin-top: 10px; margin-bottom: 0; background: rgba(255, 255, 255, 0.1); color: #fff; box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.25); }
 .guest-hint { margin: 10px 0 max(20px, env(safe-area-inset-bottom)); text-align: center; font-size: 12.5px; line-height: 1.5; color: rgba(255, 255, 255, 0.6); }
 .welcome > .btn:has(+ .guest-btn) { margin-bottom: 0; }
-.welcome.login { background: radial-gradient(120% 70% at 85% 0%, #2a4670 0%, transparent 60%), linear-gradient(180deg, var(--hero-1) 0%, #13233b 55%, #1c3150 100%); }
 .welcome.login .guest-hint { color: rgba(255, 255, 255, 0.72); }
+
+/* ─── animated backdrop (login + first-run steps) ─── */
+.welcome.login { position: relative; overflow: hidden; background: #08111f; }
+.welcome.login > *:not(.scene), .onb > *:not(.scene) { position: relative; z-index: 1; }
+.scene { position: absolute; inset: 0; z-index: 0; overflow: hidden; pointer-events: none;
+  background: radial-gradient(140% 90% at 50% 120%, #1b3a66 0%, transparent 60%), linear-gradient(180deg, #08111f 0%, #0c1a2e 60%, #11284a 100%); }
+/* drifting glows */
+.scene .glow { position: absolute; border-radius: 50%; filter: blur(60px); opacity: 0.55; mix-blend-mode: screen; will-change: transform; }
+.scene .g1 { width: 340px; height: 340px; top: -120px; right: -100px; background: #1c69d4; animation: drift1 16s ease-in-out infinite alternate; }
+.scene .g2 { width: 280px; height: 280px; bottom: 8%; left: -140px; background: #0ea5b7; opacity: 0.32; animation: drift2 20s ease-in-out infinite alternate; }
+.scene .g3 { width: 220px; height: 220px; top: 38%; right: -80px; background: #6d5bd0; opacity: 0.22; animation: drift3 24s ease-in-out infinite alternate; }
+@keyframes drift1 { to { transform: translate(-90px, 70px) scale(1.15); } }
+@keyframes drift2 { to { transform: translate(110px, -60px) scale(1.2); } }
+@keyframes drift3 { to { transform: translate(-60px, -90px) scale(0.9); } }
+/* the speedometer, slowly turning */
+.scene-dial { position: absolute; width: 560px; height: 560px; top: -140px; left: -230px; opacity: 0.6; animation: dial-in 1.6s cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+.scene-dial .ring { fill: none; stroke: rgba(255, 255, 255, 0.1); stroke-width: 1; }
+.scene-dial .ring.thin { stroke: rgba(255, 255, 255, 0.06); stroke-dasharray: 2 6; }
+.scene-dial .ticks { transform-origin: 200px 200px; animation: spin-slow 90s linear infinite; }
+.scene-dial line { stroke: rgba(255, 255, 255, 0.18); stroke-width: 1.2; stroke-linecap: round; }
+.scene-dial line.major { stroke: rgba(255, 255, 255, 0.4); stroke-width: 2; }
+.scene-dial .arc { fill: none; stroke: #4d9bff; stroke-width: 3; stroke-linecap: round; stroke-dasharray: 760; stroke-dashoffset: 760; opacity: 0.8; animation: arc-sweep 2.4s cubic-bezier(0.3, 0.7, 0.2, 1) 0.3s forwards, arc-breathe 6s ease-in-out 2.7s infinite; filter: drop-shadow(0 0 6px #4d9bff); }
+@keyframes dial-in { from { opacity: 0; transform: rotate(-25deg) scale(0.9); } }
+@keyframes spin-slow { to { transform: rotate(360deg); } }
+@keyframes arc-sweep { to { stroke-dashoffset: 250; } }
+@keyframes arc-breathe { 50% { stroke-dashoffset: 300; opacity: 0.55; } }
+/* headlight streaks on a tilted road */
+.scene .road { position: absolute; inset: 0; transform: rotate(-14deg) scale(1.4); }
+.scene .streak { position: absolute; left: -40%; height: 2px; width: 38%; border-radius: 2px; opacity: 0;
+  background: linear-gradient(90deg, transparent, rgba(160, 205, 255, 0.85), #fff); box-shadow: 0 0 12px rgba(120, 180, 255, 0.7); animation: streak 7s cubic-bezier(0.4, 0, 0.2, 1) infinite; }
+.scene .s1 { top: 58%; animation-delay: 0.8s; }
+.scene .s2 { top: 64%; width: 26%; animation-delay: 3.1s; animation-duration: 8s; }
+.scene .s3 { top: 71%; width: 44%; animation-delay: 5.2s; animation-duration: 6.5s; }
+.scene .s4 { top: 52%; width: 20%; animation-delay: 6.6s; animation-duration: 9s;
+  background: linear-gradient(90deg, transparent, rgba(255, 120, 120, 0.7), #ffb4b4); box-shadow: 0 0 12px rgba(255, 90, 90, 0.6); }
+@keyframes streak { 0% { transform: translateX(0); opacity: 0; } 8% { opacity: 1; } 70% { opacity: 0.9; } 100% { transform: translateX(380%); opacity: 0; } }
+/* film grain */
+.scene .grain { position: absolute; inset: -50%; opacity: 0.07; mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  animation: grain 1.2s steps(4) infinite; }
+@keyframes grain { 25% { transform: translate(-3%, 2%); } 50% { transform: translate(2%, -3%); } 75% { transform: translate(-2%, -1%); } }
+/* a soft fade at the bottom keeps the buttons readable */
+.scene::after { content: ''; position: absolute; inset: auto 0 0; height: 45%; background: linear-gradient(180deg, transparent, rgba(8, 17, 31, 0.75)); }
+@media (prefers-reduced-motion: reduce) {
+  .scene *, .scene { animation: none !important; }
+  .scene-dial .arc { stroke-dashoffset: 250; }
+}

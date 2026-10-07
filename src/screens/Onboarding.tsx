@@ -1,6 +1,7 @@
 import { useEffect, useLayoutEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { Icon } from '../components/Icon'
+import { Scene } from '../components/Scene'
 
 const KEY = 'car-records:onboarded'
 
@@ -31,6 +32,7 @@ export function Intro({ name, onName, onAddCar }: { name: string; onName(n: stri
 
   return (
     <div className="onb">
+      <Scene />
       <div className="onb-dots" aria-hidden="true">
         {[0, 1, 2].map(i => (
           <i key={i} className={i === step ? 'on' : i < step ? 'done' : ''} />

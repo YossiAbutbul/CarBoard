@@ -8,6 +8,7 @@ import { auth, cloudEnabled, signInWithGoogle } from './data/firebase'
 import { Icon, type IconName } from './components/Icon'
 import { Splash } from './components/Chrome'
 import { GoogleMark } from './components/GoogleMark'
+import { Scene } from './components/Scene'
 import { isGuest, moveGuestData, setGuest } from './data/guest'
 import { HomeScreen } from './screens/HomeScreen'
 import { ServicesScreen } from './screens/ServicesScreen'
@@ -210,6 +211,7 @@ function Login({ onGuest }: { onGuest(): void }) {
   return (
     <div className="shell">
       <div className="welcome login reveal">
+        <Scene />
         <div className="eyebrow" style={{ color: 'rgba(255,255,255,.7)' }}>הרכב שלי</div>
         <div className="status">
           <span>כל</span>
