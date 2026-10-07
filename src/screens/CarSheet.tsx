@@ -1,7 +1,6 @@
 import { useState } from 'react'
 import type { Car } from '../types'
-import { Sheet, useFileUrl } from '../components/ui'
-import { CarDrop, CarProcessing, useCarPhotoUpload } from '../components/CarPhoto'
+import { Sheet } from '../components/ui'
 import { useApp } from '../data/AppData'
 import { formatPlate, lookupPlate, plateDigits, type PlateInfo } from '../lib/govil'
 import { fmtDate } from '../lib/i18n'
@@ -17,11 +16,8 @@ export function CarSheet({ car, onClose }: { car?: Car; onClose(): void }) {
   const [lookErr, setLookErr] = useState<string | null>(null)
   const [name, setName] = useState(car?.name ?? '')
   const [kmNow, setKmNow] = useState(editing ? String(km.value) : '')
-  const [imageRef, setImageRef] = useState<string | null>(car?.image_url ?? null)
-  const photo = useCarPhotoUpload()
   const [err, setErr] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
-  const imageUrl = useFileUrl(imageRef)
 
   const make = info?.make ?? car?.make ?? null
   const model = info?.model ?? car?.model ?? null
@@ -63,7 +59,7 @@ export function CarSheet({ car, onClose }: { car?: Car; onClose(): void }) {
         color,
         fuel: info?.fuel ?? car?.fuel ?? null,
         tyres: info?.tyres ?? car?.tyres ?? null,
-        image_url: imageRef,
+        image_url: null,
       }
       if (car) await actions.updateCar(car.id, fields)
       else setCarId(await actions.addCar(fields, kmN, info?.licenceUntil ?? null))
@@ -110,28 +106,6 @@ export function CarSheet({ car, onClose }: { car?: Car; onClose(): void }) {
         )}
         {lookErr && <div className="err">{lookErr}</div>}
 
-        <label className="lbl">תמונה</label>
-        {imageUrl && photo.progress ? (
-          <CarProcessing progress={photo.progress} />
-        ) : imageUrl ? (
-          <>
-            <div className="checker">
-              <img src={imageUrl} alt="" />
-            </div>
-            <div className="row2" style={{ marginTop: 8 }}>
-              <label className="file-btn">
-                <Icon name="camera" /> החלפה
-                <input type="file" accept="image/*" onChange={async e => setImageRef((await photo.upload(e.target.files?.[0])) ?? imageRef)} />
-              </label>
-              <button className="btn" onClick={() => setImageRef(null)}>
-                <Icon name="trash" /> הסרה
-              </button>
-            </div>
-          </>
-        ) : (
-          <CarDrop progress={photo.progress} error={photo.error} onFile={async f => setImageRef(await photo.upload(f))} />
-        )}
-
         <label className="lbl">שם לרכב</label>
         <input className="in" value={name} onChange={e => setName(e.target.value)} placeholder="למשל: הקיה של אבא" />
         {!editing && (
@@ -141,7 +115,7 @@ export function CarSheet({ car, onClose }: { car?: Car; onClose(): void }) {
           </>
         )}
         {err && <div className="err">{err}</div>}
-        <button className="btn pri" style={{ marginTop: 16 }} disabled={busy || Boolean(photo.busy)} onClick={save}>
+        <button className="btn pri" style={{ marginTop: 16 }} disabled={busy} onClick={save}>
           {busy ? <span className="spin" /> : editing ? 'שמירה' : 'הוספת רכב'}
         </button>
       </div>

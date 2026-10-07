@@ -34,3 +34,7 @@ export function greeting(d = new Date()) {
   if (h < 21) return 'ערב טוב'
   return 'לילה טוב'
 }
+
+const longDateFmt = new Intl.DateTimeFormat('he-IL', { weekday: 'long', day: 'numeric', month: 'long' })
+/** e.g. "יום רביעי, 8 באוקטובר" */
+export const longDate = (d = new Date()) => longDateFmt.format(d)

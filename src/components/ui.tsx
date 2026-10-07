@@ -22,15 +22,6 @@ export function useFileUrl(ref: string | null | undefined) {
   return url
 }
 
-/** The car's uploaded image, or `empty` when it has none (or it fails to load). */
-export function CarImage({ car, className, empty = null }: { car: Pick<Car, 'image_url'>; className?: string; empty?: ReactNode }) {
-  const url = useFileUrl(car.image_url)
-  const [broken, setBroken] = useState(false)
-  useEffect(() => setBroken(false), [url])
-  if (url && !broken) return <img className={className} src={url} alt="" onError={() => setBroken(true)} />
-  return <>{empty}</>
-}
-
 export function FileThumb({ fileRef, onOpen }: { fileRef: string; onOpen?: (url: string) => void }) {
   const url = useFileUrl(fileRef)
   if (!url)

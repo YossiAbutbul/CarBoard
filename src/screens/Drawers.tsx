@@ -1,4 +1,4 @@
-import { CarImage, Drawer } from '../components/ui'
+import { Drawer } from '../components/ui'
 import { Icon } from '../components/Icon'
 import { useApp } from '../data/AppData'
 import { supabase } from '../data/supabase'
@@ -22,7 +22,7 @@ export function CarsDrawer({ open, onClose }: { open: OpenSheet; onClose(): void
               }}
             >
               <span className="car-pick-img">
-                <CarImage car={c} empty={<Icon name="car" />} />
+                <Icon name="swap" />
               </span>
               <span className="car-pick-text">
                 <span className="t">{c.name}</span>

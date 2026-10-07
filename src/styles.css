@@ -66,11 +66,6 @@ svg.i { width: 20px; height: 20px; flex: none; stroke: currentColor; fill: none;
 .status { position: relative; z-index: 1; margin-top: 30px; font-weight: 600; font-size: 52px; line-height: 1.02; letter-spacing: -0.025em; }
 .status span { display: block; }
 .status .sm { font-size: 14px; font-weight: 400; letter-spacing: 0; text-transform: none; opacity: 0.8; margin-top: 12px; line-height: 1.3; }
-/* the car stands on its own row, on a soft studio floor, with a contact shadow under the wheels */
-.hero .car { position: relative; z-index: 2; margin: 22px 0 0; padding: 0 4px 34px; min-height: 150px; display: flex; align-items: flex-end; justify-content: center; }
-.hero .car::before { content: ''; position: absolute; left: -18px; right: -18px; bottom: 6px; height: 70px; background: radial-gradient(50% 50% at 50% 70%, rgba(255, 255, 255, 0.55), transparent 70%); z-index: -1; pointer-events: none; }
-.hero .car img { display: block; max-height: 165px; max-width: 86%; width: auto; height: auto; object-fit: contain; filter: drop-shadow(0 10px 10px rgba(5, 12, 24, 0.25)); animation: arrive 1s var(--ease) both; }
-.hero .car::after { content: ''; position: absolute; left: 16%; right: 16%; bottom: 26px; height: 18px; border-radius: 50%; background: radial-gradient(closest-side, rgba(5, 12, 24, 0.55), rgba(5, 12, 24, 0.15) 60%, transparent); z-index: -1; pointer-events: none; }
 @keyframes arrive { from { opacity: 0; transform: translateX(-24px); } }
 
 /* ─── tiles ─── */
@@ -167,11 +162,6 @@ textarea.in { min-height: 76px; resize: vertical; }
 .pick { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; margin-top: 8px; }
 .pick button, .pick label { border-radius: 10px; padding: 9px 4px; font-size: 12.5px; font-weight: 600; color: var(--ink-2); text-align: center; cursor: pointer; background: var(--card); box-shadow: inset 0 0 0 1px var(--line); }
 .pick .on { background: var(--ink); color: #fff; box-shadow: none; }
-.checker {
-  border-radius: 14px; padding: 16px 10px 10px; display: grid; place-items: end center; min-height: 160px; margin-top: 12px;
-  background: linear-gradient(180deg, var(--hero-2), var(--hero-3) 70%, #9fb1c8);
-}
-.checker img, .checker svg { max-height: 150px; width: auto; max-width: 100%; filter: drop-shadow(0 16px 14px rgba(5, 12, 24, 0.45)); }
 .found { display: flex; gap: 10px; align-items: flex-start; border-radius: 12px; padding: 11px 13px; font-size: 14px; font-weight: 600; margin-top: 10px; background: #e8f6ee; color: #146b3f; }
 .found svg.i { width: 18px; height: 18px; margin-top: 1px; }
 .found .hint { color: #3f7a5b; font-weight: 400; }
@@ -228,28 +218,8 @@ textarea.in { min-height: 76px; resize: vertical; }
 .lightbox img { max-height: 90dvh; border-radius: 10px; }
 .foot { text-align: center; margin-top: 30px; font-size: 12px; color: var(--unset); font-weight: 600; letter-spacing: 0.08em; }
 
-.hero .add-photo { position: absolute; z-index: 3; left: 18px; bottom: 18px; display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; font-weight: 600; color: var(--ink); background: rgba(255, 255, 255, 0.85); padding: 7px 12px; border-radius: 99px; backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); }
-.hero .add-photo svg.i { width: 16px; height: 16px; }
-.hero .car.drawn svg { opacity: 0.92; max-height: 150px; }
 .tile .l svg.i { width: 18px; height: 18px; color: var(--muted); }
 
-/* empty car spot */
-.car-drop { position: relative; display: grid; justify-items: center; align-content: center; gap: 6px; width: 100%; min-height: 150px; padding: 18px; border-radius: 16px; text-align: center; cursor: pointer; pointer-events: auto; border: 1.5px dashed var(--line); background: #fff; color: var(--ink); transition: background 0.2s, border-color 0.2s; }
-.car-drop:hover { border-color: var(--blue); }
-.car-drop input { display: none; }
-.car-drop b { font-size: 15px; font-weight: 700; }
-.car-drop .drop-ic { width: 44px; height: 44px; border-radius: 50%; display: grid; place-items: center; background: var(--card); }
-.car-drop .drop-hint { font-size: 12px; color: var(--muted); max-width: 240px; }
-.car-drop .drop-err { font-size: 12.5px; color: var(--overdue); font-weight: 600; }
-.car-drop.dark { color: #fff; border-color: rgba(255, 255, 255, 0.35); background: rgba(255, 255, 255, 0.08); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); min-height: 170px; margin-bottom: 26px; }
-.car-drop.dark:hover { border-color: rgba(255, 255, 255, 0.7); background: rgba(255, 255, 255, 0.12); }
-.car-drop.dark .drop-ic { background: rgba(255, 255, 255, 0.14); }
-.car-drop.dark .drop-hint { color: rgba(255, 255, 255, 0.7); }
-.car-drop.dark .spin { border-color: rgba(255, 255, 255, 0.25); border-top-color: #fff; }
-.hero .car:has(.car-drop)::after, .hero .car:has(.car-drop)::before { display: none; }
-.hero .car:has(.car-drop) { padding-bottom: 26px; }
-.car-drop.dark { background: rgba(11, 22, 38, 0.38); border-color: rgba(255, 255, 255, 0.3); margin-bottom: 0; min-height: 150px; }
-.car-drop.dark:hover { background: rgba(11, 22, 38, 0.48); }
 
 /* phone app: no visible scrollbars, no rubber-band overscroll on the page */
 html, body, .sheet { scrollbar-width: none; -ms-overflow-style: none; }
@@ -301,36 +271,46 @@ html, body { overscroll-behavior-y: none; }
 .thumb-x button:hover, .thumb-x button:focus-visible { color: var(--overdue); }
 .thumb-x button svg.i { width: 16px; height: 16px; stroke-width: 2.6; }
 
-/* ─── BMW placement: big car low on the side opposite the text, overlapping the status ─── */
-.hero .car { margin: -40px 0 0; padding: 0 0 28px; justify-content: flex-end; min-height: 0; }
-.hero .car::before { display: none; }
-.hero .car img { max-height: 200px; max-width: 98%; margin-inline-end: -6px; filter: drop-shadow(0 14px 12px rgba(5, 12, 24, 0.3)); }
-.hero .car::after { left: 6%; right: 24%; bottom: 22px; height: 20px; }
-.hero .car:has(.car-drop), .hero .car:has(.car-processing) { margin-top: 22px; justify-content: center; }
 
-/* ─── background removal in progress ─── */
-.car-processing { width: 100%; display: grid; justify-items: center; gap: 10px; color: var(--ink); }
-.car-processing.dark { color: #fff; }
-.cp-photo { position: relative; width: 100%; max-width: 380px; aspect-ratio: 16 / 10; border-radius: 16px; overflow: hidden; background: #0b1626; box-shadow: 0 12px 30px rgba(5, 12, 24, 0.3); }
-.cp-photo img { width: 100%; height: 100%; object-fit: cover; filter: saturate(0.55) brightness(0.8); animation: breathe 2.4s ease-in-out infinite; }
-.cp-sweep { position: absolute; inset: 0; pointer-events: none; background: linear-gradient(100deg, transparent 35%, rgba(190, 215, 255, 0.45) 50%, transparent 65%); animation: sweep 1.8s cubic-bezier(0.45, 0, 0.25, 1) infinite; }
-.cp-sweep::after { content: ''; position: absolute; top: 0; bottom: 0; left: 50%; width: 2px; background: rgba(255, 255, 255, 0.9); box-shadow: 0 0 14px 3px rgba(150, 195, 255, 0.8); }
-.cp-msg { display: inline-flex; align-items: center; gap: 9px; font-size: 14px; font-weight: 500; animation: rise 0.35s var(--ease) both; }
-.cp-msg .spin { width: 16px; height: 16px; border-width: 2px; }
-.car-processing.dark .cp-msg .spin { border-color: rgba(255, 255, 255, 0.25); border-top-color: #fff; }
-.cp-steps { display: flex; gap: 6px; }
-.cp-steps i { width: 26px; height: 3px; border-radius: 3px; background: currentColor; opacity: 0.2; transition: opacity 0.3s; }
-.cp-steps i.done { opacity: 0.9; }
-.cp-steps i.on { opacity: 0.9; animation: pulse 1s ease-in-out infinite; }
-.cp-bar { width: min(240px, 80%); display: grid; gap: 4px; justify-items: center; }
-.cp-bar i { justify-self: stretch; display: block; height: 3px; border-radius: 3px; background: currentColor; transition: width 0.3s; }
-.cp-bar small { font-size: 11.5px; opacity: 0.7; }
-@keyframes sweep { from { transform: translateX(-110%); } to { transform: translateX(110%); } }
-@keyframes breathe { 50% { filter: saturate(0.4) brightness(0.7); } }
 @keyframes pulse { 50% { opacity: 0.35; } }
 .status .state-line { display: inline-flex; align-items: center; gap: 8px; margin-top: 14px; font-size: 14px; opacity: 0.95; }
 .status .state-line::before { content: ''; width: 8px; height: 8px; border-radius: 50%; background: var(--c); box-shadow: 0 0 10px var(--c); flex: none; }
 .status .state-line[data-s='ok'] { --c: #4ade80; } .status .state-line[data-s='soon'] { --c: #fbbf24; }
 .status .state-line[data-s='due'] { --c: #fb923c; } .status .state-line[data-s='overdue'] { --c: #f87171; }
-.hero .car { margin-top: -6px; }
 .status .state-line { position: relative; z-index: 3; }
+
+
+/* ─── greeting hero (no car photo) ─── */
+.hero {
+  min-height: 0; padding-bottom: 18px; margin-bottom: 12px; border-radius: 0 0 28px 28px;
+  background:
+    radial-gradient(90% 70% at 0% 0%, rgba(86, 140, 220, 0.28), transparent 60%),
+    radial-gradient(70% 60% at 100% 100%, rgba(40, 80, 140, 0.35), transparent 65%),
+    linear-gradient(180deg, #0a1424 0%, #142440 60%, #1b2f52 100%);
+}
+.hero .dial { position: absolute; width: 330px; height: 330px; left: -120px; top: -30px; opacity: 0.14; fill: none; stroke: #fff; pointer-events: none; }
+.hero .dial circle { stroke-width: 1; }
+.hero .dial .thin { stroke-dasharray: 2 6; }
+.hero .dial line { stroke-width: 1.2; }
+.hero .dial .major { stroke-width: 2.4; }
+.hero .dial .needle { stroke: #8fc0ff; stroke-width: 2.5; stroke-linecap: round; }
+.hero .dial .hub { fill: #fff; stroke: none; }
+.greet { position: relative; z-index: 1; margin-top: 24px; }
+.greet .date { font-size: 13px; opacity: 0.65; }
+.greet h1 { font-size: 38px; font-weight: 600; letter-spacing: -0.03em; line-height: 1.12; margin: 4px 0 14px; }
+.state-pill { display: inline-flex; align-items: center; gap: 8px; max-width: 100%; padding: 7px 13px; border-radius: 99px; font-size: 13px; background: rgba(255, 255, 255, 0.09); border: 1px solid rgba(255, 255, 255, 0.14); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); }
+.state-pill::before { content: ''; width: 8px; height: 8px; border-radius: 50%; flex: none; background: var(--c); box-shadow: 0 0 10px var(--c); }
+.state-pill[data-s='ok'], .glance [data-s='ok'] { --c: #4ade80; }
+.state-pill[data-s='soon'], .glance [data-s='soon'] { --c: #fbbf24; }
+.state-pill[data-s='due'], .glance [data-s='due'] { --c: #fb923c; }
+.state-pill[data-s='overdue'], .glance [data-s='overdue'] { --c: #f87171; }
+.glance [data-s='unset'] { --c: rgba(255, 255, 255, 0.35); }
+.glance { position: relative; z-index: 1; display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 22px; }
+.glance button { display: grid; gap: 3px; min-width: 0; text-align: right; color: #fff; padding: 12px; border-radius: 16px; background: rgba(255, 255, 255, 0.07); border: 1px solid rgba(255, 255, 255, 0.1); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); transition: background 0.2s; }
+.glance button:hover, .glance button:active { background: rgba(255, 255, 255, 0.13); }
+.glance .k { font-size: 11.5px; opacity: 0.65; }
+.glance .v { font-size: 18px; font-weight: 400; letter-spacing: -0.02em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-variant-numeric: tabular-nums; }
+.glance .d { display: flex; align-items: center; gap: 5px; font-size: 11px; opacity: 0.8; white-space: nowrap; overflow: hidden; }
+.glance .d i { width: 6px; height: 6px; border-radius: 50%; flex: none; background: var(--c); }
+.car-pick-img { color: #fff; }
+.car-pick-img svg.i { width: 26px; height: 26px; }

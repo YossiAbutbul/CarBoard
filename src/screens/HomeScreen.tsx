@@ -1,11 +1,9 @@
 import { useState } from 'react'
-import { CarImage } from '../components/ui'
-import { CarDrop, useCarPhotoUpload } from '../components/CarPhoto'
 import { Icon, kindIcon } from '../components/Icon'
 import { useApp } from '../data/AppData'
 import { STATUS_TEXT } from '../domain/labels'
 import type { Reminder } from '../domain/reminders'
-import { agoText, fmtNum, greeting } from '../lib/i18n'
+import { agoText, fmtNum, greeting, longDate } from '../lib/i18n'
 import type { OpenSheet } from '../App'
 
 const weekKey = (carId: string) => `car-records:confirm:${carId}:${Math.floor(Date.now() / (7 * 86_400_000))}`
@@ -23,7 +21,6 @@ export function HomeScreen({
 }) {
   const { car, km, reminders, actions } = useApp()
   const [hidden, setHidden] = useState(false)
-  const photo = useCarPhotoUpload()
 
   if (!car)
     return (
@@ -60,10 +57,7 @@ export function HomeScreen({
   const urgent = reminders.filter(r => r.status === 'due' || r.status === 'overdue')
   const soon = reminders.filter(r => r.status === 'soon')
   const service = reminders.find(r => r.item.kind === 'service')
-  const others = reminders.filter(r => r !== service)
-
-  // Greeting first, like the BMW app; the car's state sits under it as one short line.
-  const [line1, line2] = userName ? ['שלום,', userName] : greeting().split(' ')
+  const test = reminders.find(r => r.item.kind === 'test')
   const state = urgent.length ? (urgent.some(r => r.status === 'overdue') ? 'overdue' : 'due') : soon.length ? 'soon' : 'ok'
   const stateText = urgent.length
     ? `${urgent.length === 1 ? 'דבר אחד' : `${urgent.length} דברים`} לטפל בהם: ${urgent.map(r => r.item.label).join(', ')}`
@@ -74,6 +68,7 @@ export function HomeScreen({
   return (
     <div className="reveal">
       <section className="hero">
+        <Dial />
         <div className="bar">
           <button onClick={openSettings} aria-label="הגדרות">
             <Icon name="settings" />
@@ -88,42 +83,25 @@ export function HomeScreen({
             <Icon name="swap" />
           </button>
         </div>
-        <div className="status">
-          <span>{line1}</span>
-          <span>{line2}</span>
-          <div className="sm state-line" data-s={state}>
+
+        <div className="greet">
+          <div className="date">{longDate()}</div>
+          <h1>{userName ? `שלום, ${userName}` : greeting()}</h1>
+          <div className="state-pill" data-s={state}>
             {stateText}
           </div>
         </div>
-        <div className="car">
-          <CarImage
-            car={car}
-            empty={
-              <CarDrop
-                dark
-                progress={photo.progress}
-                error={photo.error}
-                onFile={async f => {
-                  const ref = await photo.upload(f)
-                  if (ref) await actions.updateCar(car.id, { image_url: ref })
-                }}
-              />
-            }
-          />
+
+        <div className="glance">
+          <button onClick={() => open({ t: 'odo' })}>
+            <span className="k">ק״מ</span>
+            <span className="v">{fmtNum(km.value)}</span>
+            <span className="d">{km.checkedDaysAgo ? `הערכה · ${agoText(km.checkedDaysAgo)}` : 'מעודכן היום'}</span>
+          </button>
+          {service && <Glance r={service} title="טיפול הבא" open={open} />}
+          {test && <Glance r={test} title="טסט" open={open} />}
         </div>
       </section>
-
-      <div className="tiles">
-        <button className="tile" onClick={() => open({ t: 'odo' })}>
-          <div className="l">ק״מ</div>
-          <div className="s">{km.checkedDaysAgo ? `הערכה · אומת ${agoText(km.checkedDaysAgo)}` : 'מעודכן היום'}</div>
-          <div className="v">
-            {fmtNum(km.value)}
-            <small>ק״מ</small>
-          </div>
-        </button>
-        {service && <Tile r={service} open={open} />}
-      </div>
 
       <div className="actions">
         <button onClick={() => open({ t: 'odo' })}>
@@ -178,11 +156,51 @@ export function HomeScreen({
         </button>
       </div>
       <div className="tiles" style={{ marginTop: 0 }}>
-        {others.map(r => (
+        {reminders.map(r => (
           <Tile key={r.item.id} r={r} open={open} />
         ))}
       </div>
     </div>
+  )
+}
+
+function Glance({ r, title, open }: { r: Reminder; title: string; open: OpenSheet }) {
+  return (
+    <button data-s={r.status} onClick={() => open({ t: 'item', item: r.item })}>
+      <span className="k">{title}</span>
+      <span className="v">{r.status === 'unset' ? '—' : r.headline}</span>
+      <span className="d">
+        <i />
+        {STATUS_TEXT[r.status]}
+      </span>
+    </button>
+  )
+}
+
+/** A faint speedometer dial behind the greeting. */
+function Dial() {
+  const ticks = Array.from({ length: 41 }, (_, i) => -210 + i * 6)
+  return (
+    <svg className="dial" viewBox="0 0 300 300" aria-hidden="true">
+      <circle cx="150" cy="150" r="128" />
+      <circle cx="150" cy="150" r="96" className="thin" />
+      {ticks.map((a, i) => {
+        const r1 = i % 5 === 0 ? 108 : 116
+        const rad = (a * Math.PI) / 180
+        return (
+          <line
+            key={a}
+            x1={150 + Math.cos(rad) * r1}
+            y1={150 + Math.sin(rad) * r1}
+            x2={150 + Math.cos(rad) * 124}
+            y2={150 + Math.sin(rad) * 124}
+            className={i % 5 === 0 ? 'major' : ''}
+          />
+        )
+      })}
+      <path d="M150 150 L232 92" className="needle" />
+      <circle cx="150" cy="150" r="5" className="hub" />
+    </svg>
   )
 }
 
