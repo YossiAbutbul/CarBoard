@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import type { Item } from '../types'
+import type { Item, ItemKind } from '../types'
 import { FileThumb, Lightbox, Sheet } from '../components/ui'
 import { useApp } from '../data/AppData'
 import { dueInfo } from '../domain/due'
@@ -20,14 +20,16 @@ export function ItemSheet({ item, onClose, onDone }: { item?: Item; onClose(): v
   // To the user these reminders and their documents are one thing: insurance ↔ policy, test ↔ car licence.
   const docKind = item?.kind === 'insurance' ? 'insurance' : item?.kind === 'test' ? 'licence' : null
   const doc = docKind ? data.documents.find(d => d.car_id === car?.id && d.kind === docKind) : undefined
-  // Service-type reminders show the receipt of the last service of that type.
+  // Service-type reminders list every service of that type, each with its receipt.
+  // Oil also lists periodic services, because a periodic service includes an oil change.
   const hasRecords = Boolean(item) && !byDate && item?.kind !== 'custom'
-  const lastService = hasRecords
+  const historyKinds: (ItemKind | undefined)[] = item?.kind === 'oil' ? ['oil', 'service'] : [item?.kind]
+  const history = hasRecords
     ? data.services
-        .filter(s => s.car_id === car?.id && s.type === item!.kind)
-        .sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : b.km - a.km))[0]
-    : undefined
-  const [receiptBusy, setReceiptBusy] = useState(false)
+        .filter(s => s.car_id === car?.id && historyKinds.includes(s.type))
+        .sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : b.km - a.km))
+    : []
+  const [receiptBusy, setReceiptBusy] = useState<string | null>(null)
 
   const [label, setLabel] = useState(item?.label ?? '')
   const [everyKm, setEveryKm] = useState(item?.every_km?.toString() ?? '')
@@ -71,17 +73,17 @@ export function ItemSheet({ item, onClose, onDone }: { item?: Item; onClose(): v
     }
   }
 
-  async function setReceipt(file: File | undefined) {
-    if (!file || !lastService) return
-    setReceiptBusy(true)
+  async function setReceipt(serviceId: string, file: File | undefined) {
+    if (!file) return
+    setReceiptBusy(serviceId)
     setErr(null)
     try {
       const ref = await actions.upload('receipt', file.type.startsWith('image/') ? await compressImage(file) : file)
-      await actions.updateService(lastService.id, { receipt: ref })
+      await actions.updateService(serviceId, { receipt: ref })
     } catch (e) {
       setErr(e instanceof Error ? e.message : String(e))
     } finally {
-      setReceiptBusy(false)
+      setReceiptBusy(null)
     }
   }
 
@@ -207,42 +209,35 @@ export function ItemSheet({ item, onClose, onDone }: { item?: Item; onClose(): v
 
         {hasRecords && (
           <>
-            <label className="lbl">קבלה של הטיפול האחרון</label>
-            {lastService ? (
-              <div className="receipt">
-                <div className="receipt-row">
-                  {lastService.receipt ? (
-                    <FileThumb fileRef={lastService.receipt} onOpen={setView} />
+            <label className="lbl">טיפולים וקבלות</label>
+            <div className="receipt">
+              {history.length === 0 && <div className="hint" style={{ padding: '2px 2px 8px' }}>עוד לא נשמר טיפול מהסוג הזה.</div>}
+              {history.slice(0, 6).map(sv => (
+                <div className="receipt-row" key={sv.id}>
+                  {sv.receipt ? (
+                    <FileThumb fileRef={sv.receipt} onOpen={setView} />
                   ) : (
                     <span className="ic">
-                      <Icon name="other" />
+                      <Icon name={sv.type} />
                     </span>
                   )}
-                  <div style={{ minWidth: 0 }}>
-                    <div className="t">{lastService.title}</div>
+                  <div style={{ minWidth: 0, flex: 1 }}>
+                    <div className="t">{sv.title}</div>
                     <div className="s">
-                      {[fmtDate(lastService.date), fmtKm(lastService.km), lastService.price != null && fmtMoney(lastService.price)]
-                        .filter(Boolean)
-                        .join(' · ')}
+                      {[fmtDate(sv.date), fmtKm(sv.km), sv.price != null && fmtMoney(sv.price)].filter(Boolean).join(' · ')}
                     </div>
                   </div>
+                  <label className="receipt-btn" aria-label={sv.receipt ? 'החלפת קבלה' : 'הוספת קבלה'}>
+                    {receiptBusy === sv.id ? <span className="spin" /> : <Icon name="camera" />}
+                    <span>{sv.receipt ? 'החלפה' : 'קבלה'}</span>
+                    <input type="file" accept="image/*,application/pdf" onChange={e => setReceipt(sv.id, e.target.files?.[0])} />
+                  </label>
                 </div>
-                <label className="file-btn" style={{ marginTop: 10, background: '#fff' }}>
-                  {receiptBusy ? (
-                    <span className="spin" />
-                  ) : (
-                    <>
-                      <Icon name="camera" /> {lastService.receipt ? 'החלפת קבלה' : 'צילום או העלאת קבלה'}
-                    </>
-                  )}
-                  <input type="file" accept="image/*,application/pdf" onChange={e => setReceipt(e.target.files?.[0])} />
-                </label>
-              </div>
-            ) : (
-              <button className="file-btn" onClick={() => onDone(item!)}>
-                <Icon name="camera" /> שמירת טיפול עם קבלה
+              ))}
+              <button className="file-btn" style={{ marginTop: 10, background: '#fff' }} onClick={() => onDone(item!)}>
+                <Icon name="plus" /> טיפול חדש עם קבלה
               </button>
-            )}
+            </div>
           </>
         )}
 

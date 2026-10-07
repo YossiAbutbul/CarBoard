@@ -50,8 +50,9 @@ export function makeActions(store: Store, getData: () => Data, refresh: () => Pr
           // lower than the last reading: keep the record, skip the reading
         }
       }
-      const item = getData().items.find(i => i.car_id === rec.car_id && i.kind === rec.type)
-      if (item)
+      // A periodic service includes an oil change, so it moves both reminders.
+      const kinds = rec.type === 'service' ? ['service', 'oil'] : [rec.type]
+      for (const item of getData().items.filter(i => i.car_id === rec.car_id && kinds.includes(i.kind)))
         await store.update('items', item.id, {
           due_km: item.every_km ? rec.km + item.every_km : item.due_km,
           due_date: item.every_months ? addMonths(rec.date, item.every_months) : item.due_date,

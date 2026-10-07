@@ -18,6 +18,7 @@ export function defaultItems(carId: string, km: number, licenceUntil: string | n
   })
   return [
     mk('service', 15000, 12),
+    mk('oil', 10000, 12),
     mk('test', null, 12, licenceUntil),
     mk('insurance', null, 12, null),
     mk('tyres', 50000, null),

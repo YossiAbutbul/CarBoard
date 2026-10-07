@@ -3,11 +3,13 @@ import { FileThumb, Lightbox } from '../components/ui'
 import { Icon, kindIcon } from '../components/Icon'
 import { useApp } from '../data/AppData'
 import { fmtDate, fmtKm, fmtMoney } from '../lib/i18n'
+import { compressImage } from '../lib/image'
 import type { OpenSheet } from '../App'
 
 export function ServicesScreen({ open }: { open: OpenSheet }) {
   const { data, car, actions } = useApp()
   const [view, setView] = useState<string | null>(null)
+  const [busy, setBusy] = useState<string | null>(null)
   if (!car) return null
 
   const list = data.services
@@ -67,6 +69,25 @@ export function ServicesScreen({ open }: { open: OpenSheet }) {
                   <div className="e">
                     {s.price != null ? fmtMoney(s.price) : '—'}
                     <div>
+                      <label className="icon-btn" style={{ cursor: 'pointer', display: 'inline-block' }} aria-label={s.receipt ? 'החלפת קבלה' : 'הוספת קבלה'}>
+                        {busy === s.id ? <span className="spin" style={{ width: 17, height: 17 }} /> : <Icon name="camera" />}
+                        <input
+                          type="file"
+                          accept="image/*,application/pdf"
+                          style={{ display: 'none' }}
+                          onChange={async e => {
+                            const f = e.target.files?.[0]
+                            if (!f) return
+                            setBusy(s.id)
+                            try {
+                              const ref = await actions.upload('receipt', f.type.startsWith('image/') ? await compressImage(f) : f)
+                              await actions.updateService(s.id, { receipt: ref })
+                            } finally {
+                              setBusy(null)
+                            }
+                          }}
+                        />
+                      </label>
                       <button
                         className="icon-btn"
                         onClick={() => confirm(`למחוק את "${s.title}"?`) && actions.deleteService(s.id)}
