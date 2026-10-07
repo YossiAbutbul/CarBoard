@@ -45,7 +45,7 @@ Each car starts with an empty spot on the home screen. Tap it to upload an image
 
 ## Stack
 
-React 19 + TypeScript + Vite, `vite-plugin-pwa`, Supabase (Postgres, Auth, Storage, Edge Functions), `@imgly/background-removal` (runs on the device), plain CSS with Noto Sans Hebrew.
+React 19 + TypeScript + Vite, `vite-plugin-pwa`, Supabase (Postgres, Auth, Storage, Edge Functions), `@imgly/background-removal` (runs on the device), plain CSS with Noto Sans Hebrew, Lucide icons (`lucide-react`).
 
 ```
 src/
