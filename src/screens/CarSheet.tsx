@@ -90,7 +90,7 @@ export function CarSheet({ car, onClose }: { car?: Car; onClose(): void }) {
 
   return (
     <Sheet title={editing ? 'עריכת רכב' : 'רכב חדש'} onClose={onClose}>
-      <div className="card">
+      <div className="card car-form">
         <div className="hint">הקלד מספר רכב. השאר מתמלא לבד.</div>
         <label className="plate-il lg plate-input" dir="ltr">
           <span className="band" aria-hidden="true">
@@ -170,14 +170,18 @@ export function CarSheet({ car, onClose }: { car?: Car; onClose(): void }) {
           ))}
         </div>
 
-        <label className="lbl">שם לרכב</label>
-        <input className="in" value={name} onChange={e => setName(e.target.value)} placeholder="למשל: הקיה של אבא" />
-        {!editing && (
-          <>
-            <label className="lbl">כמה ק״מ יש לרכב היום?</label>
-            <input className="in" inputMode="numeric" value={kmNow ? Number(kmNow).toLocaleString('he-IL') : ''} onChange={e => setKmNow(e.target.value.replace(/\D/g, ''))} placeholder="48,230" />
-          </>
-        )}
+        <div className={editing ? '' : 'row2'}>
+          <div>
+            <label className="lbl">שם לרכב</label>
+            <input className="in" value={name} onChange={e => setName(e.target.value)} placeholder="הקיה של אבא" />
+          </div>
+          {!editing && (
+            <div>
+              <label className="lbl">ק״מ היום</label>
+              <input className="in" inputMode="numeric" value={kmNow ? Number(kmNow).toLocaleString('he-IL') : ''} onChange={e => setKmNow(e.target.value.replace(/\D/g, ''))} placeholder="48,230" />
+            </div>
+          )}
+        </div>
         {err && <div className="err">{err}</div>}
         <button className="btn pri" style={{ marginTop: 16 }} disabled={busy} onClick={save}>
           {busy ? <span className="spin" /> : editing ? 'שמירה' : 'הוספת רכב'}

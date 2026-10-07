@@ -228,3 +228,18 @@
 .tour-btn.pri:hover svg.i { transform: translateX(-3px); }
 .tour-skip { margin-inline-start: auto; padding: 8px 4px; font-size: 13.5px; color: var(--muted); }
 .tour-skip:hover { color: var(--ink); }
+
+/* ─── car sheet: compact, fits a phone screen without scrolling ─── */
+.car-form .lbl { margin: 10px 0 5px; }
+.car-form .plate-status { margin-top: 6px; }
+.car-form .avatar-stage.stage-3d { margin-top: 6px; min-height: 0; height: 118px; padding: 8px 12px; }
+.car-form .avatar-stage .toy-car.preview-toy { width: auto; height: 100px; max-width: 70%; max-height: none; }
+.car-form .body-grid { gap: 6px; }
+.car-form .body-grid button { padding: 6px 4px 5px; gap: 2px; font-size: 12px; }
+.car-form .body-grid button .toy-car { width: 52px; height: 34px; }
+/* one swipeable row of colours */
+.car-form .paints { flex-wrap: nowrap; overflow-x: auto; gap: 8px; padding: 4px 4px 6px; margin: 0 -4px; scrollbar-width: none; }
+.car-form .paints::-webkit-scrollbar { display: none; }
+.car-form .paint { flex: none; width: 28px; height: 28px; }
+.car-form .paint.auto { width: auto; }
+.car-form .btn.pri { margin-top: 12px !important; }
