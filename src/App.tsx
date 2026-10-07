@@ -7,6 +7,8 @@ import { firebaseStore } from './data/firebaseStore'
 import { auth, cloudEnabled, signInWithGoogle } from './data/firebase'
 import { Icon, type IconName } from './components/Icon'
 import { Splash } from './components/Chrome'
+import { GoogleMark } from './components/GoogleMark'
+import { isGuest, moveGuestData, setGuest } from './data/guest'
 import { HomeScreen } from './screens/HomeScreen'
 import { ServicesScreen } from './screens/ServicesScreen'
 import { DocumentsScreen } from './screens/DocumentsScreen'
@@ -31,6 +33,8 @@ type Tab = 'home' | 'services' | 'docs'
 export default function App() {
   const [user, setUser] = useState<User | null>(null)
   const [authReady, setAuthReady] = useState(!cloudEnabled)
+  const [guest, setGuestState] = useState(isGuest)
+  const [moving, setMoving] = useState(false)
 
   useEffect(() => {
     if (!auth) return
@@ -43,8 +47,35 @@ export default function App() {
   const userId = user?.uid ?? null
   const store = useMemo(() => (cloudEnabled ? (userId ? firebaseStore(userId) : null) : localStore), [userId])
 
-  if (!authReady) return <Splash />
-  if (!store) return <Login />
+  // A guest who signs in takes their cars along to the account.
+  useEffect(() => {
+    if (!userId || !isGuest()) return
+    setMoving(true)
+    moveGuestData(firebaseStore(userId))
+      .catch(e => console.error('moving guest data failed', e))
+      .finally(() => {
+        setGuestState(false)
+        setMoving(false)
+      })
+  }, [userId])
+
+  if (!authReady || moving) return <Splash />
+  if (!store && guest) {
+    return (
+      <AppDataProvider key="guest" store={localStore}>
+        <Main email={null} accountName={null} guest />
+      </AppDataProvider>
+    )
+  }
+  if (!store)
+    return (
+      <Login
+        onGuest={() => {
+          setGuest(true)
+          setGuestState(true)
+        }}
+      />
+    )
   return (
     <AppDataProvider key={userId ?? 'local'} store={store}>
       <Main email={user?.email ?? null} accountName={user?.displayName ?? null} />
@@ -52,7 +83,7 @@ export default function App() {
   )
 }
 
-function Main({ email, accountName }: { email: string | null; accountName: string | null }) {
+function Main({ email, accountName, guest = false }: { email: string | null; accountName: string | null; guest?: boolean }) {
   const [localName, setLocalName] = useState(getLocalName)
   const userName = localName.trim() || accountName?.split(' ')[0] || null
   const saveName = (n: string) => {
@@ -167,18 +198,18 @@ function Main({ email, accountName }: { email: string | null; accountName: strin
       {sheet?.t === 'doc' && <DocumentSheet doc={sheet.doc} onClose={close} />}
       {sheet?.t === 'car' && <CarSheet car={sheet.car} onClose={close} />}
       {drawer === 'cars' && <CarsDrawer open={setSheet} onClose={() => setDrawer(null)} />}
-      {drawer === 'settings' && <SettingsDrawer email={email} name={localName} onName={saveName} onTour={startTour} onClose={() => setDrawer(null)} />}
+      {drawer === 'settings' && <SettingsDrawer email={email} guest={guest} name={localName} onName={saveName} onTour={startTour} onClose={() => setDrawer(null)} />}
       {guide === 'tour' && car && tab === 'home' && !sheet && <Tour name={userName ?? ''} onDone={endTour} />}
     </div>
   )
 }
 
 
-function Login() {
+function Login({ onGuest }: { onGuest(): void }) {
   const [err, setErr] = useState<string | null>(null)
   return (
     <div className="shell">
-      <div className="welcome reveal">
+      <div className="welcome login reveal">
         <div className="eyebrow" style={{ color: 'rgba(255,255,255,.7)' }}>הרכב שלי</div>
         <div className="status">
           <span>כל</span>
@@ -192,14 +223,13 @@ function Login() {
           style={{ background: '#fff' }}
           onClick={() => signInWithGoogle().catch(e => setErr(e instanceof Error ? e.message : String(e)))}
         >
-          <svg width="18" height="18" viewBox="0 0 48 48" aria-hidden="true">
-            <path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.7 32.7 29.3 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.6-.4-3.5z" />
-            <path fill="#FF3D00" d="m6.3 14.7 6.6 4.8C14.7 15.1 19 12 24 12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 16.3 4 9.7 8.3 6.3 14.7z" />
-            <path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.2 35.1 26.7 36 24 36c-5.3 0-9.7-3.3-11.3-8l-6.5 5C9.5 39.6 16.2 44 24 44z" />
-            <path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.2-2.2 4.2-4.1 5.6l6.2 5.2C37 39.2 44 34 44 24c0-1.3-.1-2.6-.4-3.5z" />
-          </svg>
+          <GoogleMark />
           התחברות עם Google
         </button>
+        <button className="btn guest-btn" onClick={onGuest}>
+          כניסה כאורח
+        </button>
+        <div className="guest-hint">כאורח, הנתונים נשמרים רק במכשיר הזה. אפשר להתחבר אחר כך ולהעביר אותם.</div>
         {err && <div className="banner">{err}</div>}
       </div>
     </div>

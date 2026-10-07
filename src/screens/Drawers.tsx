@@ -4,7 +4,9 @@ import { Plate } from '../components/Chrome'
 import { CarToy } from '../components/CarAvatar'
 import { Icon } from '../components/Icon'
 import { useApp } from '../data/AppData'
-import { signOut } from '../data/firebase'
+import { cloudEnabled, signInWithGoogle, signOut } from '../data/firebase'
+import { setGuest } from '../data/guest'
+import { GoogleMark } from '../components/GoogleMark'
 import { downloadIcs } from '../lib/ics'
 import { fmtNum } from '../lib/i18n'
 import type { OpenSheet } from '../App'
@@ -70,12 +72,14 @@ export function CarsDrawer({ open, onClose }: { open: OpenSheet; onClose(): void
 /** Settings: opens from the left, where its button is. */
 export function SettingsDrawer({
   email,
+  guest = false,
   name,
   onName,
   onTour,
   onClose,
 }: {
   email: string | null
+  guest?: boolean
   name: string
   onName(n: string): void
   onTour(): void
@@ -126,7 +130,7 @@ export function SettingsDrawer({
             <div>
               <div className="t">{store.mode === 'cloud' ? 'מסונכרן לענן' : 'שמור במכשיר הזה'}</div>
               <div className="s">
-                {store.mode === 'cloud' ? email : 'כדי לסנכרן בין מכשירים ולהתחבר עם Google, צריך לחבר Firebase (ראה README).'}
+                {store.mode === 'cloud' ? email : guest ? 'מצב אורח. התחברו כדי לגבות ולסנכרן בין מכשירים; הנתונים יעברו לחשבון.' : 'כדי לסנכרן בין מכשירים ולהתחבר עם Google, צריך לחבר Firebase (ראה README).'}
               </div>
             </div>
           </div>
@@ -134,6 +138,23 @@ export function SettingsDrawer({
             <button className="btn" style={{ marginTop: 14, background: '#fff' }} onClick={() => signOut()}>
               התנתקות
             </button>
+          )}
+          {guest && cloudEnabled && (
+            <>
+              <button className="btn" style={{ marginTop: 14, background: '#fff' }} onClick={() => signInWithGoogle()}>
+                <GoogleMark /> התחברות עם Google
+              </button>
+              <button
+                className="btn"
+                style={{ marginTop: 8, background: 'none', color: 'var(--muted)', fontWeight: 500 }}
+                onClick={() => {
+                  setGuest(false)
+                  location.reload()
+                }}
+              >
+                יציאה ממצב אורח
+              </button>
+            </>
           )}
         </div>
       </section>
