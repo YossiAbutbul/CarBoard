@@ -47,7 +47,7 @@ The licence says images must load from their CDN and must never be stored, so th
 
 ## Stack
 
-React 19 + TypeScript + Vite, `vite-plugin-pwa`, Supabase (Postgres, Auth, Storage, Edge Functions), `@imgly/background-removal` (runs on the device), plain CSS with the Heebo font.
+React 19 + TypeScript + Vite, `vite-plugin-pwa`, Supabase (Postgres, Auth, Storage, Edge Functions), `@imgly/background-removal` (runs on the device), plain CSS with the Assistant font.
 
 ```
 src/
