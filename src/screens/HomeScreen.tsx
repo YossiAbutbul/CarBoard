@@ -1,7 +1,8 @@
 import { useState } from 'react'
 import { Icon, kindIcon } from '../components/Icon'
 import { Glance, GlanceCell, PageHero, TopBar, useCountUp } from '../components/Chrome'
-import { CarBadge } from '../components/CarAvatar'
+import { carPaint } from '../components/CarAvatar'
+import { CarShot } from '../components/Car3DLazy'
 import { useApp } from '../data/AppData'
 import { STATUS_TEXT } from '../domain/labels'
 import type { Reminder } from '../domain/reminders'
@@ -73,14 +74,14 @@ export function HomeScreen({
       <PageHero dial>
         <TopBar openCars={openCars} openSettings={openSettings} />
         <div className="greet">
-          <button className="hero-avatar" onClick={() => open({ t: 'car', car })} aria-label="עריכת הרכב">
-            <CarBadge car={car} />
-          </button>
           <div className="date">{longDate()}</div>
           <h1>{userName ? `שלום, ${userName}` : greeting()}</h1>
           <div className="state-pill" data-s={state}>
             {stateText}
           </div>
+        </div>
+        <div className="hero-stage">
+          <CarShot paint={carPaint(car)} className="hero-shot" />
         </div>
         <Glance>
           <GlanceCell
