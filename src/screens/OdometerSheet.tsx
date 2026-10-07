@@ -1,32 +1,26 @@
 import { useEffect, useRef, useState } from 'react'
 import { Sheet } from '../components/ui'
 import { useApp } from '../data/AppData'
-import { readOdometer } from '../data/functions'
-import { cloudEnabled } from '../data/supabase'
 import { readingError } from '../domain/odometer'
 import { agoText, fmtDate, fmtNum } from '../lib/i18n'
 import { sortReadings } from '../domain/odometer'
 import { ConfirmButton } from '../components/ConfirmButton'
 import { Icon } from '../components/Icon'
 
-export function OdometerSheet({ onClose, startWithPhoto = false }: { onClose(): void; startWithPhoto?: boolean }) {
+export function OdometerSheet({ onClose }: { onClose(): void }) {
   const { car, km, data, actions } = useApp()
   const [value, setValue] = useState(String(km.value || ''))
   const [err, setErr] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
-  const [photo, setPhoto] = useState<string | null>(null)
-  const [reading, setReading] = useState(false)
-  const [source, setSource] = useState<'manual' | 'photo'>('manual')
+  const source = 'manual' as const
   const [editId, setEditId] = useState<string | null>(null)
   const [editValue, setEditValue] = useState('')
   const [histErr, setHistErr] = useState<string | null>(null)
-  const fileRef = useRef<HTMLInputElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
-    if (startWithPhoto) fileRef.current?.click()
-    else inputRef.current?.select()
-  }, [startWithPhoto])
+    inputRef.current?.select()
+  }, [])
 
   if (!car) return null
   const n = Number(value.replace(/\D/g, ''))
@@ -71,22 +65,6 @@ export function OdometerSheet({ onClose, startWithPhoto = false }: { onClose(): 
 
   const SOURCE: Record<string, string> = { start: 'התחלה', manual: 'ידני', confirm: 'אישור שבועי', photo: 'מתמונה', service: 'מטיפול' }
 
-  async function onPhoto(f: File | undefined) {
-    if (!f) return
-    setPhoto(URL.createObjectURL(f))
-    setErr(null)
-    setReading(true)
-    try {
-      const v = await readOdometer(f)
-      setValue(String(v))
-      setSource('photo')
-    } catch (e) {
-      setErr(e instanceof Error ? e.message : String(e))
-    } finally {
-      setReading(false)
-    }
-  }
-
   async function save() {
     const e = readingError(readings, n)
     if (e) return setErr(canFixLast ? `${e}. אם הקריאה הקודמת הוקלדה בטעות, אפשר לתקן אותה:` : e)
@@ -103,22 +81,11 @@ export function OdometerSheet({ onClose, startWithPhoto = false }: { onClose(): 
 
   const bump = (d: number) => {
     setValue(String((n || last?.km || 0) + d))
-    setSource('manual')
   }
 
   return (
     <Sheet title="כמה ק״מ ברכב?" onClose={onClose}>
       <div className="card">
-        {photo && (
-          <div className="cam" style={{ marginBottom: 12 }}>
-            <img src={photo} alt="" />
-            {reading && (
-              <div style={{ position: 'absolute', inset: 0, display: 'grid', placeItems: 'center', background: 'rgba(0,0,0,.35)' }}>
-                <span className="spin" />
-              </div>
-            )}
-          </div>
-        )}
         <input
           ref={inputRef}
           className="big-in"
@@ -127,7 +94,6 @@ export function OdometerSheet({ onClose, startWithPhoto = false }: { onClose(): 
           placeholder="0"
           onChange={e => {
             setValue(e.target.value.replace(/\D/g, ''))
-            setSource('manual')
             setErr(null)
           }}
           aria-label="ק״מ"
@@ -136,7 +102,6 @@ export function OdometerSheet({ onClose, startWithPhoto = false }: { onClose(): 
           {last
             ? `קודם: ${fmtNum(last.km)} · ${agoText(km.checkedDaysAgo ?? 0)}${n > last.km ? ` · +${fmtNum(n - last.km)} ק״מ` : ''}`
             : 'הקריאה הראשונה של הרכב'}
-          {source === 'photo' && !reading && ' · זוהה מהתמונה'}
         </div>
         <div className="chips" style={{ justifyContent: 'center', marginTop: 12 }}>
           <button onClick={() => bump(100)}>+100</button>
@@ -150,14 +115,9 @@ export function OdometerSheet({ onClose, startWithPhoto = false }: { onClose(): 
           </button>
         )}
         <div className="stack" style={{ marginTop: 16 }}>
-          <button className="btn pri" disabled={busy || reading || !n} onClick={save}>
+          <button className="btn pri" disabled={busy || !n} onClick={save}>
             {busy ? <span className="spin" /> : 'שמירה'}
           </button>
-          <label className="file-btn" style={{ opacity: cloudEnabled ? 1 : 0.6 }}>
-            <Icon name="camera" /> צילום לוח המחוונים
-            <input ref={fileRef} type="file" accept="image/*" capture="environment" onChange={e => onPhoto(e.target.files?.[0])} />
-          </label>
-          {!cloudEnabled && <div className="hint center">קריאה מתמונה פועלת אחרי חיבור לענן</div>}
         </div>
 
         {history.length > 0 && (

@@ -2,7 +2,7 @@
 
 A Hebrew (RTL) PWA that keeps everything about your cars in one place: km, services, test (טסט), insurance and documents, with reminders by km or by date.
 
-- **Smart km.** The app estimates today's km from your last reading and your own daily average. A weekly card asks “is it about right?”. You can also photograph the dashboard and AI reads the number.
+- **Smart km.** The app estimates today's km from your last reading and your own daily average. A weekly card asks “is it about right?”.
 - **Plate lookup.** Type the plate number and make, model, year, colour and the test expiry come from the Ministry of Transport open data (data.gov.il).
 - **Reminders.** Each item (service, test, insurance, tyres, brakes, battery, custom) is due at a km limit or a date, whichever comes first. You can export them to the phone calendar (.ics) with an alert 7 days before.
 - **Cloud.** Supabase with Google login and row level security. Without Supabase settings the app runs in local demo mode, with the data in the browser.
@@ -16,7 +16,7 @@ npm install
 npm run dev
 ```
 
-With no `.env`, the app runs in **local mode**. That is enough to try everything except reading km from a photo.
+With no `.env`, the app runs in **local mode**. That is enough to try everything.
 
 ## Connect the cloud (Supabase + Google login)
 
@@ -30,18 +30,9 @@ With no `.env`, the app runs in **local mode**. That is enough to try everything
 
 Also run [`supabase/migrations/0002_car_avatar.sql`](supabase/migrations/0002_car_avatar.sql). It adds the optional `body` and `paint` columns for the car avatar.
 
-### Km from a dashboard photo
-
-```bash
-supabase secrets set ANTHROPIC_API_KEY=sk-ant-...
-supabase functions deploy read-odometer
-```
-
-The function sends the photo to Claude (`claude-opus-5-5`, low effort, structured JSON output) and returns `{ km }`. The photo is not stored.
-
 ## Stack
 
-React 19 + TypeScript + Vite, `vite-plugin-pwa`, Supabase (Postgres, Auth, Storage, Edge Functions), plain CSS with Noto Sans Hebrew, Lucide icons (`lucide-react`).
+React 19 + TypeScript + Vite, `vite-plugin-pwa`, Supabase (Postgres, Auth, Storage), plain CSS with Noto Sans Hebrew, Lucide icons (`lucide-react`).
 
 ```
 src/

@@ -19,7 +19,7 @@ import { DocumentSheet } from './screens/DocumentSheet'
 import { CarSheet } from './screens/CarSheet'
 
 export type SheetState =
-  | { t: 'odo'; photo?: boolean }
+  | { t: 'odo' }
   | { t: 'service'; kind?: ItemKind; record?: ServiceRecord }
   | { t: 'item'; item?: Item }
   | { t: 'doc'; doc?: CarDocument }
@@ -131,7 +131,7 @@ function Main({ email, accountName }: { email: string | null; accountName: strin
         </nav>
       )}
 
-      {sheet?.t === 'odo' && <OdometerSheet onClose={close} startWithPhoto={sheet.photo} />}
+      {sheet?.t === 'odo' && <OdometerSheet onClose={close} />}
       {sheet?.t === 'service' && <ServiceSheet onClose={close} kind={sheet.kind} record={sheet.record} />}
       {sheet?.t === 'item' && (
         <ItemSheet item={sheet.item} onClose={close} onDone={it => setSheet({ t: 'service', kind: it.kind })} />
