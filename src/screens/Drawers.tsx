@@ -1,7 +1,7 @@
 import { ConfirmButton } from '../components/ConfirmButton'
 import { Drawer } from '../components/ui'
 import { Plate } from '../components/Chrome'
-import { CarShotOf } from '../components/Car3DLazy'
+import { CarToy } from '../components/CarAvatar'
 import { Icon } from '../components/Icon'
 import { useApp } from '../data/AppData'
 import { supabase } from '../data/supabase'
@@ -26,7 +26,7 @@ export function CarsDrawer({ open, onClose }: { open: OpenSheet; onClose(): void
               aria-current={c.id === car?.id}
             >
               <span className="car-row-pic">
-                <CarShotOf car={c} />
+                <CarToy car={c} />
               </span>
               <span className="car-row-info">
                 <span className="t">
@@ -130,11 +130,7 @@ export function SettingsDrawer({
       </section>
       <div className="foot">הרכב שלי · 0.1</div>
       <div className="credit" dir="ltr">
-        3D car: “Car Concept” by Eric Chadwick, Khronos glTF Sample Assets,{' '}
-        <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener noreferrer">
-          CC BY 4.0
-        </a>
-        , recoloured.
+        Car images: Microsoft Fluent Emoji (MIT), recoloured.
       </div>
     </Drawer>
   )

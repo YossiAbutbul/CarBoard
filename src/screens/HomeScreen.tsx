@@ -1,8 +1,7 @@
 import { useState } from 'react'
 import { Icon, kindIcon } from '../components/Icon'
 import { Glance, GlanceCell, PageHero, TopBar, useCountUp } from '../components/Chrome'
-import { carPaint } from '../components/CarAvatar'
-import { CarShot } from '../components/Car3DLazy'
+import { CarToy } from '../components/CarAvatar'
 import { useApp } from '../data/AppData'
 import { STATUS_TEXT } from '../domain/labels'
 import type { Reminder } from '../domain/reminders'
@@ -81,7 +80,7 @@ export function HomeScreen({
           </div>
         </div>
         <div className="hero-stage">
-          <CarShot paint={carPaint(car)} className="hero-shot" />
+          <CarToy car={car} className="hero-toy" />
         </div>
         <Glance>
           <GlanceCell

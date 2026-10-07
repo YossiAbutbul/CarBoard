@@ -1,7 +1,8 @@
 export type ItemKind = 'service' | 'oil' | 'tyres' | 'brakes' | 'battery' | 'test' | 'insurance' | 'custom'
 export type ReadingSource = 'start' | 'manual' | 'confirm' | 'photo' | 'service'
 export type DocKind = 'licence' | 'insurance' | 'driver' | 'other'
-export type BodyType = 'small' | 'family' | 'suv' | 'van' | 'pickup' | 'sport'
+/** 'car' | 'suv' | 'pickup' | 'van'; the others are older saved values that show as 'car'. */
+export type BodyType = 'car' | 'suv' | 'van' | 'pickup' | 'small' | 'family' | 'sport'
 
 export interface Car {
   id: string

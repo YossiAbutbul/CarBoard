@@ -1,12 +1,11 @@
 import { useState } from 'react'
-import type { Car } from '../types'
+import type { BodyType, Car } from '../types'
 import { Sheet } from '../components/ui'
-import { CarShot } from '../components/Car3DLazy'
 import { useApp } from '../data/AppData'
 import { formatPlate, lookupPlate, plateDigits, type PlateInfo } from '../lib/govil'
 import { fmtDate } from '../lib/i18n'
 import { Icon } from '../components/Icon'
-import { PAINTS, paintFromRegistry } from '../components/CarAvatar'
+import { BODY_TYPES, PAINTS, ToyCar, bodyLabel, guessBody, paintFromRegistry } from '../components/CarAvatar'
 
 /** Add a new car (car = undefined) or edit an existing one. */
 export function CarSheet({ car, onClose }: { car?: Car; onClose(): void }) {
@@ -20,8 +19,8 @@ export function CarSheet({ car, onClose }: { car?: Car; onClose(): void }) {
   const [kmNow, setKmNow] = useState(editing ? String(km.value) : '')
   const [err, setErr] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
-  // Paint: null means "automatic" (from the registry colour).
-  const body = car?.body ?? null
+  // Body and paint: null means "automatic" (guessed from the model, painted in the registry colour).
+  const [body, setBody] = useState<BodyType | null>(car?.body ?? null)
   const [paint, setPaint] = useState<string | null>(car?.paint ?? null)
 
   const make = info?.make ?? car?.make ?? null
@@ -29,6 +28,7 @@ export function CarSheet({ car, onClose }: { car?: Car; onClose(): void }) {
   const year = info?.year ?? car?.year ?? null
   const color = info?.color ?? car?.color ?? null
   const shownPaint = paint ?? paintFromRegistry(color)
+  const shownBody: BodyType = body === 'small' || body === 'family' || body === 'sport' ? 'car' : (body ?? guessBody(model))
 
   async function lookup(p = plate) {
     if (plateDigits(p).length < 7) return
@@ -127,7 +127,16 @@ export function CarSheet({ car, onClose }: { car?: Car; onClose(): void }) {
         {lookErr && <div className="err">{lookErr}</div>}
 
         <div className="avatar-stage stage-3d">
-          <CarShot paint={shownPaint} className="preview-shot" />
+          <ToyCar body={shownBody} paint={shownPaint} className="preview-toy" />
+        </div>
+        <label className="lbl">סוג רכב</label>
+        <div className="body-grid">
+          {BODY_TYPES.map(b => (
+            <button key={b} className={shownBody === b ? 'on' : ''} onClick={() => setBody(b)} aria-pressed={shownBody === b}>
+              <ToyCar body={b} paint={shownPaint} />
+              <span>{bodyLabel(b)}</span>
+            </button>
+          ))}
         </div>
         <label className="lbl">צבע</label>
         <div className="paints">

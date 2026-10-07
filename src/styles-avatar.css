@@ -114,3 +114,17 @@
 .car-row-pic .car-shot { width: 100%; height: 100%; object-fit: contain; }
 .credit { font-size: 11px; color: var(--muted); text-align: center; margin-top: 10px; line-height: 1.5; }
 .credit a { color: inherit; }
+
+/* ─── toy cars ─── */
+.toy-car { display: block; width: 100%; height: auto; -webkit-user-drag: none; user-select: none; }
+.toy-car.loading { aspect-ratio: 1; }
+.toy-car.hero-toy { width: auto; height: 158px; margin: -6px auto 0; filter: drop-shadow(0 16px 16px rgba(0, 0, 0, 0.4)); animation: toy-in 0.9s cubic-bezier(0.3, 1.5, 0.5, 1) both 0.2s; transform-origin: 50% 90%; }
+.hero-stage:hover .toy-car.hero-toy, .hero-stage:active .toy-car.hero-toy { animation: toy-hop 0.5s cubic-bezier(0.3, 1.6, 0.5, 1); }
+@keyframes toy-in { from { opacity: 0; transform: translateX(-60px) rotate(-6deg); } 60% { opacity: 1; } }
+@keyframes toy-hop { 40% { transform: translateY(-10px) rotate(-3deg); } }
+.hero-stage { min-height: 0; margin: 0 -6px; }
+.avatar-stage .toy-car.preview-toy { width: auto; height: 170px; margin: 0 auto; filter: drop-shadow(0 12px 12px rgba(0, 0, 0, 0.18)); animation: toy-in 0.6s cubic-bezier(0.3, 1.5, 0.5, 1); }
+.body-grid { grid-template-columns: repeat(4, 1fr); }
+.body-grid button .toy-car { width: 58px; }
+.car-row-pic { background: linear-gradient(180deg, #e9eef6, #dfe6f0); }
+.car-row-pic .toy-car { width: 54px; }

@@ -3,10 +3,6 @@ import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
 
 export default defineConfig({
-  // three.js is only imported lazily; pre-bundle it so the dev server never serves a stale copy.
-  optimizeDeps: {
-    include: ['three', 'three/addons/loaders/GLTFLoader.js', 'three/addons/environments/RoomEnvironment.js'],
-  },
   plugins: [
     react(),
     VitePWA({
