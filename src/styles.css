@@ -56,8 +56,8 @@ svg.i { width: 20px; height: 20px; flex: none; stroke: currentColor; fill: none;
 /* ─── hero ─── */
 .hero {
   position: relative; margin: 0 -16px; padding: max(14px, env(safe-area-inset-top)) 18px 0; color: #fff; overflow: hidden;
-  background: linear-gradient(180deg, var(--hero-1) 0%, var(--hero-2) 42%, #6f86a6 74%, #dfe5ec 92%, var(--bg) 100%);
-  min-height: 470px;
+  display: flex; flex-direction: column;
+  background: linear-gradient(180deg, var(--hero-1) 0%, var(--hero-2) 36%, #5f7596 58%, #9fb0c5 76%, #dbe2ea 90%, var(--bg) 100%);
 }
 .hero .bar { display: grid; grid-template-columns: 40px 1fr 40px; align-items: center; text-align: center; }
 .hero .bar .title { font-size: 15px; font-weight: 500; }
@@ -66,9 +66,11 @@ svg.i { width: 20px; height: 20px; flex: none; stroke: currentColor; fill: none;
 .status { position: relative; z-index: 1; margin-top: 30px; font-weight: 600; font-size: 52px; line-height: 1.02; letter-spacing: -0.025em; }
 .status span { display: block; }
 .status .sm { font-size: 14px; font-weight: 400; letter-spacing: 0; text-transform: none; opacity: 0.8; margin-top: 12px; line-height: 1.3; }
-.hero .car { position: absolute; z-index: 2; left: 16px; right: 16px; bottom: 6px; height: 200px; display: flex; align-items: flex-end; justify-content: center; pointer-events: none; }
-.hero .car img, .hero .car svg { max-height: 190px; max-width: 92%; width: auto; height: auto; object-fit: contain; filter: drop-shadow(0 18px 14px rgba(5, 12, 24, 0.35)); animation: arrive 1s var(--ease) both; }
-.hero .car::after { content: ''; position: absolute; left: 14%; right: 14%; bottom: 0; height: 16px; border-radius: 50%; background: radial-gradient(closest-side, rgba(5, 12, 24, 0.4), transparent); z-index: -1; }
+/* the car stands on its own row, on a soft studio floor, with a contact shadow under the wheels */
+.hero .car { position: relative; z-index: 2; margin: 22px 0 0; padding: 0 4px 34px; min-height: 150px; display: flex; align-items: flex-end; justify-content: center; }
+.hero .car::before { content: ''; position: absolute; left: -18px; right: -18px; bottom: 6px; height: 70px; background: radial-gradient(50% 50% at 50% 70%, rgba(255, 255, 255, 0.55), transparent 70%); z-index: -1; pointer-events: none; }
+.hero .car img { display: block; max-height: 165px; max-width: 86%; width: auto; height: auto; object-fit: contain; filter: drop-shadow(0 10px 10px rgba(5, 12, 24, 0.25)); animation: arrive 1s var(--ease) both; }
+.hero .car::after { content: ''; position: absolute; left: 16%; right: 16%; bottom: 26px; height: 18px; border-radius: 50%; background: radial-gradient(closest-side, rgba(5, 12, 24, 0.55), rgba(5, 12, 24, 0.15) 60%, transparent); z-index: -1; pointer-events: none; }
 @keyframes arrive { from { opacity: 0; transform: translateX(-24px); } }
 
 /* ─── tiles ─── */
@@ -244,8 +246,9 @@ textarea.in { min-height: 76px; resize: vertical; }
 .car-drop.dark .drop-ic { background: rgba(255, 255, 255, 0.14); }
 .car-drop.dark .drop-hint { color: rgba(255, 255, 255, 0.7); }
 .car-drop.dark .spin { border-color: rgba(255, 255, 255, 0.25); border-top-color: #fff; }
-.hero .car:has(.car-drop)::after { display: none; }
-.car-drop.dark { background: rgba(11, 22, 38, 0.38); border-color: rgba(255, 255, 255, 0.3); margin-bottom: 40px; min-height: 150px; }
+.hero .car:has(.car-drop)::after, .hero .car:has(.car-drop)::before { display: none; }
+.hero .car:has(.car-drop) { padding-bottom: 26px; }
+.car-drop.dark { background: rgba(11, 22, 38, 0.38); border-color: rgba(255, 255, 255, 0.3); margin-bottom: 0; min-height: 150px; }
 .car-drop.dark:hover { background: rgba(11, 22, 38, 0.48); }
 
 /* phone app: no visible scrollbars, no rubber-band overscroll on the page */
