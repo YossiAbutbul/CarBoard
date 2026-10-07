@@ -210,7 +210,7 @@ function Login({ onGuest }: { onGuest(): void }) {
   const [err, setErr] = useState<string | null>(null)
   return (
     <div className="shell">
-      <div className="welcome login reveal">
+      <div className="welcome scenic reveal">
         <Scene />
         <div className="eyebrow" style={{ color: 'rgba(255,255,255,.7)' }}>הרכב שלי</div>
         <div className="status">

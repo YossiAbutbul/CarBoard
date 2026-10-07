@@ -260,11 +260,11 @@
 .welcome > .btn + .guest-btn { margin-top: 10px; margin-bottom: 0; background: rgba(255, 255, 255, 0.1); color: #fff; box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.25); }
 .guest-hint { margin: 10px 0 max(20px, env(safe-area-inset-bottom)); text-align: center; font-size: 12.5px; line-height: 1.5; color: rgba(255, 255, 255, 0.6); }
 .welcome > .btn:has(+ .guest-btn) { margin-bottom: 0; }
-.welcome.login .guest-hint { color: rgba(255, 255, 255, 0.72); }
+.welcome.scenic .guest-hint { color: rgba(255, 255, 255, 0.72); }
 
 /* ─── animated backdrop (login + first-run steps) ─── */
-.welcome.login { position: relative; overflow: hidden; background: #08111f; }
-.welcome.login > *:not(.scene), .onb > *:not(.scene) { position: relative; z-index: 1; }
+.welcome.scenic { position: relative; overflow: hidden; background: #08111f; }
+.welcome.scenic > *:not(.scene), .onb > *:not(.scene) { position: relative; z-index: 1; }
 .scene { position: absolute; inset: 0; z-index: 0; overflow: hidden; pointer-events: none;
   background: radial-gradient(140% 90% at 50% 120%, #1b3a66 0%, transparent 60%), linear-gradient(180deg, #08111f 0%, #0c1a2e 60%, #11284a 100%); }
 /* drifting glows */

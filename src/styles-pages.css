@@ -116,9 +116,13 @@
 
 /* in-place delete confirmation */
 .btn.danger.armed { background: var(--overdue); color: #fff; animation: pop 0.3s var(--ease); }
-.confirm-icon { display: inline-flex; align-items: center; gap: 4px; transition: color 0.15s, background 0.15s; }
-.confirm-icon.armed { color: #fff; background: var(--overdue); padding: 5px 8px; border-radius: 99px; font-size: 12px; font-weight: 600; }
-.confirm-icon.armed svg.i { width: 15px; height: 15px; }
+.confirm-icon { position: relative; display: inline-grid; place-items: center; transition: color 0.15s, background 0.15s, transform 0.15s; }
+.confirm-icon.armed { color: transparent; }
+/* grows from the button over the text beside it, so nothing around it moves */
+.confirm-tip { position: absolute; left: 0; top: 50%; z-index: 3; display: inline-flex; align-items: center; gap: 5px; height: 30px; padding: 0 11px 0 9px; border-radius: 99px; white-space: nowrap;
+  background: var(--overdue); color: #fff; font-size: 12.5px; font-weight: 600; box-shadow: 0 4px 14px rgba(214, 50, 43, 0.35); transform: translateY(-50%); transform-origin: left center; animation: tip-in 0.22s var(--ease) both; }
+.confirm-tip svg.i { width: 15px; height: 15px; }
+@keyframes tip-in { from { opacity: 0; transform: translateY(-50%) scaleX(0.4); } }
 .tl-card { cursor: pointer; }
 .plate-status { display: flex; align-items: center; justify-content: center; gap: 6px; height: 22px; margin-top: 8px; font-size: 13px; font-weight: 500; color: var(--muted); white-space: nowrap; overflow: hidden; }
 .plate-status > span:not(.spin) { overflow: hidden; text-overflow: ellipsis; }
@@ -127,3 +131,4 @@
 .plate-status small { font-size: inherit; font-weight: 400; opacity: 0.8; }
 .plate-status.ok { color: #146b3f; font-weight: 600; animation: fade 0.25s ease-out; }
 .plate-status.bad { color: var(--overdue); animation: fade 0.25s ease-out; }
+.confirm-icon.armed:hover { color: transparent; }
