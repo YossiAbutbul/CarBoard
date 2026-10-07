@@ -35,6 +35,12 @@ export function makeActions(store: Store, getData: () => Data, refresh: () => Pr
       await store.remove('cars', id)
       await refresh()
     },
+    /** Deletes every car and everything that belongs to it. */
+    async resetAll() {
+      const d = getData()
+      for (const t of ['readings', 'items', 'services', 'documents', 'cars'] as const) for (const r of d[t]) await store.remove(t, r.id)
+      await refresh()
+    },
     async addReading(carId: string, km: number, source: ReadingSource) {
       await insertReading(carId, km, source)
       await refresh()

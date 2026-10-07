@@ -1,4 +1,4 @@
-import { get, set, del } from 'idb-keyval'
+import { get, set, del, clear } from 'idb-keyval'
 import type { Data, Table } from '../types'
 import { emptyData, type Store } from './store'
 import { uid } from '../lib/uid'
@@ -46,3 +46,5 @@ export const localStore: Store = {
 }
 
 export const clearLocal = () => del(KEY)
+/** Everything in this browser's store, uploaded files included. */
+export const wipeLocal = () => clear()

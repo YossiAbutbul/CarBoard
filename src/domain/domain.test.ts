@@ -185,4 +185,13 @@ describe('fixes from the walk-through', () => {
     expect(data().items.find(i => i.kind === 'service')?.due_km).toBe(67000)
     expect(data().items.find(i => i.kind === 'oil')?.due_km).toBe(62000)
   })
+
+  it('reset deletes every car and all their records', async () => {
+    const { actions, data } = setup()
+    const a = await actions.addCar(car, 50000, null)
+    await actions.addCar({ ...car, name: 'שני' }, 1000, null)
+    await actions.saveService({ car_id: a, type: 'oil', title: 'שמן', date: todayIso(), km: 50500, price: null, garage: null, notes: null, receipt: null })
+    await actions.resetAll()
+    expect(data()).toEqual(emptyData())
+  })
 })

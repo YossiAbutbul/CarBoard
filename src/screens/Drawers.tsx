@@ -5,6 +5,7 @@ import { CarToy } from '../components/CarAvatar'
 import { Icon } from '../components/Icon'
 import { useApp } from '../data/AppData'
 import { supabase } from '../data/supabase'
+import { wipeLocal } from '../data/localStore'
 import { downloadIcs } from '../lib/ics'
 import { fmtNum } from '../lib/i18n'
 import type { OpenSheet } from '../App'
@@ -81,7 +82,7 @@ export function SettingsDrawer({
   onTour(): void
   onClose(): void
 }) {
-  const { car, km, reminders, store } = useApp()
+  const { car, km, reminders, store, actions, data } = useApp()
   return (
     <Drawer title="הגדרות" side="end" onClose={onClose}>
       <section className="drawer-sec">
@@ -137,6 +138,33 @@ export function SettingsDrawer({
           )}
         </div>
       </section>
+      {data.cars.length > 0 && (
+        <section className="drawer-sec">
+          <div className="drawer-label">איפוס</div>
+          <div className="card">
+            <div className="s" style={{ fontSize: 13.5, color: 'var(--ink-2)', lineHeight: 1.5 }}>
+              מוחק את כל הרכבים, הטיפולים, המסמכים והקבצים{store.mode === 'cloud' ? ' מהחשבון' : ' מהמכשיר הזה'}, ומתחיל מההתחלה. אי אפשר לבטל.
+            </div>
+            <ConfirmButton
+              className="btn danger"
+              style={{ marginTop: 14 }}
+              confirmText="לחצו שוב: הכל יימחק"
+              onConfirm={async () => {
+                await actions.resetAll()
+                if (store.mode === 'local') await wipeLocal()
+                try {
+                  for (const k of Object.keys(localStorage)) if (k.startsWith('car-records:')) localStorage.removeItem(k)
+                } catch {
+                  // storage blocked
+                }
+                location.reload()
+              }}
+            >
+              <Icon name="trash" /> איפוס כל הנתונים
+            </ConfirmButton>
+          </div>
+        </section>
+      )}
       <div className="foot">הרכב שלי · 0.1</div>
       <div className="credit" dir="ltr">
         Car images: Microsoft Fluent Emoji (MIT), recoloured.
