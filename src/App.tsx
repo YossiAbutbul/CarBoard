@@ -9,7 +9,7 @@ import { Icon, type IconName } from './components/Icon'
 import { HomeScreen } from './screens/HomeScreen'
 import { ServicesScreen } from './screens/ServicesScreen'
 import { DocumentsScreen } from './screens/DocumentsScreen'
-import { SettingsScreen } from './screens/SettingsScreen'
+import { CarsDrawer, SettingsDrawer } from './screens/Drawers'
 import { OdometerSheet } from './screens/OdometerSheet'
 import { ServiceSheet } from './screens/ServiceSheet'
 import { ItemSheet } from './screens/ItemSheet'
@@ -23,7 +23,7 @@ export type SheetState =
   | { t: 'doc'; doc?: CarDocument }
   | { t: 'car'; car?: Car }
 export type OpenSheet = (s: SheetState) => void
-type Tab = 'home' | 'services' | 'docs' | 'settings'
+type Tab = 'home' | 'services' | 'docs'
 
 export default function App() {
   const [session, setSession] = useState<Session | null>(null)
@@ -55,6 +55,7 @@ function Main({ email }: { email: string | null }) {
   const { car, loading, error } = useApp()
   const [tab, setTab] = useState<Tab>('home')
   const [sheet, setSheet] = useState<SheetState | null>(null)
+  const [drawer, setDrawer] = useState<null | 'cars' | 'settings'>(null)
   const close = () => setSheet(null)
 
   if (loading) return <Splash />
@@ -63,13 +64,11 @@ function Main({ email }: { email: string | null }) {
     <div className="shell">
       {error && <div className="banner">שגיאה בטעינת הנתונים: {error}</div>}
       {tab === 'home' || !car ? (
-        <HomeScreen open={setSheet} goSettings={() => setTab('settings')} />
+        <HomeScreen open={setSheet} openCars={() => setDrawer('cars')} openSettings={() => setDrawer('settings')} />
       ) : tab === 'services' ? (
         <ServicesScreen open={setSheet} />
-      ) : tab === 'docs' ? (
-        <DocumentsScreen open={setSheet} />
       ) : (
-        <SettingsScreen open={setSheet} email={email} />
+        <DocumentsScreen open={setSheet} />
       )}
 
       {car && tab === 'services' && (
@@ -92,9 +91,13 @@ function Main({ email }: { email: string | null }) {
               ['services', 'service', 'טיפולים'],
               ['docs', 'docs', 'מסמכים'],
               ['settings', 'settings', 'הגדרות'],
-            ] as [Tab, IconName, string][]
+            ] as [Tab | 'settings', IconName, string][]
           ).map(([id, icon, label]) => (
-            <button key={id} className={tab === id ? 'on' : ''} onClick={() => setTab(id)}>
+            <button
+              key={id}
+              className={(id === 'settings' ? drawer === 'settings' : tab === id && !drawer) ? 'on' : ''}
+              onClick={() => (id === 'settings' ? setDrawer('settings') : setTab(id))}
+            >
               <span className="ico">
                 <Icon name={icon} />
               </span>
@@ -112,6 +115,8 @@ function Main({ email }: { email: string | null }) {
       )}
       {sheet?.t === 'doc' && <DocumentSheet doc={sheet.doc} onClose={close} />}
       {sheet?.t === 'car' && <CarSheet car={sheet.car} onClose={close} />}
+      {drawer === 'cars' && <CarsDrawer open={setSheet} onClose={() => setDrawer(null)} />}
+      {drawer === 'settings' && <SettingsDrawer email={email} onClose={() => setDrawer(null)} />}
     </div>
   )
 }

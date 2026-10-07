@@ -10,8 +10,8 @@ import type { OpenSheet } from '../App'
 
 const weekKey = (carId: string) => `car-records:confirm:${carId}:${Math.floor(Date.now() / (7 * 86_400_000))}`
 
-export function HomeScreen({ open, goSettings }: { open: OpenSheet; goSettings(): void }) {
-  const { data, car, km, reminders, setCarId, actions } = useApp()
+export function HomeScreen({ open, openCars, openSettings }: { open: OpenSheet; openCars(): void; openSettings(): void }) {
+  const { car, km, reminders, actions } = useApp()
   const [hidden, setHidden] = useState(false)
   const photo = useCarPhotoUpload()
 
@@ -47,8 +47,6 @@ export function HomeScreen({ open, goSettings }: { open: OpenSheet; goSettings()
     setHidden(true)
   }
 
-  const cars = data.cars
-  const nextCar = () => setCarId(cars[(cars.findIndex(c => c.id === car.id) + 1) % cars.length].id)
   const urgent = reminders.filter(r => r.status === 'due' || r.status === 'overdue')
   const soon = reminders.filter(r => r.status === 'soon')
   const service = reminders.find(r => r.item.kind === 'service')
@@ -67,15 +65,17 @@ export function HomeScreen({ open, goSettings }: { open: OpenSheet; goSettings()
     <div className="reveal">
       <section className="hero">
         <div className="bar">
-          <button onClick={cars.length > 1 ? nextCar : () => open({ t: 'car' })} aria-label={cars.length > 1 ? 'החלפת רכב' : 'הוספת רכב'}>
-            <Icon name={cars.length > 1 ? 'swap' : 'plus'} />
-          </button>
-          <div className="title">
-            {car.name}
-            {car.plate && <small>{car.plate}</small>}
-          </div>
-          <button onClick={goSettings} aria-label="הגדרות">
+          <button onClick={openSettings} aria-label="הגדרות">
             <Icon name="settings" />
+          </button>
+          <button className="title" onClick={openCars} aria-label="החלפת רכב">
+            <span>
+              {car.name} <span className="caret">▾</span>
+            </span>
+            {car.plate && <small>{car.plate}</small>}
+          </button>
+          <button onClick={openCars} aria-label="הרכבים שלי">
+            <Icon name="swap" />
           </button>
         </div>
         <div className="status">

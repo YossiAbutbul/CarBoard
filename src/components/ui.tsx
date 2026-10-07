@@ -51,6 +51,38 @@ export function FileThumb({ fileRef, onOpen }: { fileRef: string; onOpen?: (url:
   )
 }
 
+/** A side panel. side="start" opens from the right (RTL start), "end" from the left. */
+export function Drawer({ title, side, onClose, children }: { title: string; side: 'start' | 'end'; onClose(): void; children: ReactNode }) {
+  const [leaving, setLeaving] = useState(false)
+  const close = () => {
+    setLeaving(true)
+    setTimeout(onClose, 220)
+  }
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && close()
+    window.addEventListener('keydown', onKey)
+    document.body.style.overflow = 'hidden'
+    return () => {
+      window.removeEventListener('keydown', onKey)
+      document.body.style.overflow = ''
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+  return (
+    <div className={`drawer-overlay ${leaving ? 'out' : ''}`} onClick={close}>
+      <aside className={`drawer ${side}`} role="dialog" aria-modal="true" aria-label={title} onClick={e => e.stopPropagation()}>
+        <div className="drawer-head">
+          <h2>{title}</h2>
+          <button onClick={close} aria-label="סגירה">
+            <Icon name="close" />
+          </button>
+        </div>
+        <div className="drawer-body">{children}</div>
+      </aside>
+    </div>
+  )
+}
+
 export function Sheet({ title, onClose, children }: { title: string; onClose(): void; children: ReactNode }) {
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => e.key === 'Escape' && onClose()
