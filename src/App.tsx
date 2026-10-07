@@ -6,6 +6,7 @@ import { localStore } from './data/localStore'
 import { supabaseStore } from './data/supabaseStore'
 import { cloudEnabled, supabase } from './data/supabase'
 import { Icon, type IconName } from './components/Icon'
+import { Splash } from './components/Chrome'
 import { HomeScreen } from './screens/HomeScreen'
 import { ServicesScreen } from './screens/ServicesScreen'
 import { DocumentsScreen } from './screens/DocumentsScreen'
@@ -67,19 +68,29 @@ function Main({ email, accountName }: { email: string | null; accountName: strin
   const [sheet, setSheet] = useState<SheetState | null>(null)
   const [drawer, setDrawer] = useState<null | 'cars' | 'settings'>(null)
   const close = () => setSheet(null)
+  // Let the loading animation play once, even when local data loads instantly.
+  const [splashDone, setSplashDone] = useState(false)
+  useEffect(() => {
+    const t = setTimeout(() => setSplashDone(true), 1100)
+    return () => clearTimeout(t)
+  }, [])
+  const openCars = () => setDrawer('cars')
+  const openSettings = () => setDrawer('settings')
 
-  if (loading) return <Splash />
+  if (loading || !splashDone) return <Splash />
 
   return (
     <div className="shell">
       {error && <div className="banner">שגיאה בטעינת הנתונים: {error}</div>}
-      {tab === 'home' || !car ? (
-        <HomeScreen open={setSheet} openCars={() => setDrawer('cars')} openSettings={() => setDrawer('settings')} userName={userName} />
-      ) : tab === 'services' ? (
-        <ServicesScreen open={setSheet} />
-      ) : (
-        <DocumentsScreen open={setSheet} />
-      )}
+      <div className="page" key={car ? tab : 'empty'}>
+        {tab === 'home' || !car ? (
+          <HomeScreen open={setSheet} openCars={openCars} openSettings={openSettings} userName={userName} />
+        ) : tab === 'services' ? (
+          <ServicesScreen open={setSheet} openCars={openCars} openSettings={openSettings} />
+        ) : (
+          <DocumentsScreen open={setSheet} openCars={openCars} openSettings={openSettings} />
+        )}
+      </div>
 
       {car && tab === 'services' && (
         <button className="fab" onClick={() => setSheet({ t: 'service' })} aria-label="טיפול חדש">
@@ -100,13 +111,15 @@ function Main({ email, accountName }: { email: string | null; accountName: strin
               ['home', 'car', 'הרכב'],
               ['services', 'service', 'טיפולים'],
               ['docs', 'docs', 'מסמכים'],
-              ['settings', 'settings', 'הגדרות'],
-            ] as [Tab | 'settings', IconName, string][]
+            ] as [Tab, IconName, string][]
           ).map(([id, icon, label]) => (
             <button
               key={id}
-              className={(id === 'settings' ? drawer === 'settings' : tab === id && !drawer) ? 'on' : ''}
-              onClick={() => (id === 'settings' ? setDrawer('settings') : setTab(id))}
+              className={tab === id ? 'on' : ''}
+              onClick={() => {
+                setTab(id)
+                window.scrollTo({ top: 0, behavior: 'smooth' })
+              }}
             >
               <span className="ico">
                 <Icon name={icon} />
@@ -131,13 +144,6 @@ function Main({ email, accountName }: { email: string | null; accountName: strin
   )
 }
 
-function Splash() {
-  return (
-    <div className="login">
-      <span className="spin" />
-    </div>
-  )
-}
 
 function Login() {
   const [err, setErr] = useState<string | null>(null)

@@ -1,4 +1,5 @@
 import { Drawer } from '../components/ui'
+import { Plate } from '../components/Chrome'
 import { Icon } from '../components/Icon'
 import { useApp } from '../data/AppData'
 import { supabase } from '../data/supabase'
@@ -6,11 +7,11 @@ import { downloadIcs } from '../lib/ics'
 import { fmtNum } from '../lib/i18n'
 import type { OpenSheet } from '../App'
 
-/** Car switcher: opens from the left. */
+/** Car switcher: opens from the right, where its button is. */
 export function CarsDrawer({ open, onClose }: { open: OpenSheet; onClose(): void }) {
   const { data, car, setCarId, actions } = useApp()
   return (
-    <Drawer title="הרכבים שלי" side="end" onClose={onClose}>
+    <Drawer title="הרכבים שלי" side="start" onClose={onClose}>
       <div className="car-list">
         {data.cars.map(c => (
           <div key={c.id} className={`car-pick ${c.id === car?.id ? 'on' : ''}`}>
@@ -26,7 +27,8 @@ export function CarsDrawer({ open, onClose }: { open: OpenSheet; onClose(): void
               </span>
               <span className="car-pick-text">
                 <span className="t">{c.name}</span>
-                <span className="s">{[c.plate, c.year].filter(Boolean).join(' · ')}</span>
+                <span className="s">{[c.make, c.year].filter(Boolean).join(' · ')}</span>
+                {c.plate && <Plate number={c.plate} size="sm" />}
               </span>
               {c.id === car?.id && <Icon name="check" className="car-pick-check" />}
             </button>
@@ -66,7 +68,7 @@ export function CarsDrawer({ open, onClose }: { open: OpenSheet; onClose(): void
   )
 }
 
-/** Settings: opens from the right. */
+/** Settings: opens from the left, where its button is. */
 export function SettingsDrawer({
   email,
   name,
@@ -80,7 +82,7 @@ export function SettingsDrawer({
 }) {
   const { car, km, reminders, store } = useApp()
   return (
-    <Drawer title="הגדרות" side="start" onClose={onClose}>
+    <Drawer title="הגדרות" side="end" onClose={onClose}>
       <section className="drawer-sec">
         <div className="drawer-label">השם שלך</div>
         <input className="in" defaultValue={name} placeholder="למשל: יוסי" onBlur={e => onName(e.target.value.trim())} onKeyDown={e => e.key === 'Enter' && (e.target as HTMLInputElement).blur()} />

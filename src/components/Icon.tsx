@@ -1,5 +1,6 @@
 import {
   Battery,
+  BellPlus,
   Calendar,
   Camera,
   Car,
@@ -19,6 +20,7 @@ import {
   LifeBuoy,
   List,
   Pencil,
+  Receipt,
   Plus,
   Search,
   Settings,
@@ -64,6 +66,8 @@ const ICONS = {
   swap: CarFront,
   search: Search,
   car: Car,
+  reminder: BellPlus,
+  receipt: Receipt,
 } satisfies Record<string, LucideIcon>
 
 export type IconName = keyof typeof ICONS

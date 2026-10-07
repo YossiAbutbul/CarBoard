@@ -1,33 +1,59 @@
 import { useState } from 'react'
 import { FileThumb, Lightbox } from '../components/ui'
 import { Icon, kindIcon } from '../components/Icon'
+import { Glance, GlanceCell, PageHero, TopBar, useCountUp } from '../components/Chrome'
 import { useApp } from '../data/AppData'
-import { fmtDate, fmtKm, fmtMoney } from '../lib/i18n'
+import { KIND } from '../domain/labels'
+import { diffDays, todayIso } from '../lib/dates'
+import { fmtDate, fmtDays, fmtKm, fmtMoney, fmtNum } from '../lib/i18n'
 import { compressImage } from '../lib/image'
 import type { OpenSheet } from '../App'
 
-export function ServicesScreen({ open }: { open: OpenSheet }) {
+export function ServicesScreen({ open, openCars, openSettings }: { open: OpenSheet; openCars(): void; openSettings(): void }) {
   const { data, car, actions } = useApp()
   const [view, setView] = useState<string | null>(null)
   const [busy, setBusy] = useState<string | null>(null)
+  const list = data.services
+    .filter(s => s.car_id === car?.id)
+    .sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : b.km - a.km))
+  const thisYear = String(new Date().getFullYear())
+  const yearTotal = list.filter(s => s.date.startsWith(thisYear)).reduce((n, s) => n + (s.price ?? 0), 0)
+  const totalShown = useCountUp(yearTotal)
   if (!car) return null
 
-  const list = data.services
-    .filter(s => s.car_id === car.id)
-    .sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : b.km - a.km))
   const years = [...new Set(list.map(s => s.date.slice(0, 4)))]
   const total = (y: string) => list.filter(s => s.date.startsWith(y)).reduce((n, s) => n + (s.price ?? 0), 0)
-  const all = list.reduce((n, s) => n + (s.price ?? 0), 0)
+  const last = list[0]
+
+  async function addReceipt(id: string, f: File | undefined) {
+    if (!f) return
+    setBusy(id)
+    try {
+      const ref = await actions.upload('receipt', f.type.startsWith('image/') ? await compressImage(f) : f)
+      await actions.updateService(id, { receipt: ref })
+    } finally {
+      setBusy(null)
+    }
+  }
 
   return (
     <div className="reveal">
-      <header className="top">
-        <div>
-          <div className="eyebrow">{car.name}</div>
+      <PageHero>
+        <TopBar openCars={openCars} openSettings={openSettings} />
+        <div className="greet">
+          <div className="date">{car.name}</div>
           <h1>יומן טיפולים</h1>
         </div>
-        {all > 0 && <span className="pill">סה״כ {fmtMoney(all)}</span>}
-      </header>
+        <Glance>
+          <GlanceCell k={`הוצאות ${thisYear}`} v={fmtMoney(totalShown)} d={`${list.filter(s => s.date.startsWith(thisYear)).length} טיפולים`} />
+          <GlanceCell k="סה״כ טיפולים" v={fmtNum(list.length)} d={years.length ? `מאז ${years[years.length - 1]}` : 'עוד אין'} />
+          <GlanceCell
+            k="טיפול אחרון"
+            v={last ? (diffDays(todayIso(), last.date) <= 0 ? 'היום' : fmtDays(diffDays(todayIso(), last.date))) : '—'}
+            d={last ? `לפני · ${fmtKm(last.km)}` : 'לא נרשם'}
+          />
+        </Glance>
+      </PageHero>
 
       {list.length === 0 && (
         <div className="empty">
@@ -48,58 +74,50 @@ export function ServicesScreen({ open }: { open: OpenSheet }) {
             <span>{y}</span>
             <span>{fmtMoney(total(y))}</span>
           </div>
-          <div className="list">
+          <ol className="timeline">
             {list
               .filter(s => s.date.startsWith(y))
               .map(s => (
-                <div className="item" key={s.id}>
-                  <span className="ic">
+                <li key={s.id} className="tl-item">
+                  <span className="tl-dot">
                     <Icon name={kindIcon(s.type)} />
                   </span>
-                  <div style={{ minWidth: 0 }}>
-                    <div className="t">{s.title}</div>
-                    <div className="s">{[fmtDate(s.date), fmtKm(s.km), s.garage].filter(Boolean).join(' · ')}</div>
-                    {s.notes && <div className="s">{s.notes}</div>}
-                    {s.receipt && (
-                      <div className="thumbs">
-                        <FileThumb fileRef={s.receipt} onOpen={setView} />
+                  <div className="tl-card">
+                    <div className="tl-top">
+                      <div style={{ minWidth: 0 }}>
+                        <div className="t">{s.title}</div>
+                        <div className="s">
+                          {[fmtDate(s.date), fmtKm(s.km), s.garage].filter(Boolean).join(' · ')}
+                        </div>
                       </div>
-                    )}
-                  </div>
-                  <div className="e">
-                    {s.price != null ? fmtMoney(s.price) : '—'}
-                    <div>
-                      <label className="icon-btn" style={{ cursor: 'pointer', display: 'inline-block' }} aria-label={s.receipt ? 'החלפת קבלה' : 'הוספת קבלה'}>
-                        {busy === s.id ? <span className="spin" style={{ width: 17, height: 17 }} /> : <Icon name="camera" />}
-                        <input
-                          type="file"
-                          accept="image/*,application/pdf"
-                          style={{ display: 'none' }}
-                          onChange={async e => {
-                            const f = e.target.files?.[0]
-                            if (!f) return
-                            setBusy(s.id)
-                            try {
-                              const ref = await actions.upload('receipt', f.type.startsWith('image/') ? await compressImage(f) : f)
-                              await actions.updateService(s.id, { receipt: ref })
-                            } finally {
-                              setBusy(null)
-                            }
-                          }}
-                        />
-                      </label>
-                      <button
-                        className="icon-btn"
-                        onClick={() => confirm(`למחוק את "${s.title}"?`) && actions.deleteService(s.id)}
-                        aria-label="מחיקה"
-                      >
-                        <Icon name="trash" />
-                      </button>
+                      <div className="tl-price">{s.price != null ? fmtMoney(s.price) : ''}</div>
+                    </div>
+                    {s.notes && <div className="tl-notes">{s.notes}</div>}
+                    <div className="tl-foot">
+                      <span className="tl-kind">{KIND[s.type].label}</span>
+                      <span className="tl-acts">
+                        {s.receipt && (
+                          <span className="thumbs" style={{ margin: 0 }}>
+                            <FileThumb fileRef={s.receipt} onOpen={setView} />
+                          </span>
+                        )}
+                        <label className="icon-btn" aria-label={s.receipt ? 'החלפת קבלה' : 'הוספת קבלה'}>
+                          {busy === s.id ? <span className="spin" style={{ width: 17, height: 17 }} /> : <Icon name="receipt" />}
+                          <input type="file" accept="image/*,application/pdf" hidden onChange={e => addReceipt(s.id, e.target.files?.[0])} />
+                        </label>
+                        <button
+                          className="icon-btn"
+                          onClick={() => confirm(`למחוק את "${s.title}"?`) && actions.deleteService(s.id)}
+                          aria-label="מחיקה"
+                        >
+                          <Icon name="trash" />
+                        </button>
+                      </span>
                     </div>
                   </div>
-                </div>
+                </li>
               ))}
-          </div>
+          </ol>
         </section>
       ))}
       {view && <Lightbox url={view} onClose={() => setView(null)} />}

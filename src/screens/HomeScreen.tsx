@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Icon, kindIcon } from '../components/Icon'
+import { Glance, GlanceCell, PageHero, TopBar, useCountUp } from '../components/Chrome'
 import { useApp } from '../data/AppData'
 import { STATUS_TEXT } from '../domain/labels'
 import type { Reminder } from '../domain/reminders'
@@ -21,6 +22,7 @@ export function HomeScreen({
 }) {
   const { car, km, reminders, actions } = useApp()
   const [hidden, setHidden] = useState(false)
+  const kmShown = useCountUp(km.value)
 
   if (!car)
     return (
@@ -67,23 +69,8 @@ export function HomeScreen({
 
   return (
     <div className="reveal">
-      <section className="hero">
-        <Dial />
-        <div className="bar">
-          <button onClick={openSettings} aria-label="הגדרות">
-            <Icon name="settings" />
-          </button>
-          <button className="title" onClick={openCars} aria-label="החלפת רכב">
-            <span>
-              {car.name} <span className="caret">▾</span>
-            </span>
-            {car.plate && <small>{car.plate}</small>}
-          </button>
-          <button onClick={openCars} aria-label="הרכבים שלי">
-            <Icon name="swap" />
-          </button>
-        </div>
-
+      <PageHero dial>
+        <TopBar openCars={openCars} openSettings={openSettings} />
         <div className="greet">
           <div className="date">{longDate()}</div>
           <h1>{userName ? `שלום, ${userName}` : greeting()}</h1>
@@ -91,26 +78,26 @@ export function HomeScreen({
             {stateText}
           </div>
         </div>
-
-        <div className="glance">
-          <button onClick={() => open({ t: 'odo' })}>
-            <span className="k">ק״מ</span>
-            <span className="v">{fmtNum(km.value)}</span>
-            <span className="d">{km.checkedDaysAgo ? `הערכה · ${agoText(km.checkedDaysAgo)}` : 'מעודכן היום'}</span>
-          </button>
-          {service && <Glance r={service} title="טיפול הבא" open={open} />}
-          {test && <Glance r={test} title="טסט" open={open} />}
-        </div>
-      </section>
+        <Glance>
+          <GlanceCell
+            k="ק״מ"
+            v={fmtNum(kmShown)}
+            d={km.checkedDaysAgo ? `הערכה · ${agoText(km.checkedDaysAgo)}` : 'מעודכן היום'}
+            onClick={() => open({ t: 'odo' })}
+          />
+          {service && <ReminderCell r={service} title="טיפול הבא" open={open} />}
+          {test && <ReminderCell r={test} title="טסט" open={open} />}
+        </Glance>
+      </PageHero>
 
       <div className="actions">
         <button onClick={() => open({ t: 'odo' })}>
           <Icon name="gauge" />
           עדכון ק״מ
         </button>
-        <button onClick={() => open({ t: 'odo', photo: true })}>
-          <Icon name="camera" />
-          צילום לוח
+        <button onClick={() => open({ t: 'item' })}>
+          <Icon name="reminder" />
+          תזכורת
         </button>
         <button onClick={() => open({ t: 'service' })}>
           <Icon name="service" />
@@ -164,43 +151,15 @@ export function HomeScreen({
   )
 }
 
-function Glance({ r, title, open }: { r: Reminder; title: string; open: OpenSheet }) {
+function ReminderCell({ r, title, open }: { r: Reminder; title: string; open: OpenSheet }) {
   return (
-    <button data-s={r.status} onClick={() => open({ t: 'item', item: r.item })}>
-      <span className="k">{title}</span>
-      <span className="v">{r.status === 'unset' ? '—' : r.headline}</span>
-      <span className="d">
-        <i />
-        {STATUS_TEXT[r.status]}
-      </span>
-    </button>
-  )
-}
-
-/** A faint speedometer dial behind the greeting. */
-function Dial() {
-  const ticks = Array.from({ length: 41 }, (_, i) => -210 + i * 6)
-  return (
-    <svg className="dial" viewBox="0 0 300 300" aria-hidden="true">
-      <circle cx="150" cy="150" r="128" />
-      <circle cx="150" cy="150" r="96" className="thin" />
-      {ticks.map((a, i) => {
-        const r1 = i % 5 === 0 ? 108 : 116
-        const rad = (a * Math.PI) / 180
-        return (
-          <line
-            key={a}
-            x1={150 + Math.cos(rad) * r1}
-            y1={150 + Math.sin(rad) * r1}
-            x2={150 + Math.cos(rad) * 124}
-            y2={150 + Math.sin(rad) * 124}
-            className={i % 5 === 0 ? 'major' : ''}
-          />
-        )
-      })}
-      <path d="M150 150 L232 92" className="needle" />
-      <circle cx="150" cy="150" r="5" className="hub" />
-    </svg>
+    <GlanceCell
+      k={title}
+      v={r.status === 'unset' ? '—' : r.headline}
+      d={STATUS_TEXT[r.status]}
+      s={r.status}
+      onClick={() => open({ t: 'item', item: r.item })}
+    />
   )
 }
 

@@ -75,21 +75,33 @@ export function CarSheet({ car, onClose }: { car?: Car; onClose(): void }) {
     <Sheet title={editing ? 'עריכת רכב' : 'רכב חדש'} onClose={onClose}>
       <div className="card">
         <div className="hint">הקלד מספר רכב. השאר מתמלא לבד.</div>
-        <input
-          className="in plate-in"
-          style={{ marginTop: 8 }}
-          inputMode="numeric"
-          placeholder="12-345-67"
-          value={plate}
-          onChange={e => {
-            setPlate(e.target.value)
-            setInfo(null)
-            const d = plateDigits(e.target.value)
-            if (d.length === 7 || d.length === 8) lookup(e.target.value)
-          }}
-          onBlur={() => !info && lookup()}
-          aria-label="מספר רכב"
-        />
+        <label className="plate-il lg plate-input" dir="ltr">
+          <span className="band" aria-hidden="true">
+            <svg className="flag" viewBox="0 0 22 16">
+              <rect width="22" height="16" fill="#fff" />
+              <rect y="1.6" width="22" height="2.2" fill="#0038b8" />
+              <rect y="12.2" width="22" height="2.2" fill="#0038b8" />
+              <path d="M11 4.6 L14.2 10.1 H7.8 Z M11 11.4 L7.8 5.9 H14.2 Z" fill="none" stroke="#0038b8" strokeWidth="0.9" />
+            </svg>
+            <b>IL</b>
+            <small>ישראל</small>
+            <small className="ar">إسرائيل</small>
+          </span>
+          <input
+            className="num"
+            inputMode="numeric"
+            placeholder="123-45-678"
+            value={plate}
+            onChange={e => {
+              setPlate(e.target.value)
+              setInfo(null)
+              const d = plateDigits(e.target.value)
+              if (d.length === 7 || d.length === 8) lookup(e.target.value)
+            }}
+            onBlur={() => !info && lookup()}
+            aria-label="מספר רכב"
+          />
+        </label>
         {looking && (
           <div className="hint center" style={{ marginTop: 8 }}>
             <span className="spin" style={{ width: 14, height: 14, verticalAlign: 'middle' }} /> מחפש במשרד התחבורה…
