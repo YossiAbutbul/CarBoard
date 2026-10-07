@@ -10,6 +10,7 @@ import {
   Cloud,
   Contact,
   Disc,
+  Download,
   Droplet,
   Ellipsis,
   File,
@@ -24,6 +25,7 @@ import {
   Plus,
   Search,
   Settings,
+  Share2,
   ShieldCheck,
   Smartphone,
   Trash2,
@@ -68,6 +70,8 @@ const ICONS = {
   car: Car,
   reminder: BellPlus,
   receipt: Receipt,
+  share: Share2,
+  download: Download,
 } satisfies Record<string, LucideIcon>
 
 export type IconName = keyof typeof ICONS

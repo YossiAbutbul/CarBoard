@@ -59,6 +59,26 @@ export function makeActions(store: Store, getData: () => Data, refresh: () => Pr
         })
       await refresh()
     },
+    /** Fix a mistyped reading. It must stay between its neighbours in time. */
+    async updateReading(id: string, km: number) {
+      const r = getData().readings.find(x => x.id === id)
+      if (!r) return
+      const others = readingsOf(r.car_id).filter(x => x.id !== id)
+      const before = others.filter(x => x.date < r.date || (x.date === r.date && x.km <= r.km)).sort((a, b) => b.km - a.km)[0]
+      const after = others.filter(x => x.date > r.date).sort((a, b) => a.km - b.km)[0]
+      if (!Number.isFinite(km) || km < 0) throw new Error('מספר ק״מ לא תקין')
+      if (before && km < before.km) throw new Error(`נמוך מהקריאה שלפניה (${before.km.toLocaleString('he-IL')})`)
+      if (after && km > after.km) throw new Error(`גבוה מהקריאה שאחריה (${after.km.toLocaleString('he-IL')})`)
+      await store.update('readings', id, { km: Math.round(km) })
+      await refresh()
+    },
+    async deleteReading(id: string) {
+      const r = getData().readings.find(x => x.id === id)
+      if (!r) return
+      if (readingsOf(r.car_id).length <= 1) throw new Error('זו הקריאה היחידה. אפשר לערוך אותה במקום למחוק.')
+      await store.remove('readings', id)
+      await refresh()
+    },
     async updateService(id: string, patch: Partial<ServiceRecord>) {
       await store.update('services', id, patch)
       await refresh()

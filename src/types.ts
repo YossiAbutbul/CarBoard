@@ -1,6 +1,7 @@
 export type ItemKind = 'service' | 'oil' | 'tyres' | 'brakes' | 'battery' | 'test' | 'insurance' | 'custom'
 export type ReadingSource = 'start' | 'manual' | 'confirm' | 'photo' | 'service'
 export type DocKind = 'licence' | 'insurance' | 'driver' | 'other'
+export type BodyType = 'small' | 'family' | 'suv' | 'van' | 'pickup' | 'sport'
 
 export interface Car {
   id: string
@@ -13,6 +14,8 @@ export interface Car {
   fuel: string | null
   tyres: string | null
   image_url: string | null
+  body?: BodyType | null // avatar body type; null = guess from the model
+  paint?: string | null // avatar colour (hex); null = from the registry colour
 }
 
 export interface Reading {

@@ -113,3 +113,10 @@
 .doc-media + .doc-body .doc-ic { display: none; }
 .doc-foot .state { white-space: nowrap; }
 .doc-foot .s { white-space: nowrap; font-size: 11.5px; }
+
+/* in-place delete confirmation */
+.btn.danger.armed { background: var(--overdue); color: #fff; animation: pop 0.3s var(--ease); }
+.confirm-icon { display: inline-flex; align-items: center; gap: 4px; transition: color 0.15s, background 0.15s; }
+.confirm-icon.armed { color: #fff; background: var(--overdue); padding: 5px 8px; border-radius: 99px; font-size: 12px; font-weight: 600; }
+.confirm-icon.armed svg.i { width: 15px; height: 15px; }
+.tl-card { cursor: pointer; }

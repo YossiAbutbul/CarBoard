@@ -6,6 +6,8 @@ import { FileThumb } from '../components/ui'
 import { Icon, docIcon } from '../components/Icon'
 import { Glance, GlanceCell, PageHero, TopBar } from '../components/Chrome'
 import type { CarDocument } from '../types'
+import { useState } from 'react'
+import { FileViewer, FilesGallery, carFiles } from '../components/FileViewer'
 import type { OpenSheet } from '../App'
 
 function expiryState(expiry: string | null): { s: string; text: string; days: number | null } {
@@ -19,13 +21,14 @@ function expiryState(expiry: string | null): { s: string; text: string; days: nu
 
 export function DocumentsScreen({ open, openCars, openSettings }: { open: OpenSheet; openCars(): void; openSettings(): void }) {
   const { data, car } = useApp()
+  const [viewAll, setViewAll] = useState(false)
   if (!car) return null
+  const files = carFiles(data, car.id)
   const docs = data.documents
     .filter(d => d.car_id === car.id)
     .sort((a, b) => ((a.expiry ?? '9') < (b.expiry ?? '9') ? -1 : 1))
   const next = docs.find(d => d.expiry && diffDays(d.expiry, todayIso()) >= 0)
   const expired = docs.filter(d => d.expiry && diffDays(d.expiry, todayIso()) < 0).length
-  const photos = docs.reduce((n, d) => n + d.files.length, 0)
 
   return (
     <div className="reveal">
@@ -43,7 +46,12 @@ export function DocumentsScreen({ open, openCars, openSettings }: { open: OpenSh
             d={next ? next.title : 'אין תאריכים'}
             onClick={next ? () => open({ t: 'doc', doc: next }) : undefined}
           />
-          <GlanceCell k="צילומים" v={fmtNum(photos)} d="שמורים" />
+          <GlanceCell
+            k="קבצים"
+            v={fmtNum(files.length)}
+            d={files.length ? 'הקש לצפייה' : 'עוד אין'}
+            onClick={files.length ? () => setViewAll(true) : undefined}
+          />
         </Glance>
       </PageHero>
 
@@ -71,6 +79,16 @@ export function DocumentsScreen({ open, openCars, openSettings }: { open: OpenSh
           </button>
         </div>
       )}
+
+      {files.length > 0 && (
+        <>
+          <div className="sec">
+            <h2>כל הקבצים</h2>
+          </div>
+          <FilesGallery files={files} />
+        </>
+      )}
+      {viewAll && <FileViewer files={files} onClose={() => setViewAll(false)} />}
     </div>
   )
 }

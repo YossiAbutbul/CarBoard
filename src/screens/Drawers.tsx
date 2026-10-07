@@ -1,5 +1,7 @@
+import { ConfirmButton } from '../components/ConfirmButton'
 import { Drawer } from '../components/ui'
 import { Plate } from '../components/Chrome'
+import { CarBadge } from '../components/CarAvatar'
 import { Icon } from '../components/Icon'
 import { useApp } from '../data/AppData'
 import { supabase } from '../data/supabase'
@@ -14,26 +16,28 @@ export function CarsDrawer({ open, onClose }: { open: OpenSheet; onClose(): void
     <Drawer title="הרכבים שלי" side="start" onClose={onClose}>
       <div className="car-list">
         {data.cars.map(c => (
-          <div key={c.id} className={`car-pick ${c.id === car?.id ? 'on' : ''}`}>
+          <div key={c.id} className={`car-row ${c.id === car?.id ? 'on' : ''}`}>
             <button
-              className="car-pick-main"
+              className="car-row-main"
               onClick={() => {
                 setCarId(c.id)
                 onClose()
               }}
+              aria-current={c.id === car?.id}
             >
-              <span className="car-pick-head">
-                <span className="t">{c.name}</span>
-                {c.id === car?.id && (
-                  <span className="car-pick-badge">
-                    <Icon name="check" /> נבחר
-                  </span>
-                )}
+              <span className="car-row-pic">
+                <CarBadge car={c} />
               </span>
-              <span className="s">{[c.year, c.color, c.fuel].filter(Boolean).join(' · ')}</span>
-              {c.plate && <Plate number={c.plate} size="md" />}
+              <span className="car-row-info">
+                <span className="t">
+                  {c.name}
+                  {c.id === car?.id && <Icon name="check" className="car-row-check" />}
+                </span>
+                <span className="s">{[c.year, c.color].filter(Boolean).join(' · ')}</span>
+                {c.plate && <Plate number={c.plate} size="sm" />}
+              </span>
             </button>
-            <div className="car-pick-acts">
+            <span className="car-row-acts">
               <button
                 className="icon-btn"
                 onClick={() => {
@@ -44,14 +48,8 @@ export function CarsDrawer({ open, onClose }: { open: OpenSheet; onClose(): void
               >
                 <Icon name="edit" />
               </button>
-              <button
-                className="icon-btn"
-                onClick={() => confirm(`למחוק את ${c.name} וכל הנתונים שלו?`) && actions.deleteCar(c.id)}
-                aria-label={`מחיקת ${c.name}`}
-              >
-                <Icon name="trash" />
-              </button>
-            </div>
+              <ConfirmButton icon label={`מחיקת ${c.name} וכל הנתונים שלו`} onConfirm={() => actions.deleteCar(c.id)} />
+            </span>
           </div>
         ))}
       </div>

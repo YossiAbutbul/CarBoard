@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import type { ItemKind } from '../types'
+import type { ItemKind, ServiceRecord } from '../types'
 import { Sheet } from '../components/ui'
 import { useApp } from '../data/AppData'
 import { KIND, SERVICE_KINDS } from '../domain/labels'
@@ -8,19 +8,20 @@ import { fmtNum } from '../lib/i18n'
 import { todayIso } from '../lib/dates'
 import { Icon, kindIcon } from '../components/Icon'
 
-export function ServiceSheet({ onClose, kind = 'service' }: { onClose(): void; kind?: ItemKind }) {
+/** Add a service, or fix one that was entered wrong (record given). */
+export function ServiceSheet({ onClose, kind = 'service', record }: { onClose(): void; kind?: ItemKind; record?: ServiceRecord }) {
   const { car, km, data, actions } = useApp()
   const lastGarage = useMemo(
     () => [...data.services].filter(s => s.car_id === car?.id && s.garage).sort((a, b) => (a.date < b.date ? 1 : -1))[0]?.garage ?? '',
     [data.services, car?.id],
   )
-  const [type, setType] = useState<ItemKind>(kind)
-  const [title, setTitle] = useState('')
-  const [date, setDate] = useState(todayIso())
-  const [kmV, setKm] = useState(String(km.value || ''))
-  const [price, setPrice] = useState('')
-  const [garage, setGarage] = useState(lastGarage)
-  const [notes, setNotes] = useState('')
+  const [type, setType] = useState<ItemKind>(record?.type ?? kind)
+  const [title, setTitle] = useState(record?.title ?? '')
+  const [date, setDate] = useState(record?.date ?? todayIso())
+  const [kmV, setKm] = useState(String(record?.km ?? (km.value || '')))
+  const [price, setPrice] = useState(record?.price != null ? String(record.price) : '')
+  const [garage, setGarage] = useState(record?.garage ?? lastGarage)
+  const [notes, setNotes] = useState(record?.notes ?? '')
   const [receipt, setReceipt] = useState<Blob | null>(null)
   const [err, setErr] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
@@ -33,8 +34,8 @@ export function ServiceSheet({ onClose, kind = 'service' }: { onClose(): void; k
     setBusy(true)
     setErr(null)
     try {
-      const ref = receipt ? await actions.upload('receipt', await compressImage(receipt)) : null
-      await actions.saveService({
+      const ref = receipt ? await actions.upload('receipt', await compressImage(receipt)) : (record?.receipt ?? null)
+      const fields = {
         car_id: car!.id,
         type,
         title: title.trim() || (type === 'service' ? `טיפול ${fmtNum(Math.round(n / 1000) * 1000)}` : KIND[type].label),
@@ -44,7 +45,9 @@ export function ServiceSheet({ onClose, kind = 'service' }: { onClose(): void; k
         garage: garage.trim() || null,
         notes: notes.trim() || null,
         receipt: ref,
-      })
+      }
+      if (record) await actions.updateService(record.id, fields)
+      else await actions.saveService(fields)
       onClose()
     } catch (e) {
       setErr(e instanceof Error ? e.message : String(e))
@@ -54,7 +57,7 @@ export function ServiceSheet({ onClose, kind = 'service' }: { onClose(): void; k
   }
 
   return (
-    <Sheet title="טיפול חדש" onClose={onClose}>
+    <Sheet title={record ? 'עריכת טיפול' : 'טיפול חדש'} onClose={onClose}>
       <div className="card">
         <span className="lbl" style={{ marginTop: 0 }}>סוג</span>
         <div className="chips">

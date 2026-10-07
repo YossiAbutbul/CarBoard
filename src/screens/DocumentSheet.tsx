@@ -1,3 +1,4 @@
+import { ConfirmButton } from '../components/ConfirmButton'
 import { useState } from 'react'
 import type { CarDocument, DocKind } from '../types'
 import { FileThumb, Lightbox, Sheet } from '../components/ui'
@@ -56,7 +57,7 @@ export function DocumentSheet({ doc, onClose }: { doc?: CarDocument; onClose(): 
   }
 
   async function remove() {
-    if (!doc || !confirm(`למחוק את "${doc.title}"?`)) return
+    if (!doc) return
     await actions.deleteDocument(doc.id)
     onClose()
   }
@@ -111,9 +112,9 @@ export function DocumentSheet({ doc, onClose }: { doc?: CarDocument; onClose(): 
           שמירה
         </button>
         {doc && (
-          <button className="btn danger" style={{ marginTop: 8 }} onClick={remove}>
+          <ConfirmButton className="btn danger" style={{ marginTop: 8 }} onConfirm={remove}>
             מחיקה
-          </button>
+          </ConfirmButton>
         )}
       </div>
       {view && <Lightbox url={view} onClose={() => setView(null)} />}

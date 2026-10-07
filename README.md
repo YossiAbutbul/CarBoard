@@ -26,6 +26,10 @@ With no `.env`, the app runs in **local mode**. That is enough to try everything
 4. **Authentication → URL configuration:** add your site URL, for example `http://localhost:5173`.
 5. Copy `.env.example` to `.env` and fill in `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY`.
 
+### Car avatar columns
+
+Also run [`supabase/migrations/0002_car_avatar.sql`](supabase/migrations/0002_car_avatar.sql). It adds the optional `body` and `paint` columns for the car avatar.
+
 ### Km from a dashboard photo
 
 ```bash

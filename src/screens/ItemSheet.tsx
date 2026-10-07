@@ -1,3 +1,4 @@
+import { ConfirmButton } from '../components/ConfirmButton'
 import { useState } from 'react'
 import type { Item, ItemKind } from '../types'
 import { FileThumb, Lightbox, Sheet } from '../components/ui'
@@ -7,6 +8,7 @@ import { INSURERS, KIND, STATUS_TEXT } from '../domain/labels'
 import { compressImage } from '../lib/image'
 import { fmtDate, fmtKm, fmtMoney } from '../lib/i18n'
 import { uid } from '../lib/uid'
+import { defaultItems } from '../domain/defaults'
 import { Icon } from '../components/Icon'
 
 const numOrNull = (s: string) => (s.trim() ? Number(s.replace(/\D/g, '')) : null)
@@ -111,14 +113,37 @@ export function ItemSheet({ item, onClose, onDone }: { item?: Item; onClose(): v
   }
 
   async function remove() {
-    if (!item || !confirm(`למחוק את התזכורת "${item.label}"?`)) return
+    if (!item) return
     await actions.deleteItem(item.id)
     onClose()
   }
 
+  // Default reminders this car no longer has (deleted by mistake): one tap brings each back.
+  const have = new Set(data.items.filter(i => i.car_id === car.id).map(i => i.kind))
+  const missing = item ? [] : defaultItems(car.id, km.value, null).filter(d => !have.has(d.kind))
+
   return (
     <Sheet title={item ? item.label : 'תזכורת חדשה'} onClose={onClose}>
       <div className="card">
+        {missing.length > 0 && (
+          <div className="restore">
+            <div className="lbl" style={{ marginTop: 0 }}>תזכורות קבועות שנמחקו</div>
+            <div className="chips">
+              {missing.map(d => (
+                <button
+                  key={d.kind}
+                  onClick={async () => {
+                    await actions.saveItem(d)
+                    onClose()
+                  }}
+                >
+                  <Icon name="plus" /> {d.label}
+                </button>
+              ))}
+            </div>
+            <div className="hint" style={{ marginTop: 6 }}>או צרו תזכורת חדשה משלכם:</div>
+          </div>
+        )}
         {item && (
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
             <span className={`chip ${preview.status}`}>{STATUS_TEXT[preview.status]}</span>
@@ -246,9 +271,9 @@ export function ItemSheet({ item, onClose, onDone }: { item?: Item; onClose(): v
           שמירה
         </button>
         {item && (
-          <button className="btn danger" style={{ marginTop: 8 }} onClick={remove}>
+          <ConfirmButton className="btn danger" style={{ marginTop: 8 }} onConfirm={remove}>
             מחיקת תזכורת
-          </button>
+          </ConfirmButton>
         )}
       </div>
       {view && <Lightbox url={view} onClose={() => setView(null)} />}

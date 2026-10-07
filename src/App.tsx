@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import type { Session } from '@supabase/supabase-js'
-import type { Car, CarDocument, Item, ItemKind } from './types'
+import type { Car, CarDocument, Item, ItemKind, ServiceRecord } from './types'
 import { AppDataProvider, useApp } from './data/AppData'
 import { localStore } from './data/localStore'
 import { supabaseStore } from './data/supabaseStore'
@@ -20,7 +20,7 @@ import { CarSheet } from './screens/CarSheet'
 
 export type SheetState =
   | { t: 'odo'; photo?: boolean }
-  | { t: 'service'; kind?: ItemKind }
+  | { t: 'service'; kind?: ItemKind; record?: ServiceRecord }
   | { t: 'item'; item?: Item }
   | { t: 'doc'; doc?: CarDocument }
   | { t: 'car'; car?: Car }
@@ -132,7 +132,7 @@ function Main({ email, accountName }: { email: string | null; accountName: strin
       )}
 
       {sheet?.t === 'odo' && <OdometerSheet onClose={close} startWithPhoto={sheet.photo} />}
-      {sheet?.t === 'service' && <ServiceSheet onClose={close} kind={sheet.kind} />}
+      {sheet?.t === 'service' && <ServiceSheet onClose={close} kind={sheet.kind} record={sheet.record} />}
       {sheet?.t === 'item' && (
         <ItemSheet item={sheet.item} onClose={close} onDone={it => setSheet({ t: 'service', kind: it.kind })} />
       )}

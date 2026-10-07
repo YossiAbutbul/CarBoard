@@ -1,3 +1,4 @@
+import { ConfirmButton } from '../components/ConfirmButton'
 import { useState } from 'react'
 import { FileThumb, Lightbox } from '../components/ui'
 import { Icon, kindIcon } from '../components/Icon'
@@ -82,7 +83,14 @@ export function ServicesScreen({ open, openCars, openSettings }: { open: OpenShe
                   <span className="tl-dot">
                     <Icon name={kindIcon(s.type)} />
                   </span>
-                  <div className="tl-card">
+                  <div
+                    className="tl-card"
+                    role="button"
+                    tabIndex={0}
+                    onClick={e => (e.target as HTMLElement).closest('button, label, img') || open({ t: 'service', record: s })}
+                    onKeyDown={e => e.key === 'Enter' && open({ t: 'service', record: s })}
+                    aria-label={`עריכת ${s.title}`}
+                  >
                     <div className="tl-top">
                       <div style={{ minWidth: 0 }}>
                         <div className="t">{s.title}</div>
@@ -105,13 +113,7 @@ export function ServicesScreen({ open, openCars, openSettings }: { open: OpenShe
                           {busy === s.id ? <span className="spin" style={{ width: 17, height: 17 }} /> : <Icon name="receipt" />}
                           <input type="file" accept="image/*,application/pdf" hidden onChange={e => addReceipt(s.id, e.target.files?.[0])} />
                         </label>
-                        <button
-                          className="icon-btn"
-                          onClick={() => confirm(`למחוק את "${s.title}"?`) && actions.deleteService(s.id)}
-                          aria-label="מחיקה"
-                        >
-                          <Icon name="trash" />
-                        </button>
+                        <ConfirmButton icon label={`מחיקת ${s.title}`} onConfirm={() => actions.deleteService(s.id)} />
                       </span>
                     </div>
                   </div>
