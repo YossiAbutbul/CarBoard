@@ -14,9 +14,14 @@ export default defineConfig({
         lang: 'he',
         dir: 'rtl',
         display: 'standalone',
-        background_color: '#eef0f3',
+        background_color: '#08111f',
         theme_color: '#0b1626',
-        icons: [{ src: 'icon.svg', sizes: 'any', type: 'image/svg+xml', purpose: 'any' }],
+        icons: [
+          { src: 'icon-192.png', sizes: '192x192', type: 'image/png', purpose: 'any' },
+          { src: 'icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'any' },
+          { src: 'icon-maskable-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
+          { src: 'icon.svg', sizes: 'any', type: 'image/svg+xml', purpose: 'any' },
+        ],
       },
       // The background-removal model (onnxruntime) loads on demand, so keep it out of the precache.
       workbox: {
