@@ -30,7 +30,7 @@ export function TopBar({ openCars, openSettings }: { openCars(): void; openSetti
   const { car } = useApp()
   return (
     <div className="bar">
-      <button onClick={openCars} aria-label="הרכבים שלי">
+      <button onClick={openCars} aria-label="הרכבים שלי" data-tour="cars">
         <Icon name="swap" />
       </button>
       <button className="title" onClick={openCars} aria-label="החלפת רכב">
@@ -39,7 +39,7 @@ export function TopBar({ openCars, openSettings }: { openCars(): void; openSetti
         </span>
         {car?.plate && <Plate number={car.plate} size="sm" />}
       </button>
-      <button onClick={openSettings} aria-label="הגדרות">
+      <button onClick={openSettings} aria-label="הגדרות" data-tour="settings">
         <Icon name="settings" />
       </button>
     </div>
@@ -117,15 +117,17 @@ export function GlanceCell({
   d,
   s,
   onClick,
+  tour,
 }: {
   k: string
   v: ReactNode
   d: ReactNode
   s?: string
   onClick?(): void
+  tour?: string
 }) {
   return (
-    <button data-s={s} onClick={onClick} disabled={!onClick}>
+    <button data-s={s} onClick={onClick} disabled={!onClick} data-tour={tour}>
       <span className="k">{k}</span>
       <span className="v">{v}</span>
       <span className="d">

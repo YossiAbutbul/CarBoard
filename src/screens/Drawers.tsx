@@ -72,11 +72,13 @@ export function SettingsDrawer({
   email,
   name,
   onName,
+  onTour,
   onClose,
 }: {
   email: string | null
   name: string
   onName(n: string): void
+  onTour(): void
   onClose(): void
 }) {
   const { car, km, reminders, store } = useApp()
@@ -87,6 +89,13 @@ export function SettingsDrawer({
         <input className="in" defaultValue={name} placeholder="למשל: יוסי" onBlur={e => onName(e.target.value.trim())} onKeyDown={e => e.key === 'Enter' && (e.target as HTMLInputElement).blur()} />
         <div className="hint" style={{ marginTop: 6 }}>מופיע בברכה במסך הבית.</div>
       </section>
+      {car && (
+        <section className="drawer-sec">
+          <button className="btn" style={{ background: 'var(--card)' }} onClick={onTour}>
+            <Icon name="search" /> סיור באפליקציה
+          </button>
+        </section>
+      )}
       {car && (
         <section className="drawer-sec">
           <div className="drawer-label">יומן</div>

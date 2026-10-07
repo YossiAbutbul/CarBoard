@@ -1,4 +1,6 @@
 import {
+  ArrowLeft,
+  ArrowRight,
   Battery,
   BellPlus,
   Calendar,
@@ -72,6 +74,8 @@ const ICONS = {
   receipt: Receipt,
   share: Share2,
   download: Download,
+  forward: ArrowLeft, // RTL: "next" points left
+  back: ArrowRight,
 } satisfies Record<string, LucideIcon>
 
 export type IconName = keyof typeof ICONS

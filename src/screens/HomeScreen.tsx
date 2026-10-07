@@ -84,13 +84,14 @@ export function HomeScreen({
             v={fmtNum(kmShown)}
             d={km.checkedDaysAgo ? `הערכה · ${km.checkedDaysAgo} ימים` : 'מעודכן היום'}
             onClick={() => open({ t: 'odo' })}
+            tour="km"
           />
-          {service && <ReminderCell r={service} title="טיפול הבא" open={open} />}
-          {test && <ReminderCell r={test} title="טסט" open={open} />}
+          {service && <ReminderCell r={service} title="טיפול הבא" open={open} tour="service" />}
+          {test && <ReminderCell r={test} title="טסט" open={open} tour="test" />}
         </Glance>
       </PageHero>
 
-      <div className="actions">
+      <div className="actions" data-tour="actions">
         <button onClick={() => open({ t: 'odo' })}>
           <Icon name="gauge" />
           עדכון ק״מ
@@ -142,7 +143,7 @@ export function HomeScreen({
           <Icon name="plus" /> תזכורת
         </button>
       </div>
-      <div className="tiles" style={{ marginTop: 0 }}>
+      <div className="tiles" style={{ marginTop: 0 }} data-tour="tiles">
         {reminders.map(r => (
           <Tile key={r.item.id} r={r} open={open} />
         ))}
@@ -151,7 +152,7 @@ export function HomeScreen({
   )
 }
 
-function ReminderCell({ r, title, open }: { r: Reminder; title: string; open: OpenSheet }) {
+function ReminderCell({ r, title, open, tour }: { r: Reminder; title: string; open: OpenSheet; tour?: string }) {
   return (
     <GlanceCell
       k={title}
@@ -160,6 +161,7 @@ function ReminderCell({ r, title, open }: { r: Reminder; title: string; open: Op
       d={r.headline.endsWith('ק״מ') ? `ק״מ · ${STATUS_TEXT[r.status]}` : STATUS_TEXT[r.status]}
       s={r.status}
       onClick={() => open({ t: 'item', item: r.item })}
+      tour={tour}
     />
   )
 }

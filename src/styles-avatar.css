@@ -184,3 +184,43 @@
 .cal .rdp-chevron { fill: var(--ink); }
 .cal-foot .link { font-size: 14px; font-weight: 600; color: var(--blue); padding: 8px 4px; }
 .cal-foot .link.danger { color: var(--overdue); }
+
+/* ─── first run ─── */
+.onb { position: relative; margin: 0 -16px -88px; min-height: 100dvh; display: flex; flex-direction: column; padding: max(28px, env(safe-area-inset-top)) 24px max(24px, env(safe-area-inset-bottom)); color: #fff; overflow: hidden;
+  background: radial-gradient(120% 70% at 85% 0%, #2a4670 0%, transparent 60%), linear-gradient(180deg, var(--hero-1) 0%, #13233b 55%, #1c3150 100%); }
+.onb-dots { position: relative; display: flex; gap: 6px; }
+.onb-dots i { width: 18px; height: 4px; border-radius: 4px; background: rgba(255, 255, 255, 0.22); transition: all 0.4s var(--ease); }
+.onb-dots i.on { width: 34px; background: #fff; }
+.onb-dots i.done { background: rgba(255, 255, 255, 0.6); }
+.onb-step { position: relative; flex: 1; display: flex; flex-direction: column; padding-top: 22vh; }
+.onb-step > * { animation: rise 0.6s var(--ease) both; }
+.onb-step > *:nth-child(2) { animation-delay: 0.08s; } .onb-step > *:nth-child(3) { animation-delay: 0.16s; } .onb-step > *:nth-child(n + 4) { animation-delay: 0.24s; }
+.onb .eyebrow { color: rgba(255, 255, 255, 0.6); letter-spacing: 0.02em; }
+.onb h1 { margin: 10px 0 0; font-size: 44px; line-height: 1.04; font-weight: 600; letter-spacing: -0.03em; }
+.onb p { margin: 16px 0 0; font-size: 16px; line-height: 1.5; color: rgba(255, 255, 255, 0.72); max-width: 320px; }
+.onb-in { margin-top: 28px; font-size: 20px; padding: 16px; background: rgba(255, 255, 255, 0.08); color: #fff; box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.18); border-radius: 14px; }
+.onb-in::placeholder { color: rgba(255, 255, 255, 0.4); }
+.onb-in:focus { box-shadow: inset 0 0 0 2px #fff; outline: none; }
+.onb-cta { margin-top: auto; background: #fff; color: var(--ink); padding: 16px; font-size: 16px; }
+.onb-cta svg.i { width: 18px; height: 18px; transition: transform 0.2s var(--ease); }
+.onb-cta:hover svg.i { transform: translateX(-3px); }
+.onb-back { margin-top: 10px; padding: 10px; color: rgba(255, 255, 255, 0.6); font-size: 14px; }
+.onb-back:hover { color: #fff; }
+
+/* ─── tour ─── */
+.tour { position: fixed; inset: 0; z-index: 90; animation: fade 0.3s ease-out; }
+.tour-hole { position: fixed; border-radius: 18px; box-shadow: 0 0 0 9999px rgba(8, 16, 28, 0.66), 0 0 0 2px rgba(255, 255, 255, 0.9); transition: top 0.45s var(--ease), left 0.45s var(--ease), width 0.45s var(--ease), height 0.45s var(--ease), border-radius 0.45s; pointer-events: none; }
+.tour-hole.none { top: 50%; left: 50%; width: 0; height: 0; box-shadow: 0 0 0 9999px rgba(8, 16, 28, 0.66); }
+.tour-card { position: fixed; left: 16px; right: 16px; max-width: 420px; margin: 0 auto; background: #fff; border-radius: 20px; padding: 16px 18px 14px; box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3); animation: rise 0.35s var(--ease) both 0.1s; }
+.tour-top { display: flex; justify-content: space-between; align-items: center; }
+.tour-count { font-size: 12px; font-weight: 600; color: var(--blue); font-variant-numeric: tabular-nums; }
+.tour-skip { font-size: 13px; color: var(--muted); padding: 4px; }
+.tour-skip:hover { color: var(--ink); }
+.tour-card b { display: block; margin-top: 6px; font-size: 19px; font-weight: 600; letter-spacing: -0.01em; }
+.tour-card p { margin: 6px 0 0; font-size: 14.5px; line-height: 1.5; color: var(--ink-2); }
+.tour-bar { display: flex; align-items: center; gap: 10px; margin-top: 14px; }
+.tour-progress { flex: 1; height: 4px; border-radius: 4px; background: var(--card); overflow: hidden; }
+.tour-progress i { display: block; height: 100%; background: var(--blue); border-radius: 4px; transition: width 0.4s var(--ease); }
+.tour-prev { width: 40px; height: 40px; display: grid; place-items: center; color: var(--muted); }
+.tour-prev:hover { color: var(--ink); }
+.tour-next { width: auto; padding: 10px 22px; }

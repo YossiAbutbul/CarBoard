@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import type { Session } from '@supabase/supabase-js'
 import type { Car, CarDocument, Item, ItemKind, ServiceRecord } from './types'
 import { AppDataProvider, useApp } from './data/AppData'
@@ -17,6 +17,7 @@ import { ServiceSheet } from './screens/ServiceSheet'
 import { ItemSheet } from './screens/ItemSheet'
 import { DocumentSheet } from './screens/DocumentSheet'
 import { CarSheet } from './screens/CarSheet'
+import { Intro, Tour, isOnboarded, markOnboarded } from './screens/Onboarding'
 
 export type SheetState =
   | { t: 'odo' }
@@ -77,13 +78,45 @@ function Main({ email, accountName }: { email: string | null; accountName: strin
   const openCars = () => setDrawer('cars')
   const openSettings = () => setDrawer('settings')
 
+  // First run: name and car (Intro), then a walk over the home screen (Tour).
+  const [guide, setGuide] = useState<'intro' | 'tour' | 'done'>(() => (isOnboarded() ? 'done' : 'intro'))
+  const addingFromIntro = useRef(false)
+  useEffect(() => {
+    if (loading || guide !== 'intro' || !car) return
+    // a car added from the intro starts the tour; someone who already has cars skips the guide
+    if (addingFromIntro.current) setGuide('tour')
+    else {
+      markOnboarded()
+      setGuide('done')
+    }
+  }, [car, loading, guide])
+  const endTour = () => {
+    markOnboarded()
+    setGuide('done')
+  }
+  const startTour = () => {
+    setDrawer(null)
+    setTab('home')
+    window.scrollTo({ top: 0 })
+    setTimeout(() => setGuide('tour'), 450) // let the drawer close and the page arrive
+  }
+
   if (loading || !splashDone) return <Splash />
 
   return (
     <div className="shell">
       {error && <div className="banner">שגיאה בטעינת הנתונים: {error}</div>}
       <div className="page" key={car ? tab : 'empty'}>
-        {tab === 'home' || !car ? (
+        {!car && guide === 'intro' ? (
+          <Intro
+            name={userName ?? ''}
+            onName={saveName}
+            onAddCar={() => {
+              addingFromIntro.current = true
+              setSheet({ t: 'car' })
+            }}
+          />
+        ) : tab === 'home' || !car ? (
           <HomeScreen open={setSheet} openCars={openCars} openSettings={openSettings} userName={userName} />
         ) : tab === 'services' ? (
           <ServicesScreen open={setSheet} openCars={openCars} openSettings={openSettings} />
@@ -104,7 +137,7 @@ function Main({ email, accountName }: { email: string | null; accountName: strin
       )}
 
       {car && (
-        <nav className="nav">
+        <nav className="nav" data-tour="nav">
           <div>
           {(
             [
@@ -139,7 +172,8 @@ function Main({ email, accountName }: { email: string | null; accountName: strin
       {sheet?.t === 'doc' && <DocumentSheet doc={sheet.doc} onClose={close} />}
       {sheet?.t === 'car' && <CarSheet car={sheet.car} onClose={close} />}
       {drawer === 'cars' && <CarsDrawer open={setSheet} onClose={() => setDrawer(null)} />}
-      {drawer === 'settings' && <SettingsDrawer email={email} name={localName} onName={saveName} onClose={() => setDrawer(null)} />}
+      {drawer === 'settings' && <SettingsDrawer email={email} name={localName} onName={saveName} onTour={startTour} onClose={() => setDrawer(null)} />}
+      {guide === 'tour' && car && tab === 'home' && !sheet && <Tour name={userName ?? ''} onDone={endTour} />}
     </div>
   )
 }
