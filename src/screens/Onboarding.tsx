@@ -159,31 +159,32 @@ export function Tour({ name, onDone }: { name: string; onDone(): void }) {
         className={`tour-hole ${rect ? '' : 'none'}`}
         style={rect ? { top: rect.top - pad, left: rect.left - pad, width: rect.width + pad * 2, height: rect.height + pad * 2 } : undefined}
       />
-      <div className="tour-card" style={cardStyle} key={i}>
-        <div className="tour-top">
+      <div className="tour-card" style={cardStyle}>
+        <div className="tour-progress" aria-hidden="true">
+          <i style={{ width: `${((i + 1) / list.length) * 100}%` }} />
+        </div>
+        <div className="tour-body" key={i}>
           <span className="tour-count">
             {i + 1} מתוך {list.length}
           </span>
+          <b>{stop.title}</b>
+          <p>{stop.text}</p>
+        </div>
+        <div className="tour-bar">
+          <button className="tour-btn pri" onClick={() => (last ? onDone() : setI(i + 1))}>
+            {last ? 'יאללה' : 'הבא'}
+            {!last && <Icon name="forward" />}
+          </button>
+          {i > 0 && (
+            <button className="tour-btn" onClick={() => setI(i - 1)}>
+              הקודם
+            </button>
+          )}
           {!last && (
             <button className="tour-skip" onClick={onDone}>
               דילוג
             </button>
           )}
-        </div>
-        <b>{stop.title}</b>
-        <p>{stop.text}</p>
-        <div className="tour-bar">
-          <div className="tour-progress">
-            <i style={{ width: `${((i + 1) / list.length) * 100}%` }} />
-          </div>
-          {i > 0 && (
-            <button className="tour-prev" onClick={() => setI(i - 1)} aria-label="הקודם">
-              <Icon name="back" />
-            </button>
-          )}
-          <button className="btn pri tour-next" onClick={() => (last ? onDone() : setI(i + 1))}>
-            {last ? 'יאללה' : 'הבא'}
-          </button>
         </div>
       </div>
     </div>,
