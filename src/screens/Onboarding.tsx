@@ -2,6 +2,9 @@ import { useEffect, useLayoutEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { Icon } from '../components/Icon'
 import { Scene } from '../components/Scene'
+import { Plate } from '../components/Chrome'
+import { CarToy } from '../components/CarAvatar'
+import type { Car } from '../types'
 
 const KEY = 'car-records:onboarded'
 
@@ -34,7 +37,7 @@ export function Intro({ name, onName, onAddCar }: { name: string; onName(n: stri
     <div className="onb">
       <Scene />
       <div className="onb-dots" aria-hidden="true">
-        {[0, 1, 2].map(i => (
+        {[0, 1, 2, 3].map(i => (
           <i key={i} className={i === step ? 'on' : i < step ? 'done' : ''} />
         ))}
       </div>
@@ -86,6 +89,38 @@ export function Intro({ name, onName, onAddCar }: { name: string; onName(n: stri
           </button>
         </div>
       )}
+    </div>
+  )
+}
+
+/** After the first car is saved: a pause before the tour. */
+export function Ready({ name, car, onStart, onSkip }: { name: string; car: Car; onStart(): void; onSkip(): void }) {
+  const first = name.trim().split(' ')[0]
+  return (
+    <div className="onb">
+      <Scene />
+      <div className="onb-dots" aria-hidden="true">
+        {[0, 1, 2, 3].map(i => (
+          <i key={i} className={i === 3 ? 'on' : 'done'} />
+        ))}
+      </div>
+      <div className="onb-step ready">
+        <div className="ready-car">
+          <CarToy car={car} className="ready-toy" />
+          {car.plate && <Plate number={car.plate} />}
+        </div>
+        <div className="eyebrow">
+          <Icon name="check" /> הרכב נוסף
+        </div>
+        <h1>{first ? `הכל מוכן, ${first}.` : 'הכל מוכן.'}</h1>
+        <p>הוספנו תזכורות לטסט, לטיפול, לביטוח ועוד. בוא נעשה סיור קצר במסך הבית, פחות מדקה.</p>
+        <button className="btn onb-cta" onClick={onStart}>
+          בוא נתחיל <Icon name="forward" />
+        </button>
+        <button className="onb-back" onClick={onSkip}>
+          דילוג על הסיור
+        </button>
+      </div>
     </div>
   )
 }

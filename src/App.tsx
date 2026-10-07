@@ -20,7 +20,7 @@ import { ServiceSheet } from './screens/ServiceSheet'
 import { ItemSheet } from './screens/ItemSheet'
 import { DocumentSheet } from './screens/DocumentSheet'
 import { CarSheet } from './screens/CarSheet'
-import { Intro, Tour, isOnboarded, markOnboarded } from './screens/Onboarding'
+import { Intro, Ready, Tour, isOnboarded, markOnboarded } from './screens/Onboarding'
 
 export type SheetState =
   | { t: 'odo' }
@@ -106,12 +106,12 @@ function Main({ email, accountName, guest = false }: { email: string | null; acc
   const openSettings = () => setDrawer('settings')
 
   // First run: name and car (Intro), then a walk over the home screen (Tour).
-  const [guide, setGuide] = useState<'intro' | 'tour' | 'done'>(() => (isOnboarded() ? 'done' : 'intro'))
+  const [guide, setGuide] = useState<'intro' | 'ready' | 'tour' | 'done'>(() => (isOnboarded() ? 'done' : 'intro'))
   const addingFromIntro = useRef(false)
   useEffect(() => {
     if (loading || guide !== 'intro' || !car) return
-    // a car added from the intro starts the tour; someone who already has cars skips the guide
-    if (addingFromIntro.current) setGuide('tour')
+    // a car added from the intro leads to the "all set" screen; someone who already has cars skips the guide
+    if (addingFromIntro.current) setGuide('ready')
     else {
       markOnboarded()
       setGuide('done')
@@ -133,8 +133,18 @@ function Main({ email, accountName, guest = false }: { email: string | null; acc
   return (
     <div className="shell">
       {error && <div className="banner">שגיאה בטעינת הנתונים: {error}</div>}
-      <div className="page" key={car ? tab : 'empty'}>
-        {!car && guide === 'intro' ? (
+      <div className="page" key={car && guide === 'ready' ? 'ready' : car ? tab : 'empty'}>
+        {car && guide === 'ready' ? (
+          <Ready
+            name={userName ?? ''}
+            car={car}
+            onStart={() => {
+              setTab('home')
+              setGuide('tour')
+            }}
+            onSkip={endTour}
+          />
+        ) : !car && guide === 'intro' ? (
           <Intro
             name={userName ?? ''}
             onName={saveName}
@@ -163,7 +173,7 @@ function Main({ email, accountName, guest = false }: { email: string | null; acc
         </button>
       )}
 
-      {car && (
+      {car && guide !== 'ready' && (
         <nav className="nav" data-tour="nav">
           <div>
           {(
