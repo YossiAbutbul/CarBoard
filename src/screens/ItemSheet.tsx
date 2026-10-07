@@ -16,8 +16,9 @@ export function ItemSheet({ item, onClose, onDone }: { item?: Item; onClose(): v
   const { car, km, data, actions } = useApp()
   const isInsurance = item?.kind === 'insurance'
   const byDate = item?.kind === 'insurance' || item?.kind === 'test'
-  // To the user the insurance reminder and the insurance document are one thing.
-  const doc = isInsurance ? data.documents.find(d => d.car_id === car?.id && d.kind === 'insurance') : undefined
+  // To the user these reminders and their documents are one thing: insurance ↔ policy, test ↔ car licence.
+  const docKind = item?.kind === 'insurance' ? 'insurance' : item?.kind === 'test' ? 'licence' : null
+  const doc = docKind ? data.documents.find(d => d.car_id === car?.id && d.kind === docKind) : undefined
 
   const [label, setLabel] = useState(item?.label ?? '')
   const [everyKm, setEveryKm] = useState(item?.every_km?.toString() ?? '')
@@ -52,7 +53,7 @@ export function ItemSheet({ item, onClose, onDone }: { item?: Item; onClose(): v
     try {
       const refs: string[] = []
       for (const f of Array.from(list))
-        refs.push(await actions.upload('insurance', f.type.startsWith('image/') ? await compressImage(f) : f))
+        refs.push(await actions.upload(docKind ?? 'doc', f.type.startsWith('image/') ? await compressImage(f) : f))
       setFiles(fs => [...fs, ...refs])
     } catch (e) {
       setErr(e instanceof Error ? e.message : String(e))
@@ -65,12 +66,12 @@ export function ItemSheet({ item, onClose, onDone }: { item?: Item; onClose(): v
     setBusy(true)
     try {
       await actions.saveItem(draft)
-      if (isInsurance && (provider.trim() || policy.trim() || files.length || doc))
+      if (docKind && (provider.trim() || policy.trim() || files.length || doc))
         await actions.saveDocument({
           id: doc?.id ?? uid(),
           car_id: car!.id,
-          kind: 'insurance',
-          title: doc?.title ?? 'ביטוח',
+          kind: docKind,
+          title: doc?.title ?? (docKind === 'insurance' ? 'ביטוח' : 'רישיון רכב'),
           provider: provider.trim() || null,
           number: policy.trim() || null,
           expiry: draft.due_date,
@@ -153,9 +154,9 @@ export function ItemSheet({ item, onClose, onDone }: { item?: Item; onClose(): v
           </>
         )}
 
-        {isInsurance && (
+        {docKind && (
           <>
-            <label className="lbl">תמונה של הביטוח</label>
+            <label className="lbl">{isInsurance ? 'תמונה של הביטוח' : 'תמונה של רישיון הרכב'}</label>
             {files.length > 0 && (
               <div className="thumbs" style={{ marginBottom: 10 }}>
                 {files.map(f => (
@@ -173,7 +174,7 @@ export function ItemSheet({ item, onClose, onDone }: { item?: Item; onClose(): v
                 <span className="spin" />
               ) : (
                 <>
-                  <Icon name="camera" /> {files.length ? 'הוספת עוד תמונה' : 'צילום או העלאת הפוליסה'}
+                  <Icon name="camera" /> {files.length ? 'הוספת עוד תמונה' : isInsurance ? 'צילום או העלאת הפוליסה' : 'צילום או העלאת רישיון הרכב'}
                 </>
               )}
               <input type="file" accept="image/*,application/pdf" multiple onChange={e => addFiles(e.target.files)} />
