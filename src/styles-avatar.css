@@ -726,3 +726,4 @@ html, body { overscroll-behavior-y: none; }
 @media (prefers-reduced-motion: reduce) { .studio-toy, .studio-stage::before { animation: none; } }
 /* cars list: a darker base, so a white car does not vanish into its tile */
 .car-row-pic, .car-row.on .car-row-pic { background: color-mix(in srgb, var(--tint, #8a94a1) 18%, #e2e7ee); }
+.studio-toy { margin-bottom: 8px; } /* the wheels on the asphalt, in the near lane */
