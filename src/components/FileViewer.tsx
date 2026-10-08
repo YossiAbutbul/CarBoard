@@ -341,7 +341,9 @@ export function FileViewer({
             <button onClick={() => zoomBy(-1)} disabled={zoom <= ZOOMS[0]} aria-label="הקטנה">
               <Icon name="zoomOut" />
             </button>
-            <button className="zoom-level" onClick={() => setZoom(1)} aria-label="גודל רגיל">
+            {/* tapping the size returns to 100%; the arrow shows it can, whenever it is not 100% */}
+            <button className={`zoom-level ${zoom !== 1 ? 'can-reset' : ''}`} onClick={() => setZoom(1)} aria-label="חזרה לגודל רגיל" disabled={zoom === 1}>
+              {zoom !== 1 && <Icon name="reset" />}
               {Math.round(zoom * 100)}%
             </button>
             <button onClick={() => zoomBy(1)} disabled={zoom >= ZOOMS[ZOOMS.length - 1]} aria-label="הגדלה">

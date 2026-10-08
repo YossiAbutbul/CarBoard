@@ -38,6 +38,7 @@ import {
   RefreshCw,
   ZoomIn,
   ZoomOut,
+  Shrink,
   type LucideIcon,
 } from 'lucide-react'
 import type { DocKind, ItemKind } from '../types'
@@ -83,6 +84,7 @@ const ICONS = {
   back: ArrowRight,
   zoomIn: ZoomIn,
   refresh: RefreshCw,
+  reset: Shrink, // back to the normal size (arrows in, not a circle: that would read as "rotate")
   family: Users,
   link: Link2,
   zoomOut: ZoomOut,

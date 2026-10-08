@@ -370,7 +370,10 @@
 .zoom-bar button:hover:not(:disabled) { background: rgba(255, 255, 255, 0.12); }
 .zoom-bar button:disabled { opacity: 0.35; }
 .zoom-bar button svg.i { width: 19px; height: 19px; }
-.zoom-bar .zoom-level { width: 58px; font-size: 13px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.zoom-bar .zoom-level { width: 58px; font-size: 13px; font-weight: 600; font-variant-numeric: tabular-nums; display: flex; justify-content: center; gap: 4px; transition: width 0.2s var(--ease), background 0.15s; }
+.zoom-bar .zoom-level:disabled { opacity: 1; }
+.zoom-bar .zoom-level.can-reset { width: 76px; }
+.zoom-bar .zoom-level svg.i { width: 14px; height: 14px; opacity: 0.8; }
 .pdf-pages, .pdf-thumb { direction: ltr; }
 .pannable { cursor: grab; }
 .pannable img { cursor: grab !important; }
