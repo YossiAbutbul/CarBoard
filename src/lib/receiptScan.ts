@@ -11,6 +11,7 @@ export interface ScannedFuel {
   perLiter: number | null
   total: number | null
   date: string | null // YYYY-MM-DD
+  time: string | null // HH:MM
   station: string | null
 }
 
@@ -65,10 +66,13 @@ export function parseFuelReceipt(text: string): ScannedFuel {
     const day = Number(d[1])
     if (mo >= 1 && mo <= 12 && day >= 1 && day <= 31 && y >= 2015 && y <= 2100) date = `${y}-${String(mo).padStart(2, '0')}-${String(day).padStart(2, '0')}`
   }
+  // time: 09:19:50 or 9:19
+  const tm = text.match(/\b([01]?\d|2[0-3]):([0-5]\d)(?::[0-5]\d)?\b/)
+  const time = tm ? `${tm[1].padStart(2, '0')}:${tm[2]}` : null
   const lower = text.toLowerCase()
   const station = STATIONS.find(s => lower.includes(s.toLowerCase())) ?? null
 
-  return { liters: litersFound, perLiter, total, date, station: station && station === 'ten' ? 'טן' : station === 'yellow' ? 'ילו' : station }
+  return { liters: litersFound, perLiter, total, date, time, station: station && station === 'ten' ? 'טן' : station === 'yellow' ? 'ילו' : station }
 }
 
 /** Draws the file (PDF: its first page; or a photo) big enough for OCR. */

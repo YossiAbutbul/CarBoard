@@ -2,6 +2,7 @@ import type { Car, CarDocument, Data, Fuel, Item, Reading, ReadingSource, Servic
 import type { Store } from './store'
 import { defaultItems, STARTER } from '../domain/defaults'
 import { lookupPlate } from '../lib/govil'
+import { findDuplicateFuel } from '../domain/fuel'
 import { readingError } from '../domain/odometer'
 import { addMonths, todayIso } from '../lib/dates'
 import { uid } from '../lib/uid'
@@ -166,6 +167,8 @@ export function makeActions(store: Store, getData: () => Data, refresh: () => Pr
     /** Saves a fill-up (new or edited). Its km, when given and the latest, is also a km reading. */
     async saveFuel(f: Fuel) {
       const exists = getData().fuel.some(x => x.id === f.id)
+      // the same receipt twice (scanned again, or saved twice) is one fill-up
+      if (!exists && findDuplicateFuel(getData().fuel, f)) throw new Error('התדלוק הזה כבר רשום. לא נוסף שוב.')
       if (exists) await store.update('fuel', f.id, f)
       else await store.insert('fuel', f)
       if (f.km && !exists) {

@@ -70,7 +70,9 @@ export function FuelScreen({ open, openCars, openSettings }: { open: OpenSheet; 
                       </span>
                       <span className="fuel-main">
                         <span className="t">{f.station ?? 'תדלוק'}</span>
-                        <span className="s">{[fmtShortDate(f.date), f.liters != null && `${f.liters} ל׳`, f.km != null && `${fmtNum(f.km)} ק״מ`].filter(Boolean).join(' · ')}</span>
+                        <span className="s">
+                          {[fmtShortDate(f.date), f.liters != null && `${f.liters} ל׳`, perLiter(f) != null && `₪${perLiter(f)!.toFixed(2)} לל׳`, f.km != null && `${fmtNum(f.km)} ק״מ`].filter(Boolean).join(' · ')}
+                        </span>
                       </span>
                       <span className="fuel-price">{f.price != null ? fmtMoney(f.price) : ''}</span>
                     </button>
@@ -191,7 +193,7 @@ function FuelReceipt({ fill, fills, onClose, onEdit }: { fill: Fuel; fills: Fuel
           <div className="r-head">
             <Icon name="fuel" />
             <b>{fill.station ?? 'תחנת דלק'}</b>
-            <span>{fmtDate(fill.date)}</span>
+            <span>{fmtDate(fill.date)}{fill.time ? ` · ${fill.time}` : ''}</span>
             <span dir="ltr">#{no}</span>
           </div>
           <div className="r-cut" />

@@ -28,7 +28,7 @@ const SONOL = `מסמך ממוחשב
 
 describe('fuel receipt', () => {
   it('reads liters, price per liter, total, date and station from a real receipt', () => {
-    expect(parseFuelReceipt(SONOL)).toEqual({ liters: 30.849, perLiter: 7.75, total: 239.08, date: '2026-09-16', station: 'סונול' })
+    expect(parseFuelReceipt(SONOL)).toEqual({ liters: 30.849, perLiter: 7.75, total: 239.08, date: '2026-09-16', time: '09:19', station: 'סונול' })
   })
 
   it('finds the numbers by liters × price = total, whatever the lines are called', () => {

@@ -26,9 +26,10 @@ export function FuelSheet({ record, onClose }: { record?: Fuel; onClose(): void 
   const [kmV, setKm] = useState(record?.km != null ? String(record.km) : '')
   const [station, setStation] = useState(record?.station ?? lastStation)
   const [full, setFull] = useState(record?.full ?? true)
+  const [time, setTime] = useState<string | null>(record?.time ?? null) // from a scanned receipt
   const [err, setErr] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
-  const dirty = useDirty([date, liters, price, kmV, station, full])
+  const dirty = useDirty([date, time, liters, price, kmV, station, full])
   const [scan, setScan] = useState<{ p: number } | null>(null)
   const [scanNote, setScanNote] = useState<string | null>(null)
   if (!car) return null
@@ -64,6 +65,7 @@ export function FuelSheet({ record, onClose }: { record?: Fuel; onClose(): void 
       if (r.liters != null) setLiters(String(r.liters))
       if (r.total != null) setPrice(String(r.total))
       if (useDate) setDate(useDate)
+      setTime(useDate ? r.time : null)
       if (r.station) setStation(r.station)
       setScanNote('מולא מהקבלה. אפשר לתקן כל שדה לפני השמירה.')
     } catch (e) {
@@ -87,6 +89,7 @@ export function FuelSheet({ record, onClose }: { record?: Fuel; onClose(): void 
         id: record?.id ?? uid(),
         car_id: car!.id,
         date,
+        time,
         liters: l,
         price: p,
         km: kmV ? Number(kmV) : null,
@@ -131,11 +134,15 @@ export function FuelSheet({ record, onClose }: { record?: Fuel; onClose(): void 
             <input className="in" inputMode="decimal" value={price} placeholder="0" onChange={e => setPrice(e.target.value.replace(/[^\d.]/g, ''))} />
           </div>
         </div>
-        <div className="fuel-perl" aria-live="polite">{perLiter ? `₪${perLiter.toFixed(2)} לליטר` : ' '}</div>
+        {/* worked out from liters and total; shown as a box of its own, not typed */}
+        <div className="fuel-perl-box" aria-live="polite">
+          <span>מחיר לליטר</span>
+          <b>{perLiter ? `₪${perLiter.toFixed(2)}` : '—'}</b>
+        </div>
         <div className="row2">
           <div>
             <label className="lbl">תאריך</label>
-            <DateField value={date} onChange={setDate} kind="past" max={todayIso()} clearable={false} label="תאריך התדלוק" />
+            <DateField value={date} onChange={d => { setDate(d); setTime(null) }} kind="past" max={todayIso()} clearable={false} label="תאריך התדלוק" />
           </div>
           <div>
             <label className="lbl">ק״מ</label>

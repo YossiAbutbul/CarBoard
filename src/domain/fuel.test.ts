@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { Fuel } from '../types'
-import { averageEconomy, economy, monthlySpend, perLiter } from './fuel'
+import { averageEconomy, economy, findDuplicateFuel, monthlySpend, perLiter } from './fuel'
 
 const f = (id: string, date: string, km: number | null, liters: number | null, full = true, price: number | null = null): Fuel => ({
   id,
@@ -34,6 +34,15 @@ describe('fuel', () => {
   it('averages over all stretches by total km and liters', () => {
     expect(averageEconomy([f('a', '2026-09-01', 0, 10), f('b', '2026-09-02', 100, 10), f('c', '2026-09-03', 400, 10)])).toBe(20)
     expect(averageEconomy([f('a', '2026-09-01', 0, 10)])).toBeNull()
+  })
+
+  it('knows the same fill-up: same day and time, or without a time the same liters and total', () => {
+    const a = { ...f('a', '2026-09-16', null, 30.849, true, 239.08), time: '09:19' }
+    expect(findDuplicateFuel([a], { ...a, id: 'b' })).toBe(a)
+    expect(findDuplicateFuel([a], { ...a, id: 'b', time: '18:02' })).toBeNull() // two fills that day
+    expect(findDuplicateFuel([a], { ...a, id: 'b', time: null })).toBe(a) // same numbers, typed by hand
+    expect(findDuplicateFuel([a], { ...a, id: 'b', time: null, price: 200 })).toBeNull()
+    expect(findDuplicateFuel([a], { ...a, id: 'b', date: '2026-09-17' })).toBeNull()
   })
 
   it('price per liter, and monthly totals including empty months', () => {

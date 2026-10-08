@@ -68,6 +68,7 @@ export interface Fuel {
   id: string
   car_id: string
   date: string // YYYY-MM-DD
+  time?: string | null // HH:MM, when read from a receipt (tells two receipts of one day apart)
   liters: number | null
   price: number | null // the total paid, ₪
   km: number | null

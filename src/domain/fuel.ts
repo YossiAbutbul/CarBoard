@@ -9,6 +9,20 @@ import type { Fuel } from '../types'
 /** Oldest first; same day by km. */
 export const byDate = (a: Fuel, b: Fuel) => (a.date < b.date ? -1 : a.date > b.date ? 1 : (a.km ?? 0) - (b.km ?? 0))
 
+/**
+ * A fill-up already logged as this one: same car and day, and the same time when both have one
+ * (a receipt's); without a time, the same liters and total.
+ */
+export function findDuplicateFuel(all: Fuel[], f: Fuel) {
+  return (
+    all.find(x => {
+      if (x.id === f.id || x.car_id !== f.car_id || x.date !== f.date) return false
+      if (x.time && f.time) return x.time === f.time
+      return (f.liters != null || f.price != null) && x.liters === f.liters && x.price === f.price
+    }) ?? null
+  )
+}
+
 export const perLiter = (f: Fuel) => (f.price != null && f.liters ? f.price / f.liters : null)
 
 export interface Economy {
