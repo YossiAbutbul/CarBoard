@@ -580,6 +580,7 @@ html, body { overscroll-behavior-y: none; }
 .switch.on { background: var(--blue); }
 .switch.on::after { transform: translateX(-18px); }
 .switch:disabled { opacity: 0.6; }
+.switch-spin { flex: none; width: 24px; height: 24px; margin-inline: 11px; }
 .when-chips button { background: #fff; }
 
 /* update banner, v2: a small card with an icon, a title and a clear button */

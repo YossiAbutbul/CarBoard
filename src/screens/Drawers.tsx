@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom'
 import { ConfirmButton } from '../components/ConfirmButton'
 import { ask, askText } from '../components/Dialog'
 import { checkForUpdate } from '../lib/update'
+import { track } from '../lib/activity'
 import { disablePush, enablePush, loadPrefs, pushState, resavePush, savePrefs, testPush, type PushState } from '../lib/push'
 import { DEFAULT_PREFS, type NotifyPrefs } from '../domain/notify'
 import { Drawer } from '../components/ui'
@@ -221,10 +222,12 @@ function PushSection({ cloud }: { cloud: boolean }) {
   const { family } = useApp()
   const [state, setState] = useState<PushState | null>(null)
   const [busy, setBusy] = useState(false)
+  const [switching, setSwitching] = useState(false)
   const [msg, setMsg] = useState<string | null>(null)
   const [prefs, setPrefs] = useState<NotifyPrefs>(DEFAULT_PREFS)
   useEffect(() => {
-    pushState()
+    // the service worker may never come up (some private windows): give up after a while
+    Promise.race([pushState(), new Promise<PushState>(r => setTimeout(() => r('unsupported'), 8000))])
       .then(s => {
         setState(s)
         if (s === 'on' && cloud) resavePush().catch(() => {}) // heals a phone whose earlier save failed
@@ -234,7 +237,7 @@ function PushSection({ cloud }: { cloud: boolean }) {
   }, [cloud])
   const toggle = (next: NotifyPrefs) => {
     setPrefs(next)
-    savePrefs(next).catch(e => setMsg(e instanceof Error ? e.message : String(e)))
+    track(savePrefs(next)).catch(e => setMsg(e instanceof Error ? e.message : String(e)))
   }
   const WHEN: [string, number | 'late'][] = [
     ['חודש לפני', 30],
@@ -274,17 +277,27 @@ function PushSection({ cloud }: { cloud: boolean }) {
           </span>
           <div style={{ flex: 1 }}>
             <div className="t">התראות לטלפון</div>
-            <div className="s">{note}</div>
+            <div className="s">{switching ? (state === 'on' ? 'מכבה התראות…' : 'מפעיל התראות… אשרו בחלון של הדפדפן אם הוא נפתח.') : note}</div>
           </div>
-          {cloud && (state === 'on' || state === 'off') && (
-            <button
-              role="switch"
-              aria-checked={state === 'on'}
-              aria-label="התראות לטלפון"
-              className={`switch ${state === 'on' ? 'on' : ''}`}
-              disabled={busy}
-              onClick={() => run(async () => setState(state === 'on' ? await disablePush() : await enablePush()))}
-            />
+          {/* asking the phone and saving it takes a few seconds: a spinner instead of the switch meanwhile */}
+          {cloud && (switching || state === null) ? (
+            <span className="spin switch-spin" role="status" aria-label="טוען" />
+          ) : (
+            cloud &&
+            (state === 'on' || state === 'off') && (
+              <button
+                role="switch"
+                aria-checked={state === 'on'}
+                aria-label="התראות לטלפון"
+                className={`switch ${state === 'on' ? 'on' : ''}`}
+                disabled={busy}
+                onClick={async () => {
+                  setSwitching(true)
+                  await run(async () => setState(await track(state === 'on' ? disablePush() : enablePush())))
+                  setSwitching(false)
+                }}
+              />
+            )
           )}
         </div>
         {cloud && state === 'on' && (
@@ -328,7 +341,7 @@ function PushSection({ cloud }: { cloud: boolean }) {
             disabled={busy}
             onClick={() =>
               run(async () => {
-                const n = await testPush()
+                const n = await track(testPush())
                 setMsg(n ? 'נשלחה התראת ניסיון.' : 'לא נמצא טלפון רשום. כבו והפעילו מחדש.')
               })
             }
