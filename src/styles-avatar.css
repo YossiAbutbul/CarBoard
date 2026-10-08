@@ -438,12 +438,10 @@ html.scenic-page, html.scenic-page body { background: #08111f; }
 /* ─── scrolling: the card collapses into its bar and summary row, pinned at the top ─── */
 .page > .reveal > .hero, .page > div > .hero { position: sticky; z-index: 30; }
 .hero > .bar { position: sticky !important; top: max(14px, env(safe-area-inset-top)); z-index: 3; }
-.hero > .greet .date, .hero > .greet .state-pill { opacity: calc(1 - var(--p, 0) * 1.6); }
 .hero > .greet h1 { transform-origin: 100% 0; will-change: transform; position: relative; z-index: 2; }
-.hero > .glance { transform-origin: 50% 0; will-change: transform; }
-.hero > .glance { z-index: 2; }
 .hero.collapsed { box-shadow: 0 12px 30px rgba(8, 17, 31, 0.3); }
 .hero { overflow: clip; } /* clip, not hidden: hidden would stop the bar inside from sticking */
-/* collapsed summary boxes: label and value only */
-.hero > .glance button { clip-path: inset(0 0 calc(var(--p, 0) * var(--cut, 0px)) 0 round 16px); }
-.hero > .glance .d { opacity: calc(1 - var(--p, 0) * 2.2); }
+/* collapsing: everything but the bar and the greeting fades out early, so nothing overlaps on the way */
+.hero > .greet .date, .hero > .greet .state-pill { opacity: calc(1 - var(--p, 0) * 3.5); }
+.hero > .glance { opacity: calc(1 - var(--p, 0) * 2.5); }
+.hero.collapsed > .glance { visibility: hidden; }

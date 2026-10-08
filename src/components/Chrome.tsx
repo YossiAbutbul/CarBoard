@@ -50,51 +50,41 @@ export function TopBar({ openCars, openSettings }: { openCars(): void; openSetti
 /** The dark header used by every page. */
 export function PageHero({ children, dial }: { children: ReactNode; dial?: boolean }) {
   const ref = useRef<HTMLElement>(null)
-  // The card collapses as you scroll and stays pinned. The bar is CSS-sticky (the browser keeps it
-  // still); the greeting and the summary row shrink into place under it; the date and status pill
-  // fade out. Only transforms move, so the page below never jumps.
+  // The card collapses as you scroll and stays pinned as a short header: the bar (CSS-sticky, so the
+  // browser keeps it still) and the greeting, shrunk under it. The date, status pill and summary row
+  // fade out. Only transforms and opacity change, so the page below never jumps.
   useEffect(() => {
     const el = ref.current
     const bar = el?.querySelector<HTMLElement>(':scope > .bar')
     const title = el?.querySelector<HTMLElement>(':scope > .greet h1')
-    const glance = el?.querySelector<HTMLElement>(':scope > .glance')
-    if (!el || !bar || !title || !glance) return
-    const TITLE = 0.66 // greeting scale when collapsed
-    const ROW = 0.9 // summary row scale when collapsed
-    let travel = 0 // how far the card scrolls before it sticks
+    if (!el || !bar || !title) return
+    const page = el.parentElement
+    const TITLE = 0.7 // greeting scale when collapsed
+    let travel = 1 // how far the card scrolls before it sticks
     let dTitle = 0
-    let dRow = 0
+    const offset = (e: HTMLElement, upTo: HTMLElement | null) => {
+      let y = 0
+      for (let n: HTMLElement | null = e; n && n !== upTo; n = n.offsetParent as HTMLElement | null) y += n.offsetTop
+      return y
+    }
     const measure = () => {
-      title.style.transform = glance.style.transform = ''
+      title.style.transform = ''
       el.style.top = ''
-      // the card's place in the page, ignoring the page's entrance animation
-      let top = 0
-      for (let n: HTMLElement | null = el; n; n = n.offsetParent as HTMLElement | null) top += n.offsetTop
-      const rel = (e: HTMLElement) => {
-        let y = 0
-        for (let n: HTMLElement | null = e; n && n !== el; n = n.offsetParent as HTMLElement | null) y += n.offsetTop
-        return y
-      }
-      // where things sit on screen once collapsed
+      const top = offset(el, null) // ignores the page's entrance animation
       const barTop = parseFloat(getComputedStyle(bar).top) || 14
       const titleAt = barTop + bar.offsetHeight + 2
-      const rowAt = titleAt + title.offsetHeight * TITLE + 10
-      // collapsed boxes show only the label and value: their status line is clipped off
-      const d = glance.querySelector<HTMLElement>('.d')
-      const cut = d ? d.offsetHeight + 3 : 0
-      el.style.setProperty('--cut', `${cut}px`)
-      const stickAt = rowAt + (glance.offsetHeight - cut) * ROW + 12 - el.offsetHeight // the card's top, on screen
+      const stickAt = titleAt + title.offsetHeight * TITLE + 14 - el.offsetHeight // the card's top, on screen
       el.style.top = `${stickAt}px`
       travel = Math.max(1, top - stickAt)
-      dTitle = titleAt - (stickAt + rel(title))
-      dRow = rowAt - (stickAt + rel(glance))
+      dTitle = titleAt - (stickAt + offset(title, el))
+      // always leave enough room to scroll the card fully closed, even on a short page
+      if (page) page.style.minHeight = `calc(100dvh + ${Math.ceil(travel)}px)`
       on()
     }
     const on = () => {
       const p = Math.min(1, Math.max(0, window.scrollY / travel))
       el.style.setProperty('--p', String(p))
       title.style.transform = `translateY(${p * dTitle}px) scale(${1 - p * (1 - TITLE)})`
-      glance.style.transform = `translateY(${p * dRow}px) scale(${1 - p * (1 - ROW)})`
       el.classList.toggle('collapsed', p >= 1)
     }
     measure()
@@ -103,7 +93,8 @@ export function PageHero({ children, dial }: { children: ReactNode; dial?: boole
     return () => {
       window.removeEventListener('scroll', on)
       window.removeEventListener('resize', measure)
-      title.style.transform = glance.style.transform = ''
+      title.style.transform = ''
+      if (page) page.style.minHeight = ''
     }
   }, [])
   return (
