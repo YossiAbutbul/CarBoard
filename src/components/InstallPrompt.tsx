@@ -3,8 +3,8 @@ import { createPortal } from 'react-dom'
 import { useBackLayer } from '../lib/back'
 
 /*
- * Opened in the browser instead of from the home screen: suggest installing, once the person is in
- * the app (not during sign-in, the first-run guide or the tour). Android and desktop Chrome get the
+ * Opened in the browser instead of from the home screen: suggest installing, on the sign-in screen
+ * or once the person is in the app (not during the first-run guide or the tour). Android and desktop Chrome get the
  * browser's own install; iPhones get the two steps, since Safari has no install button for sites.
  * "Not now" is remembered for two weeks.
  */
@@ -37,8 +37,9 @@ const snoozed = () => {
     return false
   }
 }
-// in the app itself, with nothing else on top
-const settled = () => Boolean(document.querySelector('[data-tour=cars]')) && !document.querySelector('.tour, .onb, .sheet, .drawer, .dialog-overlay')
+// on the sign-in screen, or in the app itself, with nothing else on top
+const settled = () =>
+  Boolean(document.querySelector('[data-tour=cars], .welcome.login')) && !document.querySelector('.tour, .onb, .sheet, .drawer, .dialog-overlay')
 
 export function InstallPrompt() {
   // after "install": `installing` until the browser says it is done, then `installed`

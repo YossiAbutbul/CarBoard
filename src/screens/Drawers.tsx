@@ -23,7 +23,7 @@ export function CarsDrawer({ open, onClose }: { open: OpenSheet; onClose(): void
   const { data, car, setCarId, actions, family, store } = useApp()
   const ownerName = (uid?: string) => (uid && uid !== store.userId ? family?.members.find(m => m.uid === uid)?.name || 'בן משפחה' : null)
   return (
-    <Drawer title={family ? (family.title ? `רכבי ${family.title}` : 'רכבי המשפחה') : 'הרכבים שלי'} side="start" onClose={onClose}>
+    <Drawer title={family ? (family.title ? `הרכבים של מש' ${family.title.replace(/^(משפחת|מש['׳])\s*/, '')}` : 'רכבי המשפחה') : 'הרכבים שלי'} side="start" onClose={onClose}>
       <div className="car-list">
         {data.cars.map(c => (
           <div key={c.id} className={`car-row ${c.id === car?.id ? 'on' : ''}`}>
@@ -277,27 +277,23 @@ function PushSection({ cloud }: { cloud: boolean }) {
           </span>
           <div style={{ flex: 1 }}>
             <div className="t">התראות לטלפון</div>
-            <div className="s">{switching ? (state === 'on' ? 'מכבה…' : 'מפעיל… אשרו אם נשאלתם') : note}</div>
+            <div className="s">{note}</div>
           </div>
-          {/* asking the phone and saving it takes a few seconds: a spinner instead of the switch meanwhile */}
-          {cloud && (switching || state === null) ? (
-            <span className="spin switch-spin" role="status" aria-label="טוען" />
-          ) : (
-            cloud &&
-            (state === 'on' || state === 'off') && (
-              <button
-                role="switch"
-                aria-checked={state === 'on'}
-                aria-label="התראות לטלפון"
-                className={`switch ${state === 'on' ? 'on' : ''}`}
-                disabled={busy}
-                onClick={async () => {
-                  setSwitching(true)
-                  await run(async () => setState(await track(state === 'on' ? disablePush() : enablePush())))
-                  setSwitching(false)
-                }}
-              />
-            )
+          {/* asking the phone and saving it takes a few seconds: the switch waits, dimmed and pulsing, so nothing moves */}
+          {cloud && (state === null || state === 'on' || state === 'off') && (
+            <button
+              role="switch"
+              aria-checked={state === 'on'}
+              aria-busy={switching || state === null}
+              aria-label="התראות לטלפון"
+              className={`switch ${state === 'on' ? 'on' : ''} ${switching || state === null ? 'working' : ''}`}
+              disabled={busy || state === null}
+              onClick={async () => {
+                setSwitching(true)
+                await run(async () => setState(await track(state === 'on' ? disablePush() : enablePush())))
+                setSwitching(false)
+              }}
+            />
           )}
         </div>
         {cloud && state === 'on' && (
