@@ -78,7 +78,9 @@ describe('reminders', () => {
       km,
     )
     expect(rs.map(r => r.item.id)).toEqual(['b', 'c', 'a', 'd'])
-    expect(rs[0].headline).toMatch(/עבר/)
+    // overdue: the status says so; the headline is just how far past
+    expect(rs[0].status).toBe('overdue')
+    expect(rs[0].headline).toBe('1,000 ק״מ')
   })
 })
 
