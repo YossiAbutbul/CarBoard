@@ -3,11 +3,15 @@ import { Icon, kindIcon } from '../components/Icon'
 import { Glance, GlanceCell, PageHero, TopBar, useCountUp } from '../components/Chrome'
 import { Scene } from '../components/Scene'
 import { Brand } from '../components/Brand'
-import { REQUIRED, useApp } from '../data/AppData'
+import { useApp } from '../data/AppData'
 import { STATUS_TEXT } from '../domain/labels'
 import type { Reminder } from '../domain/reminders'
 import { fmtNum, greeting, longDate } from '../lib/i18n'
 import type { OpenSheet } from '../App'
+
+const FIRST = ['test', 'insurance', 'service']
+// fixed places for the main reminders; Array.sort is stable, so the rest keep their urgency order
+const rank = (r: Reminder) => (FIRST.includes(r.item.kind) ? FIRST.indexOf(r.item.kind) : FIRST.length)
 
 const weekKey = (carId: string) => `car-records:confirm:${carId}:${Math.floor(Date.now() / (7 * 86_400_000))}`
 
@@ -147,8 +151,8 @@ export function HomeScreen({
         </button>
       </div>
       <div className="tiles" style={{ marginTop: 0 }} data-tour="tiles">
-        {/* the ones that cannot be deleted (test, insurance) first, the rest by urgency */}
-        {[...reminders.filter(r => REQUIRED.includes(r.item.kind)), ...reminders.filter(r => !REQUIRED.includes(r.item.kind))].map(r => (
+        {/* test, insurance and periodic service in fixed places first (right to left, row by row), the rest by urgency */}
+        {[...reminders].sort((a, b) => rank(a) - rank(b)).map(r => (
           <Tile key={r.item.id} r={r} open={open} />
         ))}
       </div>
