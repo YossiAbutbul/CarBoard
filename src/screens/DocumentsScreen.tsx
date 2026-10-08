@@ -70,6 +70,14 @@ export function DocumentsScreen({ open, openCars, openSettings }: { open: OpenSh
       )}
 
       {docs.length > 0 && (
+        <div className="sec">
+          <h2>המסמכים</h2>
+          <button className="add-btn" onClick={() => open({ t: 'doc' })}>
+            <Icon name="plus" /> מסמך
+          </button>
+        </div>
+      )}
+      {docs.length > 0 && (
         <div className="doc-grid">
           {docs.map(d => (
             <DocCard key={d.id} d={d} onOpen={() => open({ t: 'doc', doc: d })} />

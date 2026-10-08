@@ -59,6 +59,12 @@ export function FuelScreen({ open, openCars, openSettings }: { open: OpenSheet; 
       ) : (
         <>
           <FuelChart fills={fills} />
+          <div className="sec">
+            <h2>התדלוקים</h2>
+            <button className="add-btn" onClick={() => open({ t: 'fuel' })}>
+              <Icon name="plus" /> תדלוק
+            </button>
+          </div>
           {months.map(m => (
             <section key={m}>
               <div className="year">
