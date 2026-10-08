@@ -57,16 +57,17 @@
 .doc-card.add { align-items: center; justify-content: center; gap: 8px; min-height: 140px; color: var(--ink-2); font-size: 13.5px; font-weight: 500; border: 1.5px dashed var(--line); background: #fff; }
 
 /* ─── animations ─── */
-.page { animation: page-in 0.38s var(--ease) both; }
-@keyframes page-in { from { opacity: 0; transform: translateY(12px); } }
+/* switching tabs: a short fade only; nothing moves, and the header stays exactly where it was */
+@keyframes page-in { from { opacity: 0; } }
+.page > .reveal > * { animation: page-in 0.22s ease-out both; }
+.page > .reveal > .hero { animation: none; }
 .hero .dial .needle-g { transform-origin: 150px 150px; animation: needle 1.6s cubic-bezier(0.3, 1.4, 0.4, 1) both 0.15s; }
 @keyframes needle { from { transform: rotate(-150deg); } }
 .state-pill::before { animation: glow 2.4s ease-in-out infinite; }
 @keyframes glow { 50% { box-shadow: 0 0 2px var(--c); opacity: 0.7; } }
-.glance button { animation: rise 0.5s var(--ease) both; }
-.glance button:nth-child(2) { animation-delay: 0.08s; }
-.glance button:nth-child(3) { animation-delay: 0.16s; }
-.tiles > *, .actions > *, .timeline > *, .doc-grid > * { animation: rise 0.5s var(--ease) both; }
+/* their numbers change with the tab: a fade, in place */
+.glance button { animation: page-in 0.25s ease-out both; }
+.tiles > *, .actions > *, .timeline > *, .doc-grid > * { animation: page-in 0.25s ease-out both; }
 .tiles > :nth-child(2), .actions > :nth-child(2), .timeline > :nth-child(2), .doc-grid > :nth-child(2) { animation-delay: 0.05s; }
 .tiles > :nth-child(3), .actions > :nth-child(3), .timeline > :nth-child(3), .doc-grid > :nth-child(3) { animation-delay: 0.1s; }
 .tiles > :nth-child(4), .actions > :nth-child(4), .timeline > :nth-child(4), .doc-grid > :nth-child(4) { animation-delay: 0.15s; }
