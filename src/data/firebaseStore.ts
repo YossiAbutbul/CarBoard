@@ -6,7 +6,7 @@ import { uid } from '../lib/uid'
 import { blobToBase64, compressImage } from '../lib/image'
 import { del as cacheDel, get as cacheGet, set as cacheSet } from 'idb-keyval'
 
-const TABLES: Table[] = ['cars', 'readings', 'items', 'services', 'documents']
+const TABLES: Table[] = ['cars', 'readings', 'items', 'services', 'documents', 'fuel']
 const urls = new Map<string, string>()
 // Uploaded files never change, so each is read from the cloud once and then kept on the device
 // (IndexedDB): later views and thumbnails cost no reads and open at once.

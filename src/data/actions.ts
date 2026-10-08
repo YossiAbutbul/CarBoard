@@ -1,7 +1,8 @@
-import type { Car, CarDocument, Data, Item, Reading, ReadingSource, ServiceRecord } from '../types'
+import type { Car, CarDocument, Data, Fuel, Item, Reading, ReadingSource, ServiceRecord } from '../types'
 import type { Store } from './store'
 import { defaultItems, STARTER } from '../domain/defaults'
 import { lookupPlate } from '../lib/govil'
+import { findDuplicateFuel } from '../domain/fuel'
 import { readingError } from '../domain/odometer'
 import { addMonths, todayIso } from '../lib/dates'
 import { uid } from '../lib/uid'
@@ -51,7 +52,7 @@ export function makeActions(store: Store, getData: () => Data, refresh: () => Pr
     async deleteCar(id: string) {
       const d = getData()
       const files = [...d.documents.filter(x => x.car_id === id).flatMap(x => x.files), ...d.services.filter(x => x.car_id === id).map(x => x.receipt)]
-      for (const t of ['readings', 'items', 'services', 'documents'] as const)
+      for (const t of ['readings', 'items', 'services', 'documents', 'fuel'] as const)
         for (const r of d[t].filter(x => x.car_id === id)) await store.remove(t, r.id)
       await store.remove('cars', id)
       await dropFiles(files)
@@ -61,7 +62,7 @@ export function makeActions(store: Store, getData: () => Data, refresh: () => Pr
     async resetAll() {
       const d = getData()
       // only my own rows: a family member's cars stay theirs
-      for (const t of ['readings', 'items', 'services', 'documents', 'cars'] as const)
+      for (const t of ['readings', 'items', 'services', 'documents', 'fuel', 'cars'] as const)
         for (const r of d[t]) if (store.owns?.(t, r.id) !== false) await store.remove(t, r.id)
       await refresh()
     },
@@ -161,6 +162,24 @@ export function makeActions(store: Store, getData: () => Data, refresh: () => Pr
       const files = getData().documents.find(d => d.id === id)?.files ?? []
       await store.remove('documents', id)
       await dropFiles(files)
+      await refresh()
+    },
+    /** Saves a fill-up (new or edited). Its km, when given and the latest, is also a km reading. */
+    async saveFuel(f: Fuel) {
+      const exists = getData().fuel.some(x => x.id === f.id)
+      // the same receipt twice (scanned again, or saved twice) is one fill-up
+      if (!exists && findDuplicateFuel(getData().fuel, f)) throw new Error('התדלוק הזה כבר רשום. לא נוסף שוב.')
+      if (exists) await store.update('fuel', f.id, f)
+      else await store.insert('fuel', f)
+      if (f.km && !exists) {
+        const later = readingsOf(f.car_id).some(r => r.date > f.date)
+        const same = readingsOf(f.car_id).some(r => r.date === f.date && r.km === f.km)
+        if (!later && !same) await insertReading(f.car_id, f.km, 'fuel', f.date).catch(() => {}) // lower than the last: keep the fill-up only
+      }
+      await refresh()
+    },
+    async deleteFuel(id: string) {
+      await store.remove('fuel', id)
       await refresh()
     },
     /** Deletes an uploaded file: takes it off its document or service, then removes the file itself. */

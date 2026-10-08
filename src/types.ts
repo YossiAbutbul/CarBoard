@@ -1,5 +1,5 @@
 export type ItemKind = 'service' | 'oil' | 'tyres' | 'brakes' | 'battery' | 'test' | 'insurance' | 'custom'
-export type ReadingSource = 'start' | 'manual' | 'confirm' | 'photo' | 'service'
+export type ReadingSource = 'start' | 'manual' | 'confirm' | 'photo' | 'service' | 'fuel'
 export type DocKind = 'licence' | 'insurance' | 'driver' | 'other'
 /** 'car' | 'suv' | 'pickup' | 'van'; the others are older saved values that show as 'car'. */
 export type BodyType = 'car' | 'suv' | 'van' | 'pickup' | 'small' | 'family' | 'sport'
@@ -63,12 +63,26 @@ export interface CarDocument {
   files: string[]
 }
 
+/** A fill-up. Everything but the date is optional; no receipt is stored (the app draws one). */
+export interface Fuel {
+  id: string
+  car_id: string
+  date: string // YYYY-MM-DD
+  time?: string | null // HH:MM, when read from a receipt (tells two receipts of one day apart)
+  liters: number | null
+  price: number | null // the total paid, ₪
+  km: number | null
+  station: string | null
+  full: boolean // filled to the top (fuel use is measured between full tanks)
+}
+
 export interface Tables {
   cars: Car
   readings: Reading
   items: Item
   services: ServiceRecord
   documents: CarDocument
+  fuel: Fuel
 }
 export type Table = keyof Tables
 export type Data = { [K in Table]: Tables[K][] }

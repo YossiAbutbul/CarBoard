@@ -36,7 +36,7 @@ export function TopBar({ openCars, openSettings }: { openCars(): void; openSetti
       </button>
       <button className="title" onClick={openCars} aria-label="החלפת רכב">
         <span>
-          {car?.name} <span className="caret">▾</span>
+          {car?.name}
         </span>
         {car?.plate && <Plate number={car.plate} size="sm" />}
       </button>
@@ -118,7 +118,15 @@ export function PageHero({ children, dial }: { children: ReactNode; dial?: boole
     if (page) mo.observe(page, { childList: true, subtree: true })
     window.addEventListener('scroll', on, { passive: true })
     window.addEventListener('resize', measure)
+    // On a first load (or right after an update) the app's font arrives after this first measure, and
+    // the header shrinks with it: measure again then, or the page keeps scroll room it does not need.
+    let live = true
+    document.fonts?.ready.then(() => live && measure())
+    const onLoad = () => live && measure()
+    window.addEventListener('load', onLoad)
     return () => {
+      live = false
+      window.removeEventListener('load', onLoad)
       ro.disconnect()
       mo.disconnect()
       window.removeEventListener('scroll', on)

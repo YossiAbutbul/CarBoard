@@ -497,6 +497,11 @@ svg.i { stroke-width: 1.8; }
 .drawer-head button svg.i { stroke-width: 2.2; }
 
 /* 4 · a solid bottom bar */
+/* the selected tab: one pill behind its icon and its name together */
+.nav > div { gap: 4px; padding: 0 6px; }
+.nav button { padding: 6px 0 5px; border-radius: 16px; transition: background 0.25s var(--ease), color 0.2s; }
+.nav button span.ico { height: 26px; background: none !important; }
+.nav button.on { background: var(--card); }
 .nav { background: #fff; backdrop-filter: none; -webkit-backdrop-filter: none; box-shadow: 0 -1px 0 var(--line); }
 
 /* 6 · real buttons */
@@ -660,3 +665,65 @@ html, body { overscroll-behavior-y: none; }
 .member b { flex: none; width: 28px; height: 28px; display: grid; place-items: center; border-radius: 50%; background: var(--ink); color: #fff; font-size: 13px; font-weight: 700; line-height: 1; }
 .member.me b { background: var(--blue); }
 .member small { flex: none; font-size: 11.5px; font-weight: 500; color: var(--muted, #888); }
+
+/* ── cars list: refined cards ── */
+.car-list { gap: 8px; }
+.car-row { gap: 6px; padding: 10px 8px 10px 10px; border-radius: 18px; background: #fff; box-shadow: inset 0 0 0 1px var(--line); transition: background 0.2s, box-shadow 0.2s; }
+.car-row:hover { background: #fafbfd; }
+.car-row.on { background: #f4f8ff; box-shadow: inset 0 0 0 1.5px var(--blue), 0 4px 14px rgba(28, 105, 212, 0.08); }
+.car-row-main { grid-template-columns: 76px 1fr; gap: 12px; }
+.car-row-pic { position: relative; width: 76px; height: 56px; border-radius: 14px; background: linear-gradient(180deg, #edf2f8, #e2e8f1); box-shadow: none; }
+.car-row.on .car-row-pic { background: linear-gradient(180deg, #e3eefc, #d5e4f8); }
+.car-row-badge { position: absolute; top: -6px; right: -6px; width: 20px; height: 20px; display: grid; place-items: center; border-radius: 50%; background: var(--blue); color: #fff; box-shadow: 0 0 0 2px #f4f8ff; }
+.car-row-badge svg.i { width: 12px; height: 12px; stroke-width: 3; }
+.car-row-info { gap: 3px; }
+.car-row-info .t { font-size: 15.5px; font-weight: 700; }
+.car-row-info .s { font-size: 12.5px; }
+.car-row-info .plate-il { margin-top: 4px; }
+.car-row-acts { flex-direction: row; gap: 2px; align-self: center; }
+.car-row-acts .icon-btn { width: 34px; height: 34px; padding: 0; display: grid; place-items: center; border-radius: 50%; color: var(--ink-2); transition: background 0.15s, color 0.15s; }
+.car-row-acts .icon-btn:hover, .car-row-acts .icon-btn:active { background: var(--card); color: var(--ink); }
+.car-row-acts .confirm-icon:hover, .car-row-acts .confirm-icon:active { background: #fdecec; color: var(--overdue); }
+.car-row-acts .icon-btn svg.i { width: 17px; height: 17px; }
+.car-row-info .t { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; white-space: normal; line-height: 1.25; }
+/* refined further: the check sits inside the picture's corner, the actions are quieter, more room */
+.car-row { padding: 12px 8px 12px 12px; }
+.car-row-badge { top: 5px; right: 5px; width: 18px; height: 18px; box-shadow: 0 1px 3px rgba(28, 105, 212, 0.35); }
+.car-row-badge svg.i { width: 11px; height: 11px; }
+.car-row-pic { width: 80px; height: 60px; }
+.car-row-main { grid-template-columns: 80px 1fr; gap: 14px; }
+.car-row-info .s { color: #8a94a1; }
+.car-row-acts .icon-btn { width: 32px; height: 32px; color: #9aa3ae; }
+.car-row.on .car-row-acts .icon-btn { color: #7b8794; }
+/* long names: the name and details use the card's full width; the actions sit low, beside the plate */
+.car-row { position: relative; }
+.car-row-main { flex: 1; }
+.car-row-acts { position: absolute; left: 8px; bottom: 8px; }
+.car-row-info { padding-inline-end: 0; }
+.car-row-info .plate-il { margin-top: 6px; }
+/* the car's tile: a small showroom, light from above and a soft floor shadow under the wheels */
+.car-row-pic { overflow: hidden; padding: 6px 8px 10px; background: radial-gradient(120% 90% at 50% 0%, #ffffff 0%, #f1f4f8 55%, #e4e9f0 100%); box-shadow: inset 0 0 0 1px rgba(15, 23, 32, 0.05); }
+.car-row-pic::after { content: ''; position: absolute; left: 16%; right: 16%; bottom: 7px; height: 7px; border-radius: 50%; background: radial-gradient(closest-side, rgba(15, 23, 32, 0.22), transparent); z-index: 0; }
+.car-row-pic > * { position: relative; z-index: 1; }
+.car-row.on .car-row-pic { background: radial-gradient(120% 90% at 50% 0%, #ffffff 0%, #e8f1fd 55%, #d6e5f9 100%); box-shadow: inset 0 0 0 1px rgba(28, 105, 212, 0.12); }
+.car-row-pic::after { display: none; } /* no floor shadow under the car */
+/* the car's tile: no border; a faint wash of the car's colour (a soft grey for white and black cars) */
+.car-row-pic, .car-row.on .car-row-pic { box-shadow: none; background: color-mix(in srgb, var(--tint, #8a94a1) 16%, #f4f5f7); }
+
+/* ── car edit: the car drives in along a road ── */
+.studio-stage { place-items: end center; overflow: hidden; background: linear-gradient(180deg, #e8eef6 0%, #f5f8fb 70%); }
+.studio-stage::after { display: none; } /* no floor shadow */
+/* the road: asphalt with a dashed centre line, which rushes past while the car drives in */
+.studio-stage::before { content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 30px; z-index: 0;
+  background: linear-gradient(180deg, transparent 13px, transparent 13px) ,
+    linear-gradient(90deg, rgba(255, 255, 255, 0.85) 0 16px, transparent 16px 32px) 0 14px / 32px 2px repeat-x,
+    linear-gradient(180deg, #4a5261 0%, #3a414d 100%);
+  animation: road-rush 0.75s cubic-bezier(0.2, 0.7, 0.3, 1) both; }
+@keyframes road-rush { from { background-position: 0 0, -160px 14px, 0 0; } to { background-position: 0 0, 0 14px, 0 0; } }
+/* the pictures face left: driving forward is right to left; it settles with a small nod */
+.studio-toy { margin-bottom: 16px; max-height: 96px; animation: drive-in 0.75s cubic-bezier(0.2, 0.8, 0.25, 1) both; transform-origin: 50% 100%; }
+@keyframes drive-in { 0% { transform: translateX(130%); } 78% { transform: translateX(-3%) rotate(-1.2deg); } 100% { transform: none; } }
+@media (prefers-reduced-motion: reduce) { .studio-toy, .studio-stage::before { animation: none; } }
+/* cars list: a darker base, so a white car does not vanish into its tile */
+.car-row-pic, .car-row.on .car-row-pic { background: color-mix(in srgb, var(--tint, #8a94a1) 18%, #e2e7ee); }
+.studio-toy { margin-bottom: 8px; } /* the wheels on the asphalt, in the near lane */

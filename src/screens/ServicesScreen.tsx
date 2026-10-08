@@ -2,7 +2,8 @@ import { ConfirmButton } from '../components/ConfirmButton'
 import { useState } from 'react'
 import { FileThumb } from '../components/ui'
 import { FileViewer } from '../components/FileViewer'
-import { Icon, kindIcon } from '../components/Icon'
+import { Icon, kindIcon, serviceIcon, type IconName } from '../components/Icon'
+import type { ItemKind, ServiceRecord } from '../types'
 import { Glance, GlanceCell, PageHero, TopBar, useCountUp } from '../components/Chrome'
 import { useApp } from '../data/AppData'
 import { KIND } from '../domain/labels'
@@ -52,7 +53,7 @@ export function ServicesScreen({ open, openCars, openSettings }: { open: OpenShe
           <GlanceCell k="סה״כ טיפולים" v={fmtNum(list.length)} d={years.length ? `מאז ${years[years.length - 1]}` : 'עוד אין'} />
           <GlanceCell
             k="טיפול אחרון"
-            v={last ? (diffDays(todayIso(), last.date) <= 0 ? 'היום' : `לפני ${fmtDays(diffDays(todayIso(), last.date))}`) : '—'}
+            v={last ? (diffDays(todayIso(), last.date) <= 0 ? 'היום' : `לפני ${fmtDays(diffDays(todayIso(), last.date))}`) : 'אין'}
             d={last ? fmtKm(last.km) : 'לא נרשם'}
           />
         </Glance>
@@ -71,6 +72,8 @@ export function ServicesScreen({ open, openCars, openSettings }: { open: OpenShe
         </div>
       )}
 
+      {list.some(s => s.price) && <SpendByType list={list} years={years} />}
+
       {years.map(y => (
         <section key={y}>
           <div className="year">
@@ -83,7 +86,7 @@ export function ServicesScreen({ open, openCars, openSettings }: { open: OpenShe
               .map(s => (
                 <li key={s.id} className="tl-item">
                   <span className="tl-dot">
-                    <Icon name={kindIcon(s.type)} />
+                    <Icon name={serviceIcon(s)} />
                   </span>
                   <div
                     className="tl-card"
@@ -132,5 +135,65 @@ export function ServicesScreen({ open, openCars, openSettings }: { open: OpenShe
         />
       )}
     </div>
+  )
+}
+
+// names for the groups that are not a reminder kind
+const EXTRA: Partial<Record<IconName, string>> = { wipers: 'מגבים', aircon: 'מיזוג', lights: 'תאורה', wash: 'שטיפה וניקוי', key: 'מפתחות' }
+const serviceLabel = (k: IconName) => EXTRA[k] ?? (k in KIND ? KIND[k as ItemKind].label : 'אחר')
+
+/** Where the money goes: a year's service spending by type, biggest first, with a bar for each one's share. */
+function SpendByType({ list, years }: { list: ServiceRecord[]; years: string[] }) {
+  const withPrice = years.filter(y => list.some(s => s.date.startsWith(y) && s.price))
+  const [year, setYear] = useState(withPrice[0] ?? years[0])
+  // grouped by what each service is: its kind, or for a custom one what its title says (wipers, A/C…)
+  const totals = new Map<IconName, number>()
+  for (const s of list)
+    if (s.date.startsWith(year) && s.price) {
+      const k = serviceIcon(s)
+      totals.set(k, (totals.get(k) ?? 0) + s.price)
+    }
+  let rows = [...totals].map(([type, total]) => ({ type, total })).sort((a, b) => b.total - a.total)
+  // every group shows; only custom services the app cannot name go together as "other", last
+  const other = rows.filter(r => r.type === 'custom').reduce((n, r) => n + r.total, 0)
+  rows = rows.filter(r => r.type !== 'custom')
+  const all = rows.reduce((n, r) => n + r.total, 0) + other
+  const max = Math.max(...rows.map(r => r.total), other)
+  const line = (key: string, icon: IconName, label: string, total: number) => (
+    <li key={key}>
+      <span className="bt-ic">
+        <Icon name={icon} />
+      </span>
+      <span className="bt-main">
+        <span className="bt-top">
+          <span>{label}</span>
+          <b>{fmtMoney(total)}</b>
+        </span>
+        <span className="bt-bar">
+          <i style={{ width: `${Math.max(3, (total / max) * 100)}%` }} />
+        </span>
+      </span>
+      <span className="bt-pct">{Math.round((total / all) * 100)}%</span>
+    </li>
+  )
+  return (
+    <section className="card by-type">
+      <div className="by-type-head">
+        <b>לאן הולך הכסף</b>
+        {withPrice.length > 1 && (
+          <div className="chart-range" role="radiogroup" aria-label="שנה">
+            {withPrice.slice(0, 3).map(y => (
+              <button key={y} role="radio" aria-checked={year === y} className={year === y ? 'on' : ''} onClick={() => setYear(y)}>
+                {y}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+      <ul className="by-type-list">
+        {rows.map(r => line(r.type, r.type, serviceLabel(r.type), r.total))}
+        {other > 0 && line('other', 'custom', 'אחר', other)}
+      </ul>
+    </section>
   )
 }

@@ -9,7 +9,7 @@ import { disablePush, enablePush, loadPrefs, pushState, resavePush, savePrefs, t
 import { DEFAULT_PREFS, type NotifyPrefs } from '../domain/notify'
 import { Drawer } from '../components/ui'
 import { Plate } from '../components/Chrome'
-import { CarToy } from '../components/CarAvatar'
+import { CarToy, carPaint } from '../components/CarAvatar'
 import { Icon } from '../components/Icon'
 import { useApp } from '../data/AppData'
 import { cloudEnabled, signInWithGoogle, signOut } from '../data/firebase'
@@ -36,14 +36,12 @@ export function CarsDrawer({ open, onClose }: { open: OpenSheet; onClose(): void
               }}
               aria-current={c.id === car?.id}
             >
-              <span className="car-row-pic">
+              {/* the tile takes a faint wash of the car's own colour */}
+              <span className="car-row-pic" style={{ '--tint': carPaint(c) } as React.CSSProperties}>
                 <CarToy car={c} />
               </span>
               <span className="car-row-info">
-                <span className="t">
-                  {c.name}
-                  {c.id === car?.id && <Icon name="check" className="car-row-check" />}
-                </span>
+                <span className="t">{c.name}</span>
                 <span className="s">{[ownerName(c.owner) && `של ${ownerName(c.owner)}`, c.year, c.color].filter(Boolean).join(' · ')}</span>
                 {c.plate && <Plate number={c.plate} size="sm" />}
               </span>

@@ -46,6 +46,7 @@ export async function moveGuestData(cloud: Store) {
       const files = (await Promise.all(d.files.map(move))).filter((f): f is string => Boolean(f))
       await cloud.insert('documents', { ...d, files })
     }
+    for (const f of local.fuel ?? []) await cloud.insert('fuel', f)
   }
   await clearLocal()
   await localStore.wipeFiles?.()

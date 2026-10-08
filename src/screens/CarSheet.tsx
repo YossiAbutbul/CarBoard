@@ -170,6 +170,7 @@ export function CarSheet({ car, onClose }: { car?: Car; onClose(): void }) {
         <div className="studio">
           <div className="studio-top">
             <div
+              key={shownBody} // a new body type drives in again, road and all
               className="studio-stage"
               onTouchStart={e => (swipeX.current = e.touches[0].clientX)}
               onTouchEnd={e => {

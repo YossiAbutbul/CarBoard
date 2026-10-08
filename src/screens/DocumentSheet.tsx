@@ -10,9 +10,10 @@ import { DOC_KIND } from '../domain/labels'
 import { compressImage } from '../lib/image'
 import { Icon, docIcon } from '../components/Icon'
 import { uid } from '../lib/uid'
+import { documentToReplace, keepAfterRenewal } from '../components/renewal'
 
 export function DocumentSheet({ doc, onClose }: { doc?: CarDocument; onClose(): void }) {
-  const { car, actions } = useApp()
+  const { car, data, actions } = useApp()
   const [kind, setKind] = useState<DocKind>(doc?.kind ?? 'insurance')
   const [title, setTitle] = useState(doc?.title ?? '')
   const [provider, setProvider] = useState(doc?.provider ?? '')
@@ -45,16 +46,21 @@ export function DocumentSheet({ doc, onClose }: { doc?: CarDocument; onClose(): 
   async function save() {
     if (doc && !dirty) return onClose() // nothing changed: nothing to write
     try {
+      const name = title.trim() || DOC_KIND[kind].label
+      // a renewal: the old policy's files go (after asking); a second copy of a document replaces the first
+      const keep = await keepAfterRenewal(doc, files, expiry || null, number.trim() || null)
+      const replaces = doc ? null : await documentToReplace(data.documents, car!.id, kind, name)
       await actions.saveDocument({
         id: doc?.id ?? uid(),
         car_id: car!.id,
         kind,
-        title: title.trim() || DOC_KIND[kind].label,
+        title: name,
         provider: provider.trim() || null,
         number: number.trim() || null,
         expiry: expiry || null,
-        files,
+        files: keep,
       })
+      if (replaces) await actions.deleteDocument(replaces.id)
       onClose()
     } catch (e) {
       setErr(userMessage(e))
