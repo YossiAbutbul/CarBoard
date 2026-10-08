@@ -1,4 +1,5 @@
 import { DateField } from '../components/DateField'
+import { userMessage } from '../lib/errors'
 import { ConfirmButton } from '../components/ConfirmButton'
 import { useState } from 'react'
 import type { CarDocument, DocKind } from '../types'
@@ -35,7 +36,7 @@ export function DocumentSheet({ doc, onClose }: { doc?: CarDocument; onClose(): 
       }
       setFiles(fs => [...fs, ...refs])
     } catch (e) {
-      setErr(e instanceof Error ? e.message : String(e))
+      setErr(userMessage(e))
     } finally {
       setUploading(false)
     }
@@ -56,7 +57,7 @@ export function DocumentSheet({ doc, onClose }: { doc?: CarDocument; onClose(): 
       })
       onClose()
     } catch (e) {
-      setErr(e instanceof Error ? e.message : String(e))
+      setErr(userMessage(e))
     }
   }
 

@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { userMessage } from '../lib/errors'
 import { createPortal } from 'react-dom'
 import { ConfirmButton } from '../components/ConfirmButton'
 import { ask, askText } from '../components/Dialog'
@@ -237,7 +238,7 @@ function PushSection({ cloud }: { cloud: boolean }) {
   }, [cloud])
   const toggle = (next: NotifyPrefs) => {
     setPrefs(next)
-    track(savePrefs(next)).catch(e => setMsg(e instanceof Error ? e.message : String(e)))
+    track(savePrefs(next)).catch(e => setMsg(userMessage(e)))
   }
   const WHEN: [string, number | 'late'][] = [
     ['חודש לפני', 30],
@@ -253,7 +254,7 @@ function PushSection({ cloud }: { cloud: boolean }) {
     try {
       await fn()
     } catch (e) {
-      setMsg(e instanceof Error ? e.message : String(e))
+      setMsg(userMessage(e))
     } finally {
       setBusy(false)
     }
@@ -391,7 +392,7 @@ function FamilySection({ myName }: { myName: string }) {
     try {
       await fn()
     } catch (e) {
-      show(e instanceof Error ? e.message : String(e))
+      show(userMessage(e))
     } finally {
       setBusy(false)
     }

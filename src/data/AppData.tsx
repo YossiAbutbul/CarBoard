@@ -1,4 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
+import { userMessage } from '../lib/errors'
 import type { Car, Data, Item, Table } from '../types'
 
 type Row = { id: string } & Record<string, unknown>
@@ -108,7 +109,7 @@ export function AppDataProvider({ store: raw, children }: { store: Store; childr
       setFamily(store.family?.current() ?? null)
       setError(null)
     } catch (e) {
-      setError(e instanceof Error ? e.message : String(e))
+      setError(userMessage(e))
     } finally {
       setLoading(false)
     }

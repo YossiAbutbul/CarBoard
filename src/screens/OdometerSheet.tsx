@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { userMessage } from '../lib/errors'
 import { Sheet, useDirty } from '../components/ui'
 import { useApp } from '../data/AppData'
 import { readingError } from '../domain/odometer'
@@ -37,7 +38,7 @@ export function OdometerSheet({ onClose }: { onClose(): void }) {
       await actions.updateReading(last.id, n)
       onClose()
     } catch (x) {
-      setErr(x instanceof Error ? x.message : String(x))
+      setErr(userMessage(x))
     } finally {
       setBusy(false)
     }
@@ -51,7 +52,7 @@ export function OdometerSheet({ onClose }: { onClose(): void }) {
       await actions.addReading(car!.id, n, source)
       onClose()
     } catch (x) {
-      setErr(x instanceof Error ? x.message : String(x))
+      setErr(userMessage(x))
     } finally {
       setBusy(false)
     }
@@ -131,7 +132,7 @@ function KmHistorySheet({ onClose }: { onClose(): void }) {
       await actions.updateReading(id, n)
       setEditId(null)
     } catch (x) {
-      setHistErr(x instanceof Error ? x.message : String(x))
+      setHistErr(userMessage(x))
     }
   }
 
@@ -140,7 +141,7 @@ function KmHistorySheet({ onClose }: { onClose(): void }) {
     try {
       await actions.deleteReading(id)
     } catch (x) {
-      setHistErr(x instanceof Error ? x.message : String(x))
+      setHistErr(userMessage(x))
     }
   }
 

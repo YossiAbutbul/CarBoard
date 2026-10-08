@@ -27,7 +27,8 @@
   <body>
     <div id="root"></div>
     <script>
-      // Last resort: an error before the app is up would leave a blank page; print it instead.
+      // Last resort: an error before the app is up would leave a blank page. Show a friendly one
+      // instead; the technical part only goes to the clipboard ("copy details").
       ;(function () {
         var shown = false
         function show(msg) {
@@ -35,12 +36,19 @@
           var root = document.getElementById('root')
           if (root && root.childElementCount) return
           shown = true
+          var details = String(msg) + '\n' + location.href + '\n' + navigator.userAgent
           document.body.innerHTML =
-            '<div style="font:14px system-ui;padding:24px;text-align:center;direction:rtl">' +
-            '<b style="font-size:18px">משהו השתבש</b><p>טעינה מחדש בדרך כלל פותרת את זה.</p>' +
-            '<button onclick="location.reload()" style="padding:10px 22px;border-radius:12px;border:0;background:#1c69d4;color:#fff;font-size:15px">טעינה מחדש</button>' +
-            '<pre dir="ltr" style="white-space:pre-wrap;word-break:break-word;text-align:left;font-size:11px;color:#7a8491;margin-top:16px"></pre></div>'
-          document.querySelector('pre').textContent = String(msg)
+            '<div style="min-height:100dvh;display:flex;flex-direction:column;justify-content:flex-end;gap:12px;padding:32px 22px max(28px,env(safe-area-inset-bottom));background:#08111f;color:#fff;font-family:\'Noto Sans Hebrew\',system-ui,sans-serif;direction:rtl">' +
+            '<b style="font-size:38px;line-height:1.1">משהו השתבש</b>' +
+            '<p style="margin:0;font-size:15px;line-height:1.5;color:rgba(255,255,255,.62)">הנתונים שלכם שמורים. טעינה מחדש בדרך כלל פותרת את זה.</p>' +
+            '<button id="cb-reload" style="margin-top:12px;height:54px;border-radius:16px;border:0;background:#fff;color:#0f1720;font:600 15.5px inherit">טעינה מחדש</button>' +
+            '<button id="cb-copy" style="border:0;background:none;color:rgba(255,255,255,.5);font:500 12.5px inherit;text-decoration:underline;padding:6px">העתקת פרטים לתמיכה</button></div>'
+          document.getElementById('cb-reload').onclick = function () { location.reload() }
+          document.getElementById('cb-copy').onclick = function () {
+            var b = this
+            var done = function () { b.textContent = '✓ הפרטים הועתקו' }
+            if (navigator.clipboard) navigator.clipboard.writeText(details).then(done)
+          }
         }
         window.addEventListener('error', function (e) { show((e.error && e.error.stack) || e.message) })
         window.addEventListener('unhandledrejection', function (e) { show((e.reason && e.reason.stack) || e.reason) })
