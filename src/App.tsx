@@ -261,7 +261,6 @@ function Login({ onGuest }: { onGuest(): void }) {
           <button className="btn guest-btn" onClick={onGuest}>
             כניסה כאורח
           </button>
-          <div className="guest-hint">כאורח, הנתונים נשמרים רק במכשיר הזה. אפשר להתחבר אחר כך ולהעביר אותם.</div>
         </div>
         {err && <div className="banner">{err}</div>}
       </div>
