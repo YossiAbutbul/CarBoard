@@ -229,15 +229,15 @@ function Login({ onGuest }: { onGuest(): void }) {
         <div className="login-hero">
           <h1 className="status">
             <span>כל הרכב.</span>
-            <span>במקום אחד.</span>
+            <span className="accent">במקום אחד.</span>
           </h1>
           <p className="login-sub">טסט, ביטוח, טיפולים וק״מ, עם תזכורת בזמן.</p>
           <ul className="login-feats">
             {(
               [
-                ['test', 'תזכורת לטסט ולביטוח'],
-                ['service', 'טיפולים לפי ק״מ או תאריך'],
-                ['docs', 'רישיון, פוליסה וקבלות במקום אחד'],
+                ['reminder', 'תזכורות בזמן'],
+                ['gauge', 'טיפולים לפי ק״מ'],
+                ['docs', 'כל המסמכים'],
               ] as [IconName, string][]
             ).map(([icon, text], n) => (
               <li key={icon} style={{ animationDelay: `${0.35 + n * 0.08}s` }}>
