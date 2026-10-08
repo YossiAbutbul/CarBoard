@@ -7,8 +7,10 @@ import { blobToBase64, compressImage } from '../lib/image'
 
 const TABLES: Table[] = ['cars', 'readings', 'items', 'services', 'documents']
 const urls = new Map<string, string>()
-// A Firestore document holds at most 1 MiB, and base64 adds a third.
-const MAX_FILE = 700 * 1024
+// A Firestore document holds at most 1 MiB and base64 adds a third, so a file is stored in pieces of
+// 700 KB: files/<id> holds its type and piece count, files/<id>/parts/<n> hold the pieces.
+const PART = 700 * 1024
+const MAX_FILE = 15 * 1024 * 1024
 
 /**
  * Cloud mode, all in Firestore (the free Spark plan has no Storage):
@@ -39,26 +41,44 @@ export function firebaseStore(userId: string): Store {
     async upload(name, blob) {
       let file = blob
       // a photo still too big after the usual compression gets one stronger pass
-      if (file.size > MAX_FILE && file.type.startsWith('image/')) file = await compressImage(file, 1100, 0.6)
-      if (file.size > MAX_FILE) throw new Error('הקובץ גדול מדי (עד 700KB). אפשר לצלם אותו במקום להעלות PDF.')
+      if (file.size > PART && file.type.startsWith('image/')) file = await compressImage(file, 1100, 0.6)
+      if (file.size > MAX_FILE) throw new Error('הקובץ גדול מדי (עד 15MB).')
       const id = uid()
-      await setDoc(row('files', id), { name, type: file.type, size: file.size, data: await blobToBase64(file), created: Date.now() })
+      const parts = Math.max(1, Math.ceil(file.size / PART))
+      // the pieces first, then the record that points to them, so a half-done upload is never shown
+      for (let n = 0; n < parts; n++)
+        await setDoc(doc(fs, 'users', userId, 'files', id, 'parts', String(n)), { data: await blobToBase64(file.slice(n * PART, (n + 1) * PART)) })
+      await setDoc(row('files', id), { name, type: file.type, size: file.size, parts, created: Date.now() })
       return `fs:${id}`
     },
     async fileUrl(ref) {
       if (!ref.startsWith('fs:')) return ref
       if (urls.has(ref)) return urls.get(ref)!
-      const snap = await getDoc(row('files', ref.slice(3)))
+      const id = ref.slice(3)
+      const snap = await getDoc(row('files', id))
       if (!snap.exists()) return ''
-      const { type, data } = snap.data() as { type: string; data: string }
-      const bytes = Uint8Array.from(atob(data), c => c.charCodeAt(0))
-      const url = URL.createObjectURL(new Blob([bytes], { type }))
+      const meta = snap.data() as { type: string; data?: string; parts?: number }
+      // older files are a single record with the data inside it
+      const pieces = meta.data
+        ? [meta.data]
+        : await Promise.all(
+            Array.from({ length: meta.parts ?? 0 }, async (_, n) => {
+              const p = await getDoc(doc(fs, 'users', userId, 'files', id, 'parts', String(n)))
+              return (p.data() as { data: string }).data
+            }),
+          )
+      const bytes = pieces.map(b64 => Uint8Array.from(atob(b64), c => c.charCodeAt(0)))
+      const url = URL.createObjectURL(new Blob(bytes, { type: meta.type }))
       urls.set(ref, url)
       return url
     },
     async wipeFiles() {
       const all = await getDocs(table('files'))
-      await Promise.all(all.docs.map(d => deleteDoc(d.ref)))
+      for (const f of all.docs) {
+        const parts = await getDocs(collection(fs, 'users', userId, 'files', f.id, 'parts'))
+        await Promise.all(parts.docs.map(p => deleteDoc(p.ref)))
+        await deleteDoc(f.ref)
+      }
       urls.clear()
     },
   }
