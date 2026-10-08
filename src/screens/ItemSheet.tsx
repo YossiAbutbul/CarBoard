@@ -52,6 +52,7 @@ export function ItemSheet({ item, onClose, onDone }: { item?: Item; onClose(): v
   const [err, setErr] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
   const dirty = useDirty([label, everyKm, everyMonths, dueKm, dueDate, provider, policy, files, mode])
+  const [adding, setAdding] = useState<Item['kind'] | null>(null) // a ready-made reminder being added
   if (!car) return null
 
   const draft: Item = {
@@ -128,7 +129,6 @@ export function ItemSheet({ item, onClose, onDone }: { item?: Item; onClose(): v
   }
 
   // Ready-made reminders this car does not have yet (or deleted): one tap adds each.
-  const [adding, setAdding] = useState<Item['kind'] | null>(null)
   const have = new Set(data.items.filter(i => i.car_id === car.id).map(i => i.kind))
   const missing = item ? [] : defaultItems(car.id, km.value, null).filter(d => !have.has(d.kind))
 

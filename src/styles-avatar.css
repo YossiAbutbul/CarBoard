@@ -580,6 +580,11 @@ html, body { overscroll-behavior-y: none; }
 .switch.on { background: var(--blue); }
 .switch.on::after { transform: translateX(-18px); }
 .switch:disabled { opacity: 0.6; }
+.crash { min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; padding: 24px; text-align: center; background: #fff; }
+.crash b { font-size: 20px; }
+.crash p { margin: 0; color: var(--muted); font-size: 14px; }
+.crash .btn { min-width: 180px; }
+.crash pre { max-width: 100%; margin: 16px 0 0; padding: 10px; border-radius: 10px; background: #f3f5f8; color: #7a8491; font-size: 11px; white-space: pre-wrap; word-break: break-word; text-align: left; }
 .switch-spin { flex: none; width: 24px; height: 24px; margin-inline: 11px; }
 .when-chips button { background: #fff; }
 
