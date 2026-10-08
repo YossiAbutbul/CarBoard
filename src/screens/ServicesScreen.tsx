@@ -74,6 +74,15 @@ export function ServicesScreen({ open, openCars, openSettings }: { open: OpenShe
 
       {list.some(s => s.price) && <SpendByType list={list} years={years} />}
 
+      {list.length > 0 && (
+        <div className="sec">
+          <h2>היסטוריה</h2>
+          <button className="add-btn" onClick={() => open({ t: 'service' })}>
+            <Icon name="plus" /> טיפול
+          </button>
+        </div>
+      )}
+
       {years.map(y => (
         <section key={y}>
           <div className="year">

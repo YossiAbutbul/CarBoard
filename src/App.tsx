@@ -263,21 +263,7 @@ function Main({ email, accountName, guest = false }: { email: string | null; acc
         )}
       </div>
 
-      {car && tab === 'services' && (
-        <button className="fab" onClick={() => setSheet({ t: 'service' })} aria-label="טיפול חדש">
-          <Icon name="plus" />
-        </button>
-      )}
-      {car && tab === 'fuel' && (
-        <button className="fab" onClick={() => setSheet({ t: 'fuel' })} aria-label="תדלוק חדש">
-          <Icon name="plus" />
-        </button>
-      )}
-      {car && tab === 'docs' && (
-        <button className="fab" onClick={() => setSheet({ t: 'doc' })} aria-label="מסמך חדש">
-          <Icon name="plus" />
-        </button>
-      )}
+      {/* adding is a pill next to each list's title (no floating button over the content) */}
 
       {car && guide !== 'ready' && (
         <nav className="nav" data-tour="nav">
