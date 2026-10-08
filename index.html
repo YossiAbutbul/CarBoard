@@ -26,6 +26,26 @@
   </head>
   <body>
     <div id="root"></div>
+    <script>
+      // Last resort: an error before the app is up would leave a blank page; print it instead.
+      ;(function () {
+        var shown = false
+        function show(msg) {
+          if (shown) return
+          var root = document.getElementById('root')
+          if (root && root.childElementCount) return
+          shown = true
+          document.body.innerHTML =
+            '<div style="font:14px system-ui;padding:24px;text-align:center;direction:rtl">' +
+            '<b style="font-size:18px">משהו השתבש</b><p>טעינה מחדש בדרך כלל פותרת את זה.</p>' +
+            '<button onclick="location.reload()" style="padding:10px 22px;border-radius:12px;border:0;background:#1c69d4;color:#fff;font-size:15px">טעינה מחדש</button>' +
+            '<pre dir="ltr" style="white-space:pre-wrap;word-break:break-word;text-align:left;font-size:11px;color:#7a8491;margin-top:16px"></pre></div>'
+          document.querySelector('pre').textContent = String(msg)
+        }
+        window.addEventListener('error', function (e) { show((e.error && e.error.stack) || e.message) })
+        window.addEventListener('unhandledrejection', function (e) { show((e.reason && e.reason.stack) || e.reason) })
+      })()
+    </script>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

@@ -6,6 +6,7 @@ import { UpdateBanner } from './components/UpdateBanner'
 import { DialogHost } from './components/Dialog'
 import { InstallPrompt } from './components/InstallPrompt'
 import { ActivityBar } from './components/ActivityBar'
+import { ErrorBoundary } from './components/ErrorBoundary'
 import './styles.css'
 import './styles-pages.css'
 import './styles-avatar.css'
@@ -37,7 +38,9 @@ if (join) {
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <App />
+    <ErrorBoundary>
+      <App />
+    </ErrorBoundary>
     <UpdateBanner />
     <DialogHost />
     <InstallPrompt />
