@@ -6,6 +6,9 @@ export function UpdateBanner() {
   const [update, setUpdate] = useState<(() => void) | null>(null)
   const [busy, setBusy] = useState(false)
   useEffect(() => {
+    // an update found before this banner was on screen
+    const waiting = (window as unknown as { __pendingUpdate?: () => void }).__pendingUpdate
+    if (waiting) setUpdate(() => waiting)
     const on = (e: Event) => setUpdate(() => (e as CustomEvent<() => void>).detail)
     window.addEventListener('app-update', on)
     return () => window.removeEventListener('app-update', on)

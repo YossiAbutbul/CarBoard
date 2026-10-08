@@ -12,7 +12,10 @@ import './styles-avatar.css'
 const updateSW = registerSW({
   immediate: true,
   onNeedRefresh() {
-    window.dispatchEvent(new CustomEvent('app-update', { detail: () => updateSW(true) }))
+    // often found at startup, before the banner is on screen: keep it for the banner to pick up
+    const apply = () => updateSW(true)
+    ;(window as unknown as { __pendingUpdate?: () => void }).__pendingUpdate = apply
+    window.dispatchEvent(new CustomEvent('app-update', { detail: apply }))
   },
   onRegisteredSW(_url, reg) {
     if (reg) setInterval(() => reg.update(), 60 * 60 * 1000)
