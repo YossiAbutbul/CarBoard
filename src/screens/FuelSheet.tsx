@@ -5,9 +5,11 @@ import { Sheet, useDirty } from '../components/ui'
 import { useApp } from '../data/AppData'
 import type { Fuel } from '../types'
 import { todayIso } from '../lib/dates'
-import { fmtNum } from '../lib/i18n'
+import { fmtDate, fmtNum } from '../lib/i18n'
+import { ask } from '../components/Dialog'
 import { userMessage } from '../lib/errors'
 import { uid } from '../lib/uid'
+import { Icon } from '../components/Icon'
 
 const num = (s: string) => (s.trim() === '' ? null : Number(s))
 
@@ -27,7 +29,49 @@ export function FuelSheet({ record, onClose }: { record?: Fuel; onClose(): void 
   const [err, setErr] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
   const dirty = useDirty([date, liters, price, kmV, station, full])
+  const [scan, setScan] = useState<{ p: number } | null>(null)
+  const [scanNote, setScanNote] = useState<string | null>(null)
   if (!car) return null
+
+  // Read a receipt (the station app's PDF, or a photo) on the phone and fill in what it says.
+  // The file is only read here: it is not uploaded and not kept.
+  async function readReceipt(file: File | undefined) {
+    if (!file) return
+    setScan({ p: 0 })
+    setScanNote(null)
+    setErr(null)
+    try {
+      const { scanFuelReceipt } = await import('../lib/receiptScan')
+      const r = await scanFuelReceipt(file, p => setScan({ p }))
+      setScan(null)
+      const useDate = r.date && r.date <= todayIso() ? r.date : null
+      const lines = [
+        r.liters != null && `ליטרים: ${r.liters}`,
+        r.perLiter != null && `מחיר לליטר: ₪${r.perLiter}`,
+        r.total != null && `סה״כ: ₪${r.total}`,
+        useDate && `תאריך: ${fmtDate(useDate)}`,
+        r.station && `תחנה: ${r.station}`,
+      ].filter(Boolean)
+      if (!lines.length) return setScanNote('לא הצלחנו לקרוא את הקבלה. אפשר למלא ידנית.')
+      // the reading is automatic and can be wrong: show what was read, and fill in only after a yes
+      const ok = await ask({
+        title: 'זה מה שנקרא מהקבלה',
+        text: `${lines.join('\n')}\n\nהקריאה אוטומטית ועלולה לטעות. בדקו שהערכים נכונים.`,
+        confirm: 'מילוי בטופס',
+        cancel: 'ביטול',
+      })
+      if (!ok) return
+      if (r.liters != null) setLiters(String(r.liters))
+      if (r.total != null) setPrice(String(r.total))
+      if (useDate) setDate(useDate)
+      if (r.station) setStation(r.station)
+      setScanNote('מולא מהקבלה. אפשר לתקן כל שדה לפני השמירה.')
+    } catch (e) {
+      setScanNote(navigator.onLine ? userMessage(e) : 'בפעם הראשונה הסריקה צריכה אינטרנט (להורדת מנוע הקריאה).')
+    } finally {
+      setScan(null)
+    }
+  }
 
   const l = num(liters)
   const p = num(price)
@@ -60,13 +104,30 @@ export function FuelSheet({ record, onClose }: { record?: Fuel; onClose(): void 
   return (
     <Sheet title={record ? 'עריכת תדלוק' : 'תדלוק'} onClose={onClose} dirty={dirty}>
       <div className="card">
+        <label className={`file-btn scan-btn ${scan ? 'busy' : ''}`}>
+          {scan ? (
+            <>
+              <span className="spin" /> קורא את הקבלה… {Math.round(scan.p * 100)}%
+              <i className="scan-progress" style={{ width: `${Math.round(scan.p * 100)}%` }} />
+            </>
+          ) : (
+            <>
+              <Icon name="scan" /> סריקת קבלה (PDF או צילום)
+            </>
+          )}
+          <input type="file" accept="image/*,application/pdf" disabled={Boolean(scan)} onChange={e => {
+            readReceipt(e.target.files?.[0])
+            e.target.value = '' // the same file can be picked again
+          }} />
+        </label>
+        <div className="scan-note">{scanNote ?? 'הקבלה נקראת בטלפון ולא נשמרת.'}</div>
         <div className="row2">
           <div>
-            <label className="lbl" style={{ marginTop: 0 }}>ליטרים</label>
+            <label className="lbl">ליטרים</label>
             <input className="in" inputMode="decimal" value={liters} placeholder="0" onChange={e => setLiters(e.target.value.replace(/[^\d.]/g, ''))} />
           </div>
           <div>
-            <label className="lbl" style={{ marginTop: 0 }}>סה״כ (₪)</label>
+            <label className="lbl">סה״כ (₪)</label>
             <input className="in" inputMode="decimal" value={price} placeholder="0" onChange={e => setPrice(e.target.value.replace(/[^\d.]/g, ''))} />
           </div>
         </div>

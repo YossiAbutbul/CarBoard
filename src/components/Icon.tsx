@@ -39,6 +39,7 @@ import {
   ZoomIn,
   ZoomOut,
   Fuel,
+  ScanLine,
   Shrink,
   type LucideIcon,
 } from 'lucide-react'
@@ -86,6 +87,7 @@ const ICONS = {
   zoomIn: ZoomIn,
   refresh: RefreshCw,
   fuel: Fuel,
+  scan: ScanLine,
   reset: Shrink, // back to the normal size (arrows in, not a circle: that would read as "rotate")
   family: Users,
   link: Link2,
