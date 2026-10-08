@@ -3,6 +3,7 @@ import type { Data, Item, Reading, Table } from '../types'
 import { estimateKm, kmPerDay, readingError } from './odometer'
 import { dueInfo } from './due'
 import { buildReminders } from './reminders'
+import { notesFor, targetKey } from './notify'
 import { makeActions } from '../data/actions'
 import { emptyData, type Store } from '../data/store'
 import { addDays, todayIso } from '../lib/dates'
@@ -217,5 +218,41 @@ describe('fixes from the walk-through', () => {
     await actions.saveService({ car_id: id, type: 'oil', title: 'שמן', date: todayIso(), km: 50500, price: null, garage: null, notes: null, receipt: 'mem:r1' })
     await actions.deleteCar(id)
     expect(removed.sort()).toEqual(['mem:p1', 'mem:p2', 'mem:r1'])
+  })
+
+})
+
+describe('push notifications', () => {
+  const today = '2026-10-08'
+  const car1 = { ...car, id: 'c1' }
+  const rd = [reading(100000, today)]
+  const mk = (p: Partial<Item>) => item({ car_id: 'c1', ...p })
+  it('7 days before a date', () => {
+    const n = notesFor(car1, [mk({ id: 'i1', label: 'ביטוח', due_date: addDays(today, 7) })], rd, {}, today)
+    expect(n).toHaveLength(1)
+    expect(n[0].step).toBe('d7')
+    expect(n[0].title).toBe('ביטוח · קיה')
+  })
+  it('nothing far away, nothing without a target', () => {
+    expect(notesFor(car1, [mk({ due_date: addDays(today, 40) }), mk({ id: 'i2' })], rd, {}, today)).toEqual([])
+  })
+  it('each step once, and not an earlier one after a later one', () => {
+    const r = mk({ id: 'i1', due_date: addDays(today, 1) })
+    expect(notesFor(car1, [r], rd, { [targetKey(r)]: ['d1'] }, today)).toEqual([])
+    expect(notesFor(car1, [mk({ id: 'i1', due_date: addDays(today, 7) })], rd, { [targetKey(mk({ id: 'i1', due_date: addDays(today, 7) }))]: ['d1'] }, today)).toEqual([])
+  })
+  it('a new target starts over', () => {
+    const old = mk({ id: 'i1', due_date: addDays(today, 3) })
+    const moved = mk({ id: 'i1', due_date: addDays(today, 7) })
+    expect(notesFor(car1, [moved], rd, { [targetKey(old)]: ['d7', 'd1'] }, today)[0].step).toBe('d7')
+  })
+  it('by km: how many km are left', () => {
+    const n = notesFor(car1, [mk({ id: 'i1', label: 'שמן', due_km: 100200 })], rd, {}, today)
+    expect(n[0].body).toMatch(/נשארו 200 ק״מ/)
+  })
+  it('overdue once', () => {
+    const r = mk({ id: 'i1', due_date: addDays(today, -3) })
+    expect(notesFor(car1, [r], rd, {}, today)[0].step).toBe('late')
+    expect(notesFor(car1, [r], rd, { [targetKey(r)]: ['late'] }, today)).toEqual([])
   })
 })

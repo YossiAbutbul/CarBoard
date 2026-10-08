@@ -31,6 +31,7 @@ export default defineConfig({
       workbox: {
         globPatterns: ['**/*.{js,css,html,svg,png,ico,woff2}'],
         globIgnores: ['**/ort*', '**/*.wasm'],
+        importScripts: ['push-sw.js'], // push reminders: show the notice, open the app on tap
       },
     }),
   ],

@@ -1,5 +1,7 @@
+import { useEffect, useState } from 'react'
 import { ConfirmButton } from '../components/ConfirmButton'
 import { askText } from '../components/Dialog'
+import { disablePush, enablePush, pushState, testPush, type PushState } from '../lib/push'
 import { Drawer } from '../components/ui'
 import { Plate } from '../components/Chrome'
 import { CarToy } from '../components/CarAvatar'
@@ -109,6 +111,7 @@ export function SettingsDrawer({
           </button>
         </section>
       )}
+      {car && <PushSection cloud={store.mode === 'cloud'} />}
       {car && (
         <section className="drawer-sec">
           <div className="drawer-label">יומן</div>
@@ -201,5 +204,77 @@ export function SettingsDrawer({
         © {new Date().getFullYear()} Yossi Abutbul. All rights reserved.
       </div>
     </Drawer>
+  )
+}
+
+/** Push reminders on this phone: on/off, and a test notice. */
+function PushSection({ cloud }: { cloud: boolean }) {
+  const [state, setState] = useState<PushState | null>(null)
+  const [busy, setBusy] = useState(false)
+  const [msg, setMsg] = useState<string | null>(null)
+  useEffect(() => {
+    pushState().then(setState).catch(() => setState('unsupported'))
+  }, [])
+  const run = async (fn: () => Promise<void>) => {
+    setBusy(true)
+    setMsg(null)
+    try {
+      await fn()
+    } catch (e) {
+      setMsg(e instanceof Error ? e.message : String(e))
+    } finally {
+      setBusy(false)
+    }
+  }
+  const note = !cloud
+    ? 'התראות זמינות לחשבון מחובר. במצב אורח הנתונים נשמרים רק במכשיר.'
+    : state === 'needs-install'
+      ? 'באייפון: שתפו ← "הוספה למסך הבית", ופתחו את CarBoard משם כדי להפעיל התראות.'
+      : state === 'blocked'
+        ? 'ההתראות חסומות בהגדרות הדפדפן או הטלפון. אפשרו אותן שם ונסו שוב.'
+        : state === 'unsupported'
+          ? 'הדפדפן הזה לא תומך בהתראות.'
+          : 'תזכורת 14 ימים, 7 ימים ויום אחד לפני כל מועד, ביום עצמו, ופעם אחת אם עבר. כל בוקר ב־9:00.'
+  return (
+    <section className="drawer-sec">
+      <div className="drawer-label">התראות</div>
+      <div className="card">
+        <div className="item" style={{ padding: 0 }}>
+          <span className="ic">
+            <Icon name="reminder" />
+          </span>
+          <div style={{ flex: 1 }}>
+            <div className="t">התראות לטלפון</div>
+            <div className="s">{note}</div>
+          </div>
+          {cloud && (state === 'on' || state === 'off') && (
+            <button
+              role="switch"
+              aria-checked={state === 'on'}
+              aria-label="התראות לטלפון"
+              className={`switch ${state === 'on' ? 'on' : ''}`}
+              disabled={busy}
+              onClick={() => run(async () => setState(state === 'on' ? await disablePush() : await enablePush()))}
+            />
+          )}
+        </div>
+        {cloud && state === 'on' && (
+          <button
+            className="btn"
+            style={{ marginTop: 12, background: '#fff' }}
+            disabled={busy}
+            onClick={() =>
+              run(async () => {
+                const n = await testPush()
+                setMsg(n ? 'נשלחה התראת ניסיון.' : 'לא נמצא טלפון רשום. כבו והפעילו מחדש.')
+              })
+            }
+          >
+            {busy ? <span className="spin" /> : 'שליחת התראת ניסיון'}
+          </button>
+        )}
+        {msg && <div className="hint" style={{ marginTop: 8 }}>{msg}</div>}
+      </div>
+    </section>
   )
 }

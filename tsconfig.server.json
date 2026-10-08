@@ -1,0 +1,5 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": { "noEmit": true, "types": ["node"], "lib": ["ES2022", "DOM"] },
+  "include": ["server", "src/domain", "src/lib/dates.ts", "src/lib/i18n.ts", "src/types.ts"]
+}

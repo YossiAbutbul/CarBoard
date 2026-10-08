@@ -5,6 +5,7 @@ rules_version = '2';
 //   files/<id>                 an uploaded file's record: name, type, size, piece count
 //   files/<id>/parts/<n>       the file itself, in pieces of 700 KB (base64)
 //   meta/quota                 bytes and files stored; every file added or removed must update it
+//   push/<id>                  a phone with push reminders on (meta/notified is the server's own)
 // A user can store up to 250 MB of files, 15 MB each. Anything else is refused.
 
 service cloud.firestore {
@@ -61,6 +62,18 @@ service cloud.firestore {
             && request.resource.data.bytes == oldBytes() - get(f).data.size
             && request.resource.data.files == oldFiles() - 1)
         );
+      }
+
+      // ── push: one record per phone with notifications on (the daily job reads them) ──
+      match /push/{subId} {
+        allow read, delete: if signedIn(uid);
+        allow create, update: if signedIn(uid)
+          && request.resource.data.keys().hasOnly(['endpoint', 'keys', 'created', 'ua'])
+          && request.resource.data.endpoint is string
+          && request.resource.data.endpoint.size() <= 1000
+          && request.resource.data.endpoint.matches('https://.*')
+          && request.resource.data.keys.keys().hasOnly(['p256dh', 'auth'])
+          && request.resource.data.ua.size() <= 200;
       }
 
       // ── files ──
