@@ -146,8 +146,8 @@ export function HomeScreen({
 
       <div className="sec">
         <h2>מצב הרכב</h2>
-        <button onClick={() => open({ t: 'item' })}>
-          <Icon name="plus" /> תזכורת
+        <button className="add-btn" onClick={() => open({ t: 'item' })}>
+          <Icon name="plus" /> תזכורת חדשה
         </button>
       </div>
       <div className="tiles" style={{ marginTop: 0 }} data-tour="tiles">

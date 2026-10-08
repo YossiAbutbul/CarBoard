@@ -4,6 +4,8 @@ import type { Car } from '../types'
 import { useApp } from '../data/AppData'
 import type { Status } from '../domain/due'
 import { Icon } from './Icon'
+import { ask } from './Dialog'
+import { useBackLayer } from '../lib/back'
 import { PdfThumb, useFile } from './FileViewer'
 
 /** Resolves a stored file ref (idb:/sb:/https:) to a URL the browser can show. */
@@ -53,6 +55,7 @@ export function Drawer({ title, side, onClose, children }: { title: string; side
     setLeaving(true)
     setTimeout(onClose, 220)
   }
+  useBackLayer(true, close)
   // Drag the panel back toward its edge to close it (start = right edge in RTL, end = left).
   const panel = useRef<HTMLElement>(null)
   const drag = useRef<{ x: number; y: number; t: number; dx: number; axis: 'x' | 'y' | null } | null>(null)
@@ -118,7 +121,7 @@ export function Drawer({ title, side, onClose, children }: { title: string; side
  * Drag a bottom sheet down by its handle to close it. Spread `handle` on the drag area
  * (the handle and title) and put `sheet` on the panel. Buttons inside the area still click.
  */
-export function useSwipeClose(onClose: () => void) {
+export function useSwipeClose(onClose: () => void, mustAsk?: () => boolean) {
   const sheet = useRef<HTMLDivElement>(null)
   const drag = useRef<{ y: number; t: number; dy: number } | null>(null)
   const backdrop = (o: string) => {
@@ -146,7 +149,12 @@ export function useSwipeClose(onClose: () => void) {
       if (!d || !el) return
       const fast = d.dy / Math.max(1, Date.now() - d.t) > 0.5 // a quick flick also closes
       el.style.transition = 'transform 0.22s cubic-bezier(0.2, 0.8, 0.2, 1)'
-      if (d.dy > el.offsetHeight * 0.25 || (fast && d.dy > 30)) {
+      if ((d.dy > el.offsetHeight * 0.25 || (fast && d.dy > 30)) && mustAsk?.()) {
+        // unsaved changes: spring back and ask first
+        el.style.transform = ''
+        backdrop('')
+        onClose()
+      } else if (d.dy > el.offsetHeight * 0.25 || (fast && d.dy > 30)) {
         el.style.transform = 'translateY(100%)'
         backdrop('rgba(11, 22, 38, 0)')
         setTimeout(onClose, 200)
@@ -159,32 +167,55 @@ export function useSwipeClose(onClose: () => void) {
   return { sheet, handle: { ...handle, onPointerCancel: handle.onPointerUp } }
 }
 
-export function Sheet({ title, onClose, children }: { title: string; onClose(): void; children: ReactNode }) {
+/** True once any of `values` differs from what it was when the sheet opened. */
+export function useDirty(values: unknown[]) {
+  const [start] = useState(() => JSON.stringify(values))
+  return JSON.stringify(values) !== start
+}
+
+/**
+ * A bottom sheet. With `dirty` (unsaved edits), closing it any way (✕, tapping outside, swiping
+ * down, Escape, the phone's back button) asks first.
+ */
+export function Sheet({ title, onClose, dirty = false, children }: { title: string; onClose(): void; dirty?: boolean; children: ReactNode }) {
+  const dirtyRef = useRef(dirty)
+  dirtyRef.current = dirty
+  const requestClose = async () => {
+    if (dirtyRef.current) {
+      const leave = await ask({ title: 'לצאת בלי לשמור?', text: 'השינויים שעשית לא יישמרו.', confirm: 'יציאה', cancel: 'המשך עריכה', danger: true })
+      if (!leave) return false
+    }
+    onClose()
+    return true
+  }
+  useBackLayer(true, requestClose)
   useEffect(() => {
-    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && onClose()
+    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && requestClose()
     window.addEventListener('keydown', onKey)
     document.body.style.overflow = 'hidden'
     return () => {
       window.removeEventListener('keydown', onKey)
       document.body.style.overflow = ''
     }
-  }, [onClose])
-  const { sheet, handle } = useSwipeClose(onClose)
-  return (
-    <div className="overlay" onClick={onClose}>
+  }) // eslint-disable-line react-hooks/exhaustive-deps
+  const { sheet, handle } = useSwipeClose(() => void requestClose(), () => dirtyRef.current)
+  // into <body>: a sheet can open over another sheet (and is never caught in a page's animation)
+  return createPortal(
+    <div className="overlay" onClick={() => requestClose()}>
       <div className="sheet" ref={sheet} role="dialog" aria-modal="true" aria-label={title} onClick={e => e.stopPropagation()}>
         <div className="drag-zone" {...handle}>
           <div className="grab" />
           <div className="sheet-head">
             <h2>{title}</h2>
-            <button onClick={onClose} aria-label="סגירה">
+            <button onClick={() => requestClose()} aria-label="סגירה">
               <Icon name="close" />
             </button>
           </div>
         </div>
         {children}
       </div>
-    </div>
+    </div>,
+    document.body,
   )
 }
 

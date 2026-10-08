@@ -7,6 +7,7 @@ import { addDays, addMonths, parseIso, toIso, todayIso } from '../lib/dates'
 import { fmtDate } from '../lib/i18n'
 import { Icon } from './Icon'
 import { useSwipeClose } from './ui'
+import { useBackLayer } from '../lib/back'
 
 type Kind = 'future' | 'past'
 
@@ -95,6 +96,7 @@ function CalendarSheet({
   }, [onClose])
 
   const { sheet, handle } = useSwipeClose(onClose)
+  useBackLayer(true, onClose)
   const now = new Date()
   const maxDate = max ? parseIso(max) : undefined
   return createPortal(

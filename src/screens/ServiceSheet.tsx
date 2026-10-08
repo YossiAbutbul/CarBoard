@@ -1,7 +1,7 @@
 import { DateField } from '../components/DateField'
 import { useMemo, useState } from 'react'
 import type { ItemKind, ServiceRecord } from '../types'
-import { Sheet } from '../components/ui'
+import { Sheet, useDirty } from '../components/ui'
 import { useApp } from '../data/AppData'
 import { KIND, SERVICE_KINDS } from '../domain/labels'
 import { compressImage } from '../lib/image'
@@ -26,6 +26,7 @@ export function ServiceSheet({ onClose, kind = 'service', record }: { onClose():
   const [receipt, setReceipt] = useState<Blob | null>(null)
   const [err, setErr] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
+  const dirty = useDirty([type, title, date, kmV, price, garage, notes, Boolean(receipt)])
 
   if (!car) return null
 
@@ -58,7 +59,7 @@ export function ServiceSheet({ onClose, kind = 'service', record }: { onClose():
   }
 
   return (
-    <Sheet title={record ? 'עריכת טיפול' : 'טיפול חדש'} onClose={onClose}>
+    <Sheet title={record ? 'עריכת טיפול' : 'טיפול חדש'} onClose={onClose} dirty={dirty}>
       <div className="card">
         <span className="lbl" style={{ marginTop: 0 }}>סוג</span>
         <div className="chips">

@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client'
 import { registerSW } from 'virtual:pwa-register'
 import App from './App'
 import { UpdateBanner } from './components/UpdateBanner'
+import { DialogHost } from './components/Dialog'
 import './styles.css'
 import './styles-pages.css'
 import './styles-avatar.css'
@@ -22,5 +23,6 @@ createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <App />
     <UpdateBanner />
+    <DialogHost />
   </StrictMode>,
 )

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { Sheet } from '../components/ui'
+import { Sheet, useDirty } from '../components/ui'
 import { useApp } from '../data/AppData'
 import { readingError } from '../domain/odometer'
 import { agoText, fmtDate, fmtNum } from '../lib/i18n'
@@ -13,9 +13,8 @@ export function OdometerSheet({ onClose }: { onClose(): void }) {
   const [err, setErr] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
   const source = 'manual' as const
-  const [editId, setEditId] = useState<string | null>(null)
-  const [editValue, setEditValue] = useState('')
-  const [histErr, setHistErr] = useState<string | null>(null)
+  const [showHistory, setShowHistory] = useState(false)
+  const dirty = useDirty([value])
   const inputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
@@ -44,27 +43,6 @@ export function OdometerSheet({ onClose }: { onClose(): void }) {
     }
   }
 
-  async function saveEdit(id: string) {
-    setHistErr(null)
-    try {
-      await actions.updateReading(id, Number(editValue.replace(/\D/g, '')))
-      setEditId(null)
-    } catch (x) {
-      setHistErr(x instanceof Error ? x.message : String(x))
-    }
-  }
-
-  async function removeReading(id: string) {
-    setHistErr(null)
-    try {
-      await actions.deleteReading(id)
-    } catch (x) {
-      setHistErr(x instanceof Error ? x.message : String(x))
-    }
-  }
-
-  const SOURCE: Record<string, string> = { start: 'התחלה', manual: 'ידני', confirm: 'אישור שבועי', photo: 'מתמונה', service: 'מטיפול' }
-
   async function save() {
     const e = readingError(readings, n)
     if (e) return setErr(canFixLast ? `${e}. אם הקריאה הקודמת הוקלדה בטעות, אפשר לתקן אותה:` : e)
@@ -84,7 +62,7 @@ export function OdometerSheet({ onClose }: { onClose(): void }) {
   }
 
   return (
-    <Sheet title="כמה ק״מ ברכב?" onClose={onClose}>
+    <Sheet title="כמה ק״מ ברכב?" onClose={onClose} dirty={dirty}>
       <div className="card">
         <input
           ref={inputRef}
@@ -121,10 +99,53 @@ export function OdometerSheet({ onClose }: { onClose(): void }) {
         </div>
 
         {history.length > 0 && (
-          <>
-            <label className="lbl" style={{ marginTop: 22 }}>קריאות קודמות</label>
+          <button className="history-btn" onClick={() => setShowHistory(true)}>
+            <Icon name="list" />
+            <span>היסטוריית ק״מ</span>
+            <small>{history.length === 1 ? 'קריאה אחת' : `${history.length} קריאות`}</small>
+          </button>
+        )}
+      </div>
+      {showHistory && <KmHistorySheet onClose={() => setShowHistory(false)} />}
+    </Sheet>
+  )
+}
+
+const SOURCE: Record<string, string> = { start: 'התחלה', manual: 'ידני', confirm: 'אישור שבועי', photo: 'מתמונה', service: 'מטיפול' }
+
+/** Every km reading of the car, in its own window: fix a mistyped one or delete it. */
+function KmHistorySheet({ onClose }: { onClose(): void }) {
+  const { car, data, actions } = useApp()
+  const [editId, setEditId] = useState<string | null>(null)
+  const [editValue, setEditValue] = useState('')
+  const [histErr, setHistErr] = useState<string | null>(null)
+  if (!car) return null
+  const history = sortReadings(data.readings.filter(r => r.car_id === car.id)).reverse()
+
+  async function saveEdit(id: string) {
+    setHistErr(null)
+    try {
+      await actions.updateReading(id, Number(editValue.replace(/\D/g, '')))
+      setEditId(null)
+    } catch (x) {
+      setHistErr(x instanceof Error ? x.message : String(x))
+    }
+  }
+
+  async function removeReading(id: string) {
+    setHistErr(null)
+    try {
+      await actions.deleteReading(id)
+    } catch (x) {
+      setHistErr(x instanceof Error ? x.message : String(x))
+    }
+  }
+
+  return (
+    <Sheet title="היסטוריית ק״מ" onClose={onClose} dirty={editId !== null}>
+      <div className="card">
             <div className="readings">
-              {history.slice(0, 8).map(r => (
+              {history.map(r => (
                 <div key={r.id} className="reading">
                   {editId === r.id ? (
                     <>
@@ -161,15 +182,13 @@ export function OdometerSheet({ onClose }: { onClose(): void }) {
                       >
                         <Icon name="edit" />
                       </button>
-                      {history.length > 1 && <ConfirmButton icon label={`מחיקת קריאה ${fmtNum(r.km)}`} onConfirm={() => removeReading(r.id)} />}
+                      {history.length > 1 && <ConfirmButton icon label={`מחיקת קריאה ${fmtNum(r.km)}`} question="למחוק את הקריאה?" detail={`${fmtNum(r.km)} ק״מ · ${fmtDate(r.date)}`} onConfirm={() => removeReading(r.id)} />}
                     </>
                   )}
                 </div>
               ))}
             </div>
             {histErr && <div className="err">{histErr}</div>}
-          </>
-        )}
       </div>
     </Sheet>
   )

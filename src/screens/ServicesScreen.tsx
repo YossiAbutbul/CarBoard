@@ -115,7 +115,7 @@ export function ServicesScreen({ open, openCars, openSettings }: { open: OpenShe
                           {busy === s.id ? <span className="spin" style={{ width: 17, height: 17 }} /> : <Icon name="receipt" />}
                           <input type="file" accept="image/*,application/pdf" hidden onChange={e => addReceipt(s.id, e.target.files?.[0])} />
                         </label>
-                        <ConfirmButton icon label={`מחיקת ${s.title}`} onConfirm={() => actions.deleteService(s.id)} />
+                        <ConfirmButton icon label={`מחיקת ${s.title}`} question="למחוק את הטיפול?" detail={`${s.title} · ${fmtDate(s.date)}`} onConfirm={() => actions.deleteService(s.id)} />
                       </span>
                     </div>
                   </div>

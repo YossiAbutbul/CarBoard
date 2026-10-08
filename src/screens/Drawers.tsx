@@ -50,7 +50,7 @@ export function CarsDrawer({ open, onClose }: { open: OpenSheet; onClose(): void
               >
                 <Icon name="edit" />
               </button>
-              <ConfirmButton icon label={`מחיקת ${c.name} וכל הנתונים שלו`} onConfirm={() => actions.deleteCar(c.id)} />
+              <ConfirmButton icon label={`מחיקת ${c.name}`} question={`למחוק את ${c.name}?`} detail="הרכב וכל מה ששייך לו יימחקו: ק״מ, טיפולים, תזכורות ומסמכים." onConfirm={() => actions.deleteCar(c.id)} />
             </span>
           </div>
         ))}
@@ -168,7 +168,7 @@ export function SettingsDrawer({
             <ConfirmButton
               className="btn danger"
               style={{ marginTop: 14 }}
-              confirmText="לחצו שוב: הכל יימחק"
+              question="לאפס את כל הנתונים?" detail="כל הרכבים, הטיפולים, המסמכים והקבצים יימחקו. אי אפשר לבטל." confirmLabel="איפוס"
               onConfirm={async () => {
                 await actions.resetAll()
                 await store.wipeFiles?.().catch(() => {}) // a file that is already gone must not stop the reset

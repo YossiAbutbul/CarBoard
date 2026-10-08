@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import type { BodyType, Car } from '../types'
-import { Sheet } from '../components/ui'
+import { Sheet, useDirty } from '../components/ui'
 import { useApp } from '../data/AppData'
 import { formatPlate, lookupPlate, plateDigits, type PlateInfo } from '../lib/govil'
 import { fmtDate } from '../lib/i18n'
@@ -22,6 +22,7 @@ export function CarSheet({ car, onClose }: { car?: Car; onClose(): void }) {
   // Body and paint: null means "automatic" (guessed from the model, painted in the registry colour).
   const [body, setBody] = useState<BodyType | null>(car?.body ?? null)
   const [paint, setPaint] = useState<string | null>(car?.paint ?? null)
+  const dirty = useDirty([plate, name, kmNow, body, paint])
 
   const make = info?.make ?? car?.make ?? null
   const model = info?.model ?? car?.model ?? null
@@ -91,7 +92,7 @@ export function CarSheet({ car, onClose }: { car?: Car; onClose(): void }) {
   }
 
   return (
-    <Sheet title={editing ? 'עריכת רכב' : 'רכב חדש'} onClose={onClose}>
+    <Sheet title={editing ? 'עריכת רכב' : 'רכב חדש'} onClose={onClose} dirty={dirty}>
       <div className="card car-form">
         <div className="hint">הקלד מספר רכב. השאר מתמלא לבד.</div>
         <label className="plate-il lg plate-input" dir="ltr">

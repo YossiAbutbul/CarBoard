@@ -2,13 +2,14 @@ import { DateField } from '../components/DateField'
 import { ConfirmButton } from '../components/ConfirmButton'
 import { useState } from 'react'
 import type { Item, ItemKind } from '../types'
-import { FileThumb, Sheet } from '../components/ui'
+import { FileThumb, Sheet, useDirty } from '../components/ui'
 import { FileViewer } from '../components/FileViewer'
 import { REQUIRED, useApp } from '../data/AppData'
 import { dueInfo } from '../domain/due'
 import { INSURERS, KIND, STATUS_TEXT } from '../domain/labels'
 import { compressImage } from '../lib/image'
-import { fmtDate, fmtKm, fmtMoney } from '../lib/i18n'
+import { fmtDate, fmtDays, fmtKm, fmtMoney, fmtNum } from '../lib/i18n'
+import { diffDays, todayIso } from '../lib/dates'
 import { uid } from '../lib/uid'
 import { defaultItems } from '../domain/defaults'
 import { Icon } from '../components/Icon'
@@ -40,6 +41,9 @@ export function ItemSheet({ item, onClose, onDone }: { item?: Item; onClose(): v
   const [everyMonths, setEveryMonths] = useState(item?.every_months?.toString() ?? '')
   const [dueKm, setDueKm] = useState(item?.due_km?.toString() ?? '')
   const [dueDate, setDueDate] = useState(item?.due_date ?? '')
+  // the next time by a km target or by a booked date; switching drops the other one
+  const startMode: 'km' | 'date' = item?.due_date && !item?.due_km ? 'date' : 'km'
+  const [mode, setMode] = useState<'km' | 'date'>(startMode)
   const [provider, setProvider] = useState(doc?.provider ?? '')
   const [policy, setPolicy] = useState(doc?.number ?? '')
   const [files, setFiles] = useState<string[]>(doc?.files ?? [])
@@ -47,6 +51,7 @@ export function ItemSheet({ item, onClose, onDone }: { item?: Item; onClose(): v
   const [view, setView] = useState<string | null>(null)
   const [err, setErr] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
+  const dirty = useDirty([label, everyKm, everyMonths, dueKm, dueDate, provider, policy, files, mode])
   if (!car) return null
 
   const draft: Item = {
@@ -56,8 +61,8 @@ export function ItemSheet({ item, onClose, onDone }: { item?: Item; onClose(): v
     label: label.trim() || KIND[item?.kind ?? 'custom'].label,
     every_km: byDate ? null : numOrNull(everyKm),
     every_months: numOrNull(everyMonths),
-    due_km: byDate ? null : numOrNull(dueKm),
-    due_date: dueDate || null,
+    due_km: byDate || (mode === 'date' && mode !== startMode) ? null : numOrNull(dueKm),
+    due_date: !byDate && mode === 'km' && mode !== startMode ? null : dueDate || null,
   }
   const preview = dueInfo(draft, km)
 
@@ -125,7 +130,7 @@ export function ItemSheet({ item, onClose, onDone }: { item?: Item; onClose(): v
   const missing = item ? [] : defaultItems(car.id, km.value, null).filter(d => !have.has(d.kind))
 
   return (
-    <Sheet title={item ? item.label : 'תזכורת חדשה'} onClose={onClose}>
+    <Sheet title={item ? item.label : 'תזכורת חדשה'} onClose={onClose} dirty={dirty}>
       <div className="card">
         {missing.length > 0 && (
           <div className="restore">
@@ -147,11 +152,11 @@ export function ItemSheet({ item, onClose, onDone }: { item?: Item; onClose(): v
           </div>
         )}
         {item && (
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+          <div className="item-top">
             <span className={`chip ${preview.status}`}>{STATUS_TEXT[preview.status]}</span>
             {!isInsurance && (
-              <button className="pill" onClick={() => onDone(item)}>
-                <Icon name="check" /> בוצע עכשיו
+              <button className="done-btn" onClick={() => onDone(item)}>
+                <Icon name="check" /> סימון כבוצע
               </button>
             )}
           </div>
@@ -167,7 +172,7 @@ export function ItemSheet({ item, onClose, onDone }: { item?: Item; onClose(): v
               ))}
             </datalist>
             <div className="chips" style={{ marginTop: 8 }}>
-              {INSURERS.slice(0, 6).map(n => (
+              {INSURERS.slice(0, 8).map(n => (
                 <button key={n} className={provider === n ? 'on' : ''} onClick={() => setProvider(n)}>
                   {n}
                 </button>
@@ -193,11 +198,25 @@ export function ItemSheet({ item, onClose, onDone }: { item?: Item; onClose(): v
         ) : (
           <>
             <label className="lbl">המועד הבא</label>
-            <div className="row2">
-              <input className="in" inputMode="numeric" placeholder="בק״מ" value={dueKm} onChange={e => setDueKm(digits(e.target.value))} />
-              <DateField value={dueDate} onChange={setDueDate} placeholder="בתאריך" label="המועד הבא" />
+            <div className="seg" role="radiogroup" aria-label="המועד הבא לפי">
+              <button role="radio" aria-checked={mode === 'km'} className={mode === 'km' ? 'on' : ''} onClick={() => setMode('km')}>
+                <Icon name="gauge" /> לפי ק״מ
+              </button>
+              <button role="radio" aria-checked={mode === 'date'} className={mode === 'date' ? 'on' : ''} onClick={() => setMode('date')}>
+                <Icon name="calendar" /> לפי תאריך
+              </button>
             </div>
-            <div className="hint" style={{ marginTop: 6 }}>מה שמגיע קודם קובע. אפשר למלא רק אחד.</div>
+            {mode === 'km' ? (
+              <input className="in" inputMode="numeric" placeholder={`למשל ${fmtNum(Math.ceil((km.value + 10000) / 1000) * 1000)}`} value={dueKm ? fmtNum(Number(dueKm)) : ''} onChange={e => setDueKm(digits(e.target.value))} aria-label="יעד ק״מ" />
+            ) : (
+              <DateField value={dueDate} onChange={setDueDate} placeholder="תאריך התור" label="המועד הבא" />
+            )}
+            <DueLine mode={mode} dueKm={numOrNull(dueKm)} dueDate={dueDate} kmNow={km.value} perDay={km.perDay} />
+            {mode === startMode && item?.due_km && item?.due_date && (
+              <div className="hint" style={{ marginTop: 4 }}>
+                {mode === 'km' ? `יש גם תאריך: ${fmtDate(item.due_date)}` : `יש גם יעד: ${fmtNum(item.due_km)} ק״מ`}. מה שמגיע קודם קובע.
+              </div>
+            )}
             <label className="lbl">חוזר כל</label>
             <div className="row2">
               <input className="in" inputMode="numeric" placeholder="ק״מ" value={everyKm} onChange={e => setEveryKm(digits(e.target.value))} />
@@ -209,15 +228,11 @@ export function ItemSheet({ item, onClose, onDone }: { item?: Item; onClose(): v
         {docKind && (
           <>
             <label className="lbl">{isInsurance ? 'הפוליסה (תמונה או קובץ)' : 'רישיון הרכב (תמונה או קובץ)'}</label>
+            {files.length > 0 && <div className="hint" style={{ margin: '0 0 6px' }}>לחיצה על קובץ פותחת אותו; משם אפשר גם להסיר.</div>}
             {files.length > 0 && (
               <div className="thumbs" style={{ marginBottom: 10 }}>
                 {files.map(f => (
-                  <span key={f} className="thumb-x">
-                    <FileThumb fileRef={f} onOpen={() => setView(f)} />
-                    <button onClick={() => setFiles(fs => fs.filter(x => x !== f))} aria-label="הסרה">
-                      <Icon name="close" />
-                    </button>
-                  </span>
+                  <FileThumb key={f} fileRef={f} onOpen={() => setView(f)} />
                 ))}
               </div>
             )}
@@ -273,7 +288,7 @@ export function ItemSheet({ item, onClose, onDone }: { item?: Item; onClose(): v
           שמירה
         </button>
         {item && !REQUIRED.includes(item.kind) && (
-          <ConfirmButton className="btn danger" style={{ marginTop: 8 }} onConfirm={remove}>
+          <ConfirmButton className="btn danger" style={{ marginTop: 8 }} onConfirm={remove} question="למחוק את התזכורת?" detail={`"${draft.label}" תימחק. אפשר להחזיר תזכורת קבועה מ"תזכורת חדשה".`}>
             מחיקת תזכורת
           </ConfirmButton>
         )}
@@ -286,8 +301,38 @@ export function ItemSheet({ item, onClose, onDone }: { item?: Item; onClose(): v
           ]}
           start={Math.max(0, [...files, ...history.filter(sv => sv.receipt).map(sv => sv.receipt!)].indexOf(view))}
           onClose={() => setView(null)}
+          onDelete={ref => {
+            if (!files.includes(ref)) return false // receipts are removed from the service itself
+            setFiles(fs => fs.filter(x => x !== ref))
+            return true
+          }}
         />
       )}
     </Sheet>
+  )
+}
+
+/** How far the next time is: km left (and about how many days), or days left (and about how many km). */
+function DueLine({ mode, dueKm, dueDate, kmNow, perDay }: { mode: 'km' | 'date'; dueKm: number | null; dueDate: string; kmNow: number; perDay: number }) {
+  if (mode === 'km') {
+    if (!dueKm) return null
+    const left = dueKm - kmNow
+    if (left <= 0) return <div className="due-line late">עבר לפני {fmtNum(-left)} ק״מ</div>
+    const days = perDay > 0 ? Math.round(left / perDay) : null
+    return (
+      <div className="due-line">
+        נשארו <b>{fmtNum(left)} ק״מ</b>
+        {days != null && <> · בערך {fmtDays(days)}</>}
+      </div>
+    )
+  }
+  if (!dueDate) return null
+  const days = diffDays(dueDate, todayIso())
+  if (days < 0) return <div className="due-line late">עבר לפני {fmtDays(-days)}</div>
+  return (
+    <div className="due-line">
+      {days === 0 ? 'היום' : <>בעוד <b>{fmtDays(days)}</b></>}
+      {days > 0 && perDay > 0 && <> · עד אז עוד כ־{fmtNum(Math.round((days * perDay) / 50) * 50)} ק״מ</>}
+    </div>
   )
 }

@@ -1,15 +1,14 @@
-import { useEffect, useState, type ReactNode } from 'react'
+import { useState, type ReactNode } from 'react'
 import { Icon } from './Icon'
+import { ask } from './Dialog'
 
-/**
- * A delete button that asks in place instead of window.confirm (which some
- * browsers and installed apps block): the first tap arms it, the second deletes.
- * It disarms itself after 3 seconds.
- */
+/** A delete button that asks "are you sure?" in a dialog before it acts. */
 export function ConfirmButton({
   onConfirm,
   children,
-  confirmText = 'לחצו שוב למחיקה',
+  question = 'למחוק?',
+  detail,
+  confirmLabel = 'מחיקה',
   icon = false,
   label,
   className = '',
@@ -17,47 +16,36 @@ export function ConfirmButton({
 }: {
   onConfirm(): void | Promise<void>
   children?: ReactNode
-  confirmText?: string
+  question?: string // the dialog's title
+  detail?: string // a line under it: what will be deleted
+  confirmLabel?: string
   icon?: boolean // a small trash icon instead of a full button
   label?: string // aria-label for the icon form
   className?: string
   style?: React.CSSProperties
 }) {
-  const [armed, setArmed] = useState(false)
   const [busy, setBusy] = useState(false)
-  useEffect(() => {
-    if (!armed) return
-    const t = setTimeout(() => setArmed(false), 3000)
-    return () => clearTimeout(t)
-  }, [armed])
 
   async function click(e: React.MouseEvent) {
     e.stopPropagation()
-    if (!armed) return setArmed(true)
+    if (!(await ask({ title: question, text: detail, confirm: confirmLabel, danger: true }))) return
     setBusy(true)
     try {
       await onConfirm()
     } finally {
       setBusy(false)
-      setArmed(false)
     }
   }
 
   if (icon)
     return (
-      <button className={`icon-btn confirm-icon ${armed ? 'armed' : ''} ${className}`} style={style} onClick={click} aria-label={armed ? confirmText : label} disabled={busy}>
+      <button className={`icon-btn confirm-icon ${className}`} style={style} onClick={click} aria-label={label} disabled={busy}>
         <Icon name="trash" />
-        {/* a tooltip above the button, so arming it does not move anything around it */}
-        {armed && (
-          <span className="confirm-tip" role="status">
-            לחצו שוב
-          </span>
-        )}
       </button>
     )
   return (
-    <button className={`${className} ${armed ? 'armed' : ''}`} style={style} onClick={click} disabled={busy}>
-      {armed ? confirmText : children}
+    <button className={className} style={style} onClick={click} disabled={busy}>
+      {children}
     </button>
   )
 }

@@ -2,7 +2,7 @@ import { DateField } from '../components/DateField'
 import { ConfirmButton } from '../components/ConfirmButton'
 import { useState } from 'react'
 import type { CarDocument, DocKind } from '../types'
-import { FileThumb, Sheet } from '../components/ui'
+import { FileThumb, Sheet, useDirty } from '../components/ui'
 import { FileViewer } from '../components/FileViewer'
 import { useApp } from '../data/AppData'
 import { DOC_KIND } from '../domain/labels'
@@ -21,6 +21,7 @@ export function DocumentSheet({ doc, onClose }: { doc?: CarDocument; onClose(): 
   const [uploading, setUploading] = useState(false)
   const [view, setView] = useState<string | null>(null)
   const [err, setErr] = useState<string | null>(null)
+  const dirty = useDirty([kind, title, provider, number, expiry, files])
   if (!car) return null
 
   async function addFiles(list: FileList | null) {
@@ -65,7 +66,7 @@ export function DocumentSheet({ doc, onClose }: { doc?: CarDocument; onClose(): 
   }
 
   return (
-    <Sheet title={doc ? doc.title : 'מסמך חדש'} onClose={onClose}>
+    <Sheet title={doc ? doc.title : 'מסמך חדש'} onClose={onClose} dirty={dirty}>
       <div className="card">
         <div className="chips">
           {(Object.keys(DOC_KIND) as DocKind[]).map(k => (
@@ -114,7 +115,7 @@ export function DocumentSheet({ doc, onClose }: { doc?: CarDocument; onClose(): 
           שמירה
         </button>
         {doc && (
-          <ConfirmButton className="btn danger" style={{ marginTop: 8 }} onConfirm={remove}>
+          <ConfirmButton className="btn danger" style={{ marginTop: 8 }} onConfirm={remove} question="למחוק את המסמך?" detail="המסמך והקבצים שלו יימחקו.">
             מחיקה
           </ConfirmButton>
         )}
@@ -124,6 +125,10 @@ export function DocumentSheet({ doc, onClose }: { doc?: CarDocument; onClose(): 
           files={files.map(ref => ({ ref, title: title || DOC_KIND[kind].label, sub: '', source: 'doc' as const }))}
           start={Math.max(0, files.indexOf(view))}
           onClose={() => setView(null)}
+          onDelete={ref => {
+            setFiles(fs => fs.filter(x => x !== ref))
+            return true
+          }}
         />
       )}
     </Sheet>

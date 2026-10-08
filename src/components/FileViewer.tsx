@@ -5,6 +5,8 @@ import { useApp } from '../data/AppData'
 import { fmtDate } from '../lib/i18n'
 import { Icon } from './Icon'
 import { drawPage, isCancelled, openPdf } from '../lib/pdf'
+import { useBackLayer } from '../lib/back'
+import { ask } from './Dialog'
 
 export interface AppFile {
   ref: string
@@ -146,11 +148,22 @@ function Thumb({ fileRef }: { fileRef: string }) {
 const ZOOMS = [0.5, 0.75, 1, 1.25, 1.5, 2, 3, 4]
 
 /** Full-screen viewer with zoom, next/previous, a thumbnail strip, download and share. */
-export function FileViewer({ files, start = 0, onClose }: { files: AppFile[]; start?: number; onClose(): void }) {
+export function FileViewer({
+  files,
+  start = 0,
+  onClose,
+  onDelete,
+}: {
+  files: AppFile[]
+  start?: number
+  onClose(): void
+  onDelete?: (ref: string) => boolean // removes the file; return false for files this place cannot remove
+}) {
   const [i, setI] = useState(start)
-  const file = files[i]
+  const file = files[Math.min(i, files.length - 1)]
   const f = useFile(file?.ref ?? null)
   const go = (d: number) => setI(x => (x + d + files.length) % files.length)
+  useBackLayer(true, onClose)
   const [zoom, setZoom] = useState(1)
   const [fitWidth, setFitWidth] = useState(0) // the photo's width at 100%
   const pan = useDragPan<HTMLDivElement>(zoom > 1)
@@ -216,6 +229,20 @@ export function FileViewer({ files, start = 0, onClose }: { files: AppFile[]; st
         <button onClick={download} aria-label="הורדה">
           <Icon name="download" />
         </button>
+        {onDelete && (
+          <button
+            className="viewer-del"
+            aria-label="הסרת הקובץ"
+            onClick={async () => {
+              if (!(await ask({ title: 'להסיר את הקובץ?', text: file.title, confirm: 'הסרה', danger: true }))) return
+              if (onDelete(file.ref) === false) return
+              if (files.length <= 1) onClose()
+              else setI(x => Math.max(0, Math.min(x, files.length - 2)))
+            }}
+          >
+            <Icon name="trash" />
+          </button>
+        )}
       </div>
       <div className="viewer-stage" onClick={e => e.target === e.currentTarget && onClose()}>
         {!f ? (

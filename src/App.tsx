@@ -22,6 +22,7 @@ import { ItemSheet } from './screens/ItemSheet'
 import { DocumentSheet } from './screens/DocumentSheet'
 import { CarSheet } from './screens/CarSheet'
 import { Intro, Ready, Tour, isOnboarded, markOnboarded } from './screens/Onboarding'
+import { setExitHint, startBackHandling, useBackLayer } from './lib/back'
 
 export type SheetState =
   | { t: 'odo' }
@@ -128,6 +129,15 @@ function Main({ email, accountName, guest = false }: { email: string | null; acc
     window.scrollTo({ top: 0 })
     setTimeout(() => setGuide('tour'), 450) // let the drawer close and the page arrive
   }
+
+  // The phone's back button: from another tab it goes home; at home, press twice to leave.
+  const [exitHint, setExitHintShown] = useState(false)
+  useEffect(() => {
+    startBackHandling()
+    setExitHint(setExitHintShown)
+    return () => setExitHint(null)
+  }, [])
+  useBackLayer(Boolean(car) && tab !== 'home', () => setTab('home'))
 
   // Swipe in from a screen edge to open a drawer: from the right for the cars, from the left for settings.
   const canSwipe = Boolean(car) && !sheet && !drawer && guide === 'done'
@@ -242,6 +252,7 @@ function Main({ email, accountName, guest = false }: { email: string | null; acc
       {sheet?.t === 'car' && <CarSheet car={sheet.car} onClose={close} />}
       {drawer === 'cars' && <CarsDrawer open={setSheet} onClose={() => setDrawer(null)} />}
       {drawer === 'settings' && <SettingsDrawer email={email} guest={guest} name={localName} onName={saveName} onTour={startTour} onClose={() => setDrawer(null)} />}
+      {exitHint && <div className="exit-hint">לחצו שוב על חזור כדי לצאת</div>}
       {guide === 'tour' && car && tab === 'home' && !sheet && <Tour name={userName ?? ''} onDone={endTour} />}
     </div>
   )

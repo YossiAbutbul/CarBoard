@@ -22,7 +22,7 @@ export const DOC_KIND: Record<DocKind, { label: string }> = {
 
 /** Israeli car insurers, for quick pick. The field still takes free text. */
 export const INSURERS = [
-  'הראל', 'מגדל', 'הפניקס', 'כלל', 'מנורה מבטחים', 'איילון', 'הכשרה', 'ביטוח ישיר', 'AIG', 'שומרה', 'שלמה ביטוח', 'ליברה', 'WeSure', '9 מיליון', 'שירביט',
+  'הראל', 'מגדל', 'הפניקס', 'כלל', 'מנורה מבטחים', 'AIG', 'ביטוח ישיר', 'איילון', 'הכשרה', 'שומרה', 'שלמה ביטוח', 'ליברה', 'WeSure', '9 מיליון', 'שירביט',
 ]
 
 export const STATUS_TEXT = {

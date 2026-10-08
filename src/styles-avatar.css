@@ -447,3 +447,85 @@ html.scenic-page, html.scenic-page body { background: #08111f; }
 .hero.collapsed > .glance { visibility: hidden; }
 /* the quick actions dock under the collapsed header and stay; only the content below scrolls */
 .hero + .actions { position: sticky; top: calc(var(--hero-bottom, 0px) - 20px); z-index: 25; margin: -20px -16px 0; padding: 28px 16px 10px; background: var(--bg); }
+
+/* ═══ round of fixes ═══ */
+
+/* 1 · the sheet's handle and title stay at the top while its content scrolls, so it can always be closed */
+.sheet > .drag-zone { position: sticky; top: -8px; z-index: 6; background: var(--card); padding-bottom: 6px; }
+.cal-sheet > .drag-zone { position: sticky; top: 0; z-index: 6; background: #fff; }
+
+/* 2 · compact sizing for phones */
+.greet h1, .page .hero .greet h1 { font-size: 28px; margin: 2px 0 12px; }
+.glance button { padding: 10px 11px; }
+.sec { margin: 20px 2px 8px; }
+.sec h2 { font-size: 17px; }
+.tiles { gap: 8px; }
+.tile { min-height: 88px; padding: 12px 13px; }
+.tile .l { font-size: 13px; }
+.tile .v { font-size: 20px; padding-top: 8px; }
+.actions button { padding: 11px 4px 9px; gap: 5px; font-size: 11.5px; }
+.actions button svg.i { width: 20px; height: 20px; }
+.sheet-head h2, .drawer-head h2 { font-size: 19px; }
+.lbl { margin: 12px 0 5px; font-size: 12px; }
+.in { padding: 10px 12px; font-size: 16px; } /* 16px: smaller makes iPhones zoom into the field */
+.btn { padding: 12px; font-size: 14.5px; }
+.card { padding: 14px; }
+
+/* 3 · stronger icons */
+svg.i { stroke-width: 1.8; }
+.hero .bar button { opacity: 1; }
+.hero .bar button svg.i { width: 22px; height: 22px; stroke-width: 2; }
+.car-row-acts .icon-btn { color: var(--ink-2); padding: 7px; }
+.car-row-acts .icon-btn svg.i { width: 18px; height: 18px; stroke-width: 2; }
+.ic { color: var(--ink); }
+.ic svg.i { stroke-width: 2; }
+.drawer-head button svg.i { stroke-width: 2.2; }
+
+/* 4 · a solid bottom bar */
+.nav { background: #fff; backdrop-filter: none; -webkit-backdrop-filter: none; box-shadow: 0 -1px 0 var(--line); }
+
+/* 6 · real buttons */
+.item-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+.item-top .chip { padding: 6px 11px; border-radius: 99px; background: color-mix(in srgb, var(--c) 12%, #fff); }
+.done-btn { display: inline-flex; align-items: center; gap: 6px; height: 36px; padding: 0 14px; border-radius: 99px; background: #fff; color: var(--ink); font-size: 13px; font-weight: 600; box-shadow: inset 0 0 0 1px var(--line); transition: background 0.15s; }
+.done-btn:hover { background: #f7f8fa; }
+.done-btn svg.i { width: 16px; height: 16px; color: var(--ok); stroke-width: 2.4; }
+.sec .add-btn { display: inline-flex; align-items: center; gap: 5px; height: 32px; padding: 0 12px; border-radius: 99px; background: #e9f1fc; color: var(--blue); font-size: 13px; font-weight: 600; }
+.sec .add-btn:hover { background: #dce9fb; }
+.sec .add-btn svg.i { width: 15px; height: 15px; stroke-width: 2.4; }
+
+/* 8 · the calendar fills its sheet */
+.cal, .cal .rdp-months, .cal .rdp-month { width: 100%; max-width: none; }
+.cal .rdp-month_grid { width: 100%; border-collapse: collapse; }
+.cal .rdp-day { width: auto; height: 44px; }
+.cal .rdp-day_button { width: 100%; max-width: 48px; height: 40px; margin: 0 auto; }
+.cal .rdp-month_caption, .cal .rdp-nav { padding-inline: 4px; }
+.sec { align-items: center; }
+
+/* confirmation dialog */
+.dialog-overlay { position: fixed; inset: 0; z-index: 150; display: grid; place-items: center; padding: 24px; background: rgba(11, 22, 38, 0.5); animation: fade 0.18s ease-out; }
+.dialog { width: min(340px, 100%); background: #fff; border-radius: 22px; padding: 22px 20px 16px; text-align: center; box-shadow: 0 24px 60px rgba(8, 17, 31, 0.35); animation: pop-in 0.22s cubic-bezier(0.2, 0.9, 0.3, 1.2) both; }
+.dialog b { display: block; font-size: 18px; font-weight: 700; letter-spacing: -0.01em; }
+.dialog p { margin: 8px 0 0; font-size: 14px; line-height: 1.5; color: var(--ink-2); }
+.dialog-btns { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 20px; }
+.dialog-btns button { height: 46px; border-radius: 14px; font-size: 15px; font-weight: 600; }
+.dialog-cancel { background: var(--card); color: var(--ink); }
+.dialog-ok { background: var(--blue); color: #fff; }
+.dialog-ok.danger { background: var(--overdue); }
+@keyframes pop-in { from { opacity: 0; transform: scale(0.92); } }
+.exit-hint { position: fixed; bottom: calc(96px + env(safe-area-inset-bottom)); left: 50%; transform: translateX(-50%); z-index: 130; padding: 10px 18px; border-radius: 99px; background: rgba(15, 23, 32, 0.9); color: #fff; font-size: 13.5px; font-weight: 500; white-space: nowrap; animation: rise 0.25s var(--ease) both; }
+/* 9 · km history opens in its own sheet */
+.history-btn { display: flex; align-items: center; gap: 10px; width: 100%; margin-top: 18px; padding: 13px 14px; border-radius: 14px; background: #fff; box-shadow: inset 0 0 0 1px var(--line); font-size: 14.5px; font-weight: 600; color: var(--ink); text-align: right; }
+.history-btn svg.i { color: var(--blue); }
+.history-btn span { flex: 1; }
+.history-btn small { font-size: 12.5px; font-weight: 500; color: var(--muted); }
+.history-btn::after { content: '‹'; font-size: 20px; color: var(--muted); line-height: 1; }
+/* 7 · next time by km or by date */
+.seg { display: grid; grid-template-columns: 1fr 1fr; gap: 2px; padding: 3px; margin-bottom: 8px; border-radius: 12px; background: #fff; box-shadow: inset 0 0 0 1px var(--line); }
+.seg button { display: inline-flex; align-items: center; justify-content: center; gap: 6px; height: 36px; border-radius: 9px; font-size: 13.5px; font-weight: 500; color: var(--ink-2); transition: background 0.2s, color 0.2s; }
+.seg button svg.i { width: 16px; height: 16px; }
+.seg button.on { background: var(--ink); color: #fff; font-weight: 600; }
+.due-line { margin-top: 8px; padding: 9px 12px; border-radius: 10px; background: #e9f1fc; color: var(--blue-ink); font-size: 13.5px; }
+.due-line b { font-weight: 700; }
+.due-line.late { background: #fdecea; color: var(--overdue); }
+.viewer-del:hover { color: #ff8a80; }
