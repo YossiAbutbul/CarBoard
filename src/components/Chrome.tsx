@@ -101,7 +101,9 @@ export function PageHero({ children, dial }: { children: ReactNode; dial?: boole
       page.style.minHeight = `calc(100lvh + ${Math.ceil(travel - outside)}px)` // ignored where lvh is unknown
     }
     const on = () => {
-      const p = Math.min(1, Math.max(0, window.scrollY / travel))
+      // a page that fits the screen never collapses (also not while a phone bounces past the edge)
+      const canScroll = document.documentElement.scrollHeight - window.innerHeight > 1
+      const p = canScroll ? Math.min(1, Math.max(0, window.scrollY / travel)) : 0
       el.style.setProperty('--p', String(p))
       title.style.transform = `translateY(${p * dTitle}px) scale(${1 - p * (1 - TITLE)})`
       if (date) date.style.transform = `translateY(${p * dDate}px)`

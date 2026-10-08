@@ -185,7 +185,9 @@ export function SettingsDrawer({
           </div>
         </section>
       )}
-      <div className="foot" dir="ltr">CarBoard · v{__APP_VERSION__}</div>
+      <div className="foot" dir="ltr">
+        CarBoard · v{__APP_VERSION__} · {new Date(__APP_BUILD__).toLocaleString('he-IL', { day: 'numeric', month: 'numeric', hour: '2-digit', minute: '2-digit' })}
+      </div>
       <div className="credit" dir="ltr">
         © {new Date().getFullYear()} Yossi Abutbul. All rights reserved.
       </div>

@@ -560,3 +560,5 @@ svg.i { stroke-width: 1.8; }
 .tile .v { font-size: 18px; padding-top: 6px; }
 .tile .l svg.i { width: 16px; height: 16px; }
 .nav button svg.i { width: 21px; height: 21px; }
+/* no rubber-band bounce past the page edges (it fakes a scroll) */
+html, body { overscroll-behavior-y: none; }
