@@ -1,9 +1,104 @@
 rules_version = '2';
+
+// CarBoard. Each user reaches only their own folder, users/<uid>/…, and only the app's own data:
+//   <table>/<id>               cars, readings, items, services, documents
+//   files/<id>                 an uploaded file's record: name, type, size, piece count
+//   files/<id>/parts/<n>       the file itself, in pieces of 700 KB (base64)
+//   meta/quota                 bytes and files stored; every file added or removed must update it
+// A user can store up to 250 MB of files, 15 MB each. Anything else is refused.
+
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Each user reads and writes only their own folder: users/<uid>/<table>/<row id>.
-    match /users/{uid}/{document=**} {
-      allow read, write: if request.auth != null && request.auth.uid == uid;
+
+    function signedIn(uid) {
+      return request.auth != null && request.auth.uid == uid;
+    }
+
+    match /users/{uid} {
+
+      // ── app data ──
+      match /{table}/{id} {
+        allow read: if signedIn(uid) && table in ['cars', 'readings', 'items', 'services', 'documents'];
+        allow delete: if signedIn(uid) && table in ['cars', 'readings', 'items', 'services', 'documents'];
+        allow create, update: if signedIn(uid)
+          && table in ['cars', 'readings', 'items', 'services', 'documents']
+          && request.resource.data.id == id
+          && request.resource.data.keys().size() <= 24
+          && (!('notes' in request.resource.data) || request.resource.data.notes == null || request.resource.data.notes.size() <= 2000)
+          && (!('title' in request.resource.data) || request.resource.data.title == null || request.resource.data.title.size() <= 200)
+          && (!('name' in request.resource.data) || request.resource.data.name == null || request.resource.data.name.size() <= 200)
+          && (!('label' in request.resource.data) || request.resource.data.label == null || request.resource.data.label.size() <= 200)
+          && (!('files' in request.resource.data) || request.resource.data.files.size() <= 30);
+      }
+
+      // ── storage count ──
+      match /meta/quota {
+        allow read: if signedIn(uid);
+        allow delete: if false;
+        // Every change is one file added or removed, named in lastFile, and moves the count by its size.
+        allow create, update: if signedIn(uid)
+          && request.resource.data.keys().hasOnly(['bytes', 'files', 'lastFile'])
+          && request.resource.data.bytes <= 250 * 1024 * 1024
+          && request.resource.data.bytes >= 0
+          && quotaMove(uid, request.resource.data.lastFile);
+      }
+      function oldBytes() {
+        return resource == null ? 0 : resource.data.bytes;
+      }
+      function oldFiles() {
+        return resource == null ? 0 : resource.data.files;
+      }
+      function quotaMove(uid, fileId) {
+        let f = /databases/$(database)/documents/users/$(uid)/files/$(fileId);
+        return (
+          // added
+          (!exists(f) && existsAfter(f)
+            && request.resource.data.bytes == oldBytes() + getAfter(f).data.size
+            && request.resource.data.files == oldFiles() + 1)
+          ||
+          // removed
+          (exists(f) && !existsAfter(f)
+            && request.resource.data.bytes == oldBytes() - get(f).data.size
+            && request.resource.data.files == oldFiles() - 1)
+        );
+      }
+
+      // ── files ──
+      match /files/{fileId} {
+        allow read: if signedIn(uid);
+        allow update: if false;
+        // created together with the storage count, which names this file
+        allow create: if signedIn(uid)
+          && request.resource.data.keys().hasOnly(['name', 'type', 'size', 'parts', 'created', 'counted'])
+          && request.resource.data.counted == true
+          && request.resource.data.size is int
+          && request.resource.data.size > 0
+          && request.resource.data.size <= 15 * 1024 * 1024
+          && request.resource.data.parts is int
+          && request.resource.data.parts >= 1
+          && request.resource.data.parts <= 22
+          && request.resource.data.parts * 716800 >= request.resource.data.size
+          && request.resource.data.type is string && request.resource.data.type.size() <= 80
+          && request.resource.data.name is string && request.resource.data.name.size() <= 40
+          && getAfter(/databases/$(database)/documents/users/$(uid)/meta/quota).data.lastFile == fileId;
+        // files from before the count were never counted; counted ones are taken off it as they go
+        allow delete: if signedIn(uid)
+          && (!('counted' in resource.data)
+            || getAfter(/databases/$(database)/documents/users/$(uid)/meta/quota).data.lastFile == fileId);
+
+        match /parts/{n} {
+          allow read, delete: if signedIn(uid);
+          allow update: if false;
+          // only for a counted file, only as many pieces as it declared, each at most 700 KB (base64)
+          allow create: if signedIn(uid)
+            && exists(/databases/$(database)/documents/users/$(uid)/files/$(fileId))
+            && int(n) >= 0
+            && int(n) < get(/databases/$(database)/documents/users/$(uid)/files/$(fileId)).data.parts
+            && request.resource.data.keys().hasOnly(['data'])
+            && request.resource.data.data is string
+            && request.resource.data.data.size() <= 960000;
+        }
+      }
     }
   }
 }

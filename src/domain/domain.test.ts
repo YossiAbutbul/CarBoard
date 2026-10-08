@@ -77,6 +77,7 @@ describe('reminders', () => {
 
 /* ─── actions against an in-memory store ─── */
 
+const removed: string[] = []
 function memoryStore(): Store & { data: Data } {
   const data = emptyData()
   const rows = (t: Table) => data[t] as unknown as { id: string }[]
@@ -95,6 +96,7 @@ function memoryStore(): Store & { data: Data } {
     },
     upload: async name => `mem:${name}`,
     fileUrl: async ref => ref,
+    removeFile: async ref => void removed.push(ref),
   }
 }
 
@@ -203,5 +205,17 @@ describe('fixes from the walk-through', () => {
     await actions.deleteFile('mem:b')
     expect(data().documents[0].files).toEqual(['mem:a'])
     expect(data().services[0].receipt).toBeNull()
+  })
+
+  it('files nothing points to any more are deleted', async () => {
+    const { actions } = setup()
+    removed.length = 0
+    const id = await actions.addCar(car, 50000, null)
+    await actions.saveDocument({ id: 'd1', car_id: id, kind: 'insurance', title: 'ביטוח', provider: null, number: null, expiry: null, files: ['mem:p1', 'mem:p2'] })
+    await actions.saveDocument({ id: 'd1', car_id: id, kind: 'insurance', title: 'ביטוח', provider: null, number: null, expiry: null, files: ['mem:p1'] })
+    expect(removed).toEqual(['mem:p2']) // taken off the document and saved
+    await actions.saveService({ car_id: id, type: 'oil', title: 'שמן', date: todayIso(), km: 50500, price: null, garage: null, notes: null, receipt: 'mem:r1' })
+    await actions.deleteCar(id)
+    expect(removed.sort()).toEqual(['mem:p1', 'mem:p2', 'mem:r1'])
   })
 })

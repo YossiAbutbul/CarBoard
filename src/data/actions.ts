@@ -7,6 +7,10 @@ import { uid } from '../lib/uid'
 
 export function makeActions(store: Store, getData: () => Data, refresh: () => Promise<void>) {
   const readingsOf = (carId: string) => getData().readings.filter(r => r.car_id === carId)
+  // uploaded files nothing points to any more are deleted, so they stop taking space
+  const dropFiles = async (refs: (string | null | undefined)[]) => {
+    for (const ref of refs) if (ref) await store.removeFile?.(ref).catch(() => {})
+  }
 
   async function insertReading(carId: string, km: number, source: ReadingSource, date = todayIso()) {
     const err = readingError(readingsOf(carId).filter(r => r.date <= date), km)
@@ -30,9 +34,11 @@ export function makeActions(store: Store, getData: () => Data, refresh: () => Pr
     },
     async deleteCar(id: string) {
       const d = getData()
+      const files = [...d.documents.filter(x => x.car_id === id).flatMap(x => x.files), ...d.services.filter(x => x.car_id === id).map(x => x.receipt)]
       for (const t of ['readings', 'items', 'services', 'documents'] as const)
         for (const r of d[t].filter(x => x.car_id === id)) await store.remove(t, r.id)
       await store.remove('cars', id)
+      await dropFiles(files)
       await refresh()
     },
     /** Deletes every car and everything that belongs to it. */
@@ -89,6 +95,7 @@ export function makeActions(store: Store, getData: () => Data, refresh: () => Pr
     async updateService(id: string, patch: Partial<ServiceRecord>) {
       const before = getData().services.find(s => s.id === id)
       await store.update('services', id, patch)
+      if (patch.receipt !== undefined && before?.receipt && before.receipt !== patch.receipt) await dropFiles([before.receipt]) // replaced
       const rec = before && { ...before, ...patch }
       // if this is still the latest service of its type, its (fixed) km and date set the next due point
       const latest =
@@ -105,7 +112,9 @@ export function makeActions(store: Store, getData: () => Data, refresh: () => Pr
       await refresh()
     },
     async deleteService(id: string) {
+      const receipt = getData().services.find(s => s.id === id)?.receipt
       await store.remove('services', id)
+      await dropFiles([receipt])
       await refresh()
     },
     async saveItem(item: Item) {
@@ -120,16 +129,20 @@ export function makeActions(store: Store, getData: () => Data, refresh: () => Pr
     },
     /** A licence or insurance expiry also sets the matching reminder. */
     async saveDocument(doc: CarDocument) {
-      const exists = getData().documents.some(d => d.id === doc.id)
+      const before = getData().documents.find(d => d.id === doc.id)
+      const exists = Boolean(before)
       if (exists) await store.update('documents', doc.id, doc)
       else await store.insert('documents', doc)
       const kind = doc.kind === 'licence' ? 'test' : doc.kind === 'insurance' ? 'insurance' : null
       const item = kind ? getData().items.find(i => i.car_id === doc.car_id && i.kind === kind) : undefined
       if (item && doc.expiry) await store.update('items', item.id, { due_date: doc.expiry })
+      await dropFiles((before?.files ?? []).filter(f => !doc.files.includes(f))) // files taken off this document
       await refresh()
     },
     async deleteDocument(id: string) {
+      const files = getData().documents.find(d => d.id === id)?.files ?? []
       await store.remove('documents', id)
+      await dropFiles(files)
       await refresh()
     },
     /** Deletes an uploaded file: takes it off its document or service, then removes the file itself. */

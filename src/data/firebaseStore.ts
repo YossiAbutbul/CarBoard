@@ -1,4 +1,4 @@
-import { collection, deleteDoc, doc, getDoc, getDocs, setDoc, updateDoc } from 'firebase/firestore'
+import { collection, deleteDoc, doc, getDoc, getDocs, increment, setDoc, updateDoc, writeBatch } from 'firebase/firestore'
 import type { Data, Table } from '../types'
 import type { Store } from './store'
 import { db } from './firebase'
@@ -26,6 +26,25 @@ export function firebaseStore(userId: string): Store {
   const fs = db
   const table = (t: Table | 'files') => collection(fs, 'users', userId, t)
   const row = (t: Table | 'files', id: string) => doc(fs, 'users', userId, t, id)
+  const quota = doc(fs, 'users', userId, 'meta', 'quota') // bytes and files stored, checked by the rules
+
+  /** The pieces, then the record and the storage count together. Files from before the count (no `counted`) leave it as it is. */
+  async function deleteFile(id: string) {
+    const parts = await getDocs(collection(fs, 'users', userId, 'files', id, 'parts'))
+    await Promise.all(parts.docs.map(p => deleteDoc(p.ref)))
+    const meta = await getDoc(row('files', id))
+    if (meta.exists()) {
+      const m = meta.data() as { size?: number; counted?: boolean }
+      const batch = writeBatch(fs)
+      batch.delete(meta.ref)
+      if (m.counted && m.size) batch.set(quota, { bytes: increment(-m.size), files: increment(-1), lastFile: id }, { merge: true })
+      await batch.commit()
+    }
+    await cacheDel(cacheKey(`fs:${id}`)).catch(() => {})
+    const url = urls.get(`fs:${id}`)
+    if (url) URL.revokeObjectURL(url)
+    urls.delete(`fs:${id}`)
+  }
 
   return {
     mode: 'cloud',
@@ -49,10 +68,19 @@ export function firebaseStore(userId: string): Store {
       if (file.size > MAX_FILE) throw new Error('הקובץ גדול מדי (עד 15MB).')
       const id = uid()
       const parts = Math.max(1, Math.ceil(file.size / PART))
-      // the pieces first, then the record that points to them, so a half-done upload is never shown
+      // The file's record and the user's storage count change together (the rules check both),
+      // then the pieces, which the rules accept only for a file that is already counted.
+      const batch = writeBatch(fs)
+      batch.set(row('files', id), { name: name.slice(0, 40), type: file.type.slice(0, 80), size: file.size, parts, created: Date.now(), counted: true })
+      batch.set(quota, { bytes: increment(file.size), files: increment(1), lastFile: id }, { merge: true })
+      try {
+        await batch.commit()
+      } catch (e) {
+        if ((e as { code?: string }).code === 'permission-denied') throw new Error('נגמר המקום לקבצים בחשבון (עד 250MB). אפשר למחוק קבצים ישנים.')
+        throw e
+      }
       for (let n = 0; n < parts; n++)
         await setDoc(doc(fs, 'users', userId, 'files', id, 'parts', String(n)), { data: await blobToBase64(file.slice(n * PART, (n + 1) * PART)) })
-      await setDoc(row('files', id), { name, type: file.type, size: file.size, parts, created: Date.now() })
       await cacheSet(cacheKey(`fs:${id}`), file).catch(() => {}) // the first view is free too
       return `fs:${id}`
     },
@@ -75,6 +103,7 @@ export function firebaseStore(userId: string): Store {
         : await Promise.all(
             Array.from({ length: meta.parts ?? 0 }, async (_, n) => {
               const p = await getDoc(doc(fs, 'users', userId, 'files', id, 'parts', String(n)))
+              if (!p.exists()) throw new Error('missing piece') // still uploading, or a broken upload
               return (p.data() as { data: string }).data
             }),
           )
@@ -87,21 +116,11 @@ export function firebaseStore(userId: string): Store {
     },
     async removeFile(ref) {
       if (!ref.startsWith('fs:')) return
-      const id = ref.slice(3)
-      const parts = await getDocs(collection(fs, 'users', userId, 'files', id, 'parts'))
-      await Promise.all(parts.docs.map(p => deleteDoc(p.ref)))
-      await deleteDoc(row('files', id))
-      await cacheDel(cacheKey(ref)).catch(() => {})
-      urls.delete(ref)
+      await deleteFile(ref.slice(3))
     },
     async wipeFiles() {
       const all = await getDocs(table('files'))
-      for (const f of all.docs) {
-        const parts = await getDocs(collection(fs, 'users', userId, 'files', f.id, 'parts'))
-        await Promise.all(parts.docs.map(p => deleteDoc(p.ref)))
-        await deleteDoc(f.ref)
-        await cacheDel(cacheKey(`fs:${f.id}`)).catch(() => {})
-      }
+      for (const f of all.docs) await deleteFile(f.id)
       urls.clear()
     },
   }
