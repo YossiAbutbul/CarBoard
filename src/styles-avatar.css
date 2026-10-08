@@ -529,3 +529,7 @@ svg.i { stroke-width: 1.8; }
 .due-line b { font-weight: 700; }
 .due-line.late { background: #fdecea; color: var(--overdue); }
 .viewer-del:hover { color: #ff8a80; }
+/* bolder numbers */
+.tile .v, .glance .v, .confirm .num, .big-in { font-weight: 600; }
+.tile .v small { font-weight: 500; }
+.tl-price { font-weight: 600; }
