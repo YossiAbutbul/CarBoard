@@ -22,7 +22,6 @@ export function CarSheet({ car, onClose }: { car?: Car; onClose(): void }) {
   // Body and paint: null means "automatic" (guessed from the model, painted in the registry colour).
   const [body, setBody] = useState<BodyType | null>(car?.body ?? null)
   const [paint, setPaint] = useState<string | null>(car?.paint ?? null)
-  const dirty = useDirty([plate, name, kmNow, body, paint])
 
   const make = info?.make ?? car?.make ?? null
   const model = info?.model ?? car?.model ?? null
@@ -30,6 +29,8 @@ export function CarSheet({ car, onClose }: { car?: Car; onClose(): void }) {
   const color = info?.color ?? car?.color ?? null
   const shownPaint = paint ?? paintFromRegistry(color)
   const shownBody: BodyType = body === 'small' || body === 'family' || body === 'sport' ? 'car' : (body ?? guessBody(model))
+  // compared by what you see: choosing the colour or body that was already showing is not a change
+  const dirty = useDirty([plateDigits(plate), name, kmNow, shownBody, shownPaint])
   const swipeX = useRef(0)
   const stepBody = (d: number) => setBody(BODY_TYPES[(BODY_TYPES.indexOf(shownBody) + d + BODY_TYPES.length) % BODY_TYPES.length])
 

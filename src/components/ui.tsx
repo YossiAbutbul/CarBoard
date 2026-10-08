@@ -167,10 +167,24 @@ export function useSwipeClose(onClose: () => void, mustAsk?: () => boolean) {
   return { sheet, handle: { ...handle, onPointerCancel: handle.onPointerUp } }
 }
 
-/** True once any of `values` differs from what it was when the sheet opened. */
+/**
+ * True once any of `values` really differs from what it was when the sheet opened. Playing with a
+ * field and putting it back is not a change: text is trimmed, numbers ignore commas and spaces,
+ * and empty, null and undefined count as the same.
+ */
 export function useDirty(values: unknown[]) {
-  const [start] = useState(() => JSON.stringify(values))
-  return JSON.stringify(values) !== start
+  const norm = (v: unknown): unknown => {
+    if (v === null || v === undefined || v === '') return null
+    if (typeof v === 'string') {
+      const t = v.trim()
+      return /^[\d,\s]+$/.test(t) ? t.replace(/[,\s]/g, '') : t
+    }
+    if (Array.isArray(v)) return v.map(norm)
+    return v
+  }
+  const key = JSON.stringify(values.map(norm))
+  const [start] = useState(key)
+  return key !== start
 }
 
 /**
