@@ -23,7 +23,7 @@ export function CarsDrawer({ open, onClose }: { open: OpenSheet; onClose(): void
   const { data, car, setCarId, actions, family, store } = useApp()
   const ownerName = (uid?: string) => (uid && uid !== store.userId ? family?.members.find(m => m.uid === uid)?.name || 'בן משפחה' : null)
   return (
-    <Drawer title={family ? (family.title ? `רכבי ${family.title}` : 'רכבי המשפחה') : 'הרכבים שלי'} side="start" onClose={onClose}>
+    <Drawer title={family ? (family.title ? `הרכבים של מש' ${family.title.replace(/^(משפחת|מש['׳])\s*/, '')}` : 'רכבי המשפחה') : 'הרכבים שלי'} side="start" onClose={onClose}>
       <div className="car-list">
         {data.cars.map(c => (
           <div key={c.id} className={`car-row ${c.id === car?.id ? 'on' : ''}`}>
