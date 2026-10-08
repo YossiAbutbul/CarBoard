@@ -8,3 +8,6 @@ supabase/.temp
 .claude/
 *.tsbuildinfo
 public/pdfjs/
+
+.vercel
+.env*
