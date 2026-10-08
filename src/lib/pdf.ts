@@ -16,7 +16,21 @@ function pdfjs() {
 
 const docs = new Map<string, Promise<PDFDocumentProxy>>()
 export async function openPdf(url: string) {
-  if (!docs.has(url)) docs.set(url, pdfjs().then(m => m.getDocument({ url }).promise))
+  if (!docs.has(url)) {
+    const open = pdfjs().then(
+      m =>
+        m.getDocument({
+          url,
+          // fonts and character maps for PDFs that do not embed their fonts (common with Hebrew)
+          cMapUrl: '/pdfjs/cmaps/',
+          cMapPacked: true,
+          standardFontDataUrl: '/pdfjs/standard_fonts/',
+          wasmUrl: '/pdfjs/wasm/',
+          iccUrl: '/pdfjs/iccs/',
+        }).promise,
+    )
+    docs.set(url, open)
+  }
   return docs.get(url)!
 }
 
@@ -34,8 +48,12 @@ export async function drawPage(url: string, n: number, canvas: HTMLCanvasElement
   const doc = await openPdf(url)
   const page = await doc.getPage(n)
   const base = page.getViewport({ scale: 1 })
-  const dpr = Math.min(window.devicePixelRatio || 1, 2)
+  // at least 2x, so text stays crisp on ordinary screens and when zoomed by the browser
+  const dpr = Math.min(Math.max(window.devicePixelRatio || 1, 2), 3)
   const viewport = page.getViewport({ scale: (width / base.width) * dpr })
+  // pdf.js places every glyph itself; an inherited right-to-left direction would shift each one
+  canvas.dir = 'ltr'
+  canvas.style.direction = 'ltr'
   canvas.width = Math.floor(viewport.width)
   canvas.height = Math.floor(viewport.height)
   canvas.style.width = `${width}px`

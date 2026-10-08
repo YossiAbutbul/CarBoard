@@ -48,6 +48,43 @@ export function useFile(ref: string | null) {
   return state
 }
 
+/** Drag with the mouse to move around a zoomed photo or PDF (touch screens already pan by finger). */
+function useDragPan<T extends HTMLElement>(enabled: boolean) {
+  const ref = useRef<T>(null)
+  useEffect(() => {
+    const el = ref.current
+    if (!el || !enabled) return
+    let start: { x: number; y: number; left: number; top: number } | null = null
+    const down = (e: PointerEvent) => {
+      if (e.pointerType !== 'mouse' || e.button !== 0) return
+      start = { x: e.clientX, y: e.clientY, left: el.scrollLeft, top: el.scrollTop }
+      el.setPointerCapture(e.pointerId)
+      el.classList.add('dragging')
+      e.preventDefault()
+    }
+    const move = (e: PointerEvent) => {
+      if (!start) return
+      el.scrollLeft = start.left - (e.clientX - start.x)
+      el.scrollTop = start.top - (e.clientY - start.y)
+    }
+    const up = () => {
+      start = null
+      el.classList.remove('dragging')
+    }
+    el.addEventListener('pointerdown', down)
+    el.addEventListener('pointermove', move)
+    el.addEventListener('pointerup', up)
+    el.addEventListener('pointercancel', up)
+    return () => {
+      el.removeEventListener('pointerdown', down)
+      el.removeEventListener('pointermove', move)
+      el.removeEventListener('pointerup', up)
+      el.removeEventListener('pointercancel', up)
+    }
+  }, [enabled])
+  return ref
+}
+
 /** The first page of a PDF, small, with a PDF badge. */
 export function PdfThumb({ url, width = 120 }: { url: string; width?: number }) {
   const ref = useRef<HTMLCanvasElement>(null)
@@ -64,8 +101,8 @@ export function PdfThumb({ url, width = 120 }: { url: string; width?: number }) 
 }
 
 /** Every page of a PDF, as wide as its container. */
-function PdfPages({ url }: { url: string }) {
-  const box = useRef<HTMLDivElement>(null)
+function PdfPages({ url, zoom }: { url: string; zoom: number }) {
+  const box = useDragPan<HTMLDivElement>(zoom > 1)
   const [pages, setPages] = useState(0)
   const [failed, setFailed] = useState(false)
   useEffect(() => {
@@ -78,15 +115,19 @@ function PdfPages({ url }: { url: string }) {
       live = false
     }
   }, [url])
+  // redraw at the new size, so a zoomed page is sharp, not stretched; wait for a pause between taps
   useEffect(() => {
     const el = box.current
     if (!el || !pages) return
-    const width = Math.min(el.clientWidth, 900)
-    el.querySelectorAll('canvas').forEach((c, i) => drawPage(url, i + 1, c, width).catch(() => {}))
-  }, [url, pages])
+    const t = setTimeout(() => {
+      const width = Math.round(Math.min(el.clientWidth - 8, 900) * zoom)
+      el.querySelectorAll('canvas').forEach((c, i) => drawPage(url, i + 1, c, width).catch(() => {}))
+    }, 120)
+    return () => clearTimeout(t)
+  }, [url, pages, zoom])
   if (failed) return <div className="pdf-failed">אי אפשר להציג את הקובץ. אפשר להוריד אותו מלמעלה.</div>
   return (
-    <div className="pdf-pages" ref={box}>
+    <div className={`pdf-pages ${zoom > 1 ? 'pannable' : ''}`} ref={box}>
       {!pages && <span className="spin" />}
       {Array.from({ length: pages }, (_, i) => (
         <canvas key={i} />
@@ -102,18 +143,28 @@ function Thumb({ fileRef }: { fileRef: string }) {
   return <img src={f.url} alt="" loading="lazy" />
 }
 
-/** Full-screen viewer with next/previous, a thumbnail strip, download and share. */
+const ZOOMS = [0.5, 0.75, 1, 1.25, 1.5, 2, 3, 4]
+
+/** Full-screen viewer with zoom, next/previous, a thumbnail strip, download and share. */
 export function FileViewer({ files, start = 0, onClose }: { files: AppFile[]; start?: number; onClose(): void }) {
   const [i, setI] = useState(start)
   const file = files[i]
   const f = useFile(file?.ref ?? null)
   const go = (d: number) => setI(x => (x + d + files.length) % files.length)
+  const [zoom, setZoom] = useState(1)
+  const [fitWidth, setFitWidth] = useState(0) // the photo's width at 100%
+  const pan = useDragPan<HTMLDivElement>(zoom > 1)
+  useEffect(() => setZoom(1), [i])
+  const zoomBy = (d: number) => setZoom(z => ZOOMS[Math.max(0, Math.min(ZOOMS.length - 1, ZOOMS.indexOf(z) + d))])
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose()
       if (e.key === 'ArrowLeft') go(1)
       if (e.key === 'ArrowRight') go(-1)
+      if (e.key === '+' || e.key === '=') zoomBy(1)
+      if (e.key === '-') zoomBy(-1)
+      if (e.key === '0') setZoom(1)
     }
     window.addEventListener('keydown', onKey)
     document.body.style.overflow = 'hidden'
@@ -167,7 +218,36 @@ export function FileViewer({ files, start = 0, onClose }: { files: AppFile[]; st
         </button>
       </div>
       <div className="viewer-stage" onClick={e => e.target === e.currentTarget && onClose()}>
-        {!f ? <span className="spin" /> : f.pdf ? <PdfPages key={f.url} url={f.url} /> : <img key={f.url} src={f.url} alt={file.title} />}
+        {!f ? (
+          <span className="spin" />
+        ) : f.pdf ? (
+          <PdfPages key={f.url} url={f.url} zoom={zoom} />
+        ) : (
+          <div ref={pan} className={`viewer-zoom ${zoom > 1 ? 'zoomed pannable' : ''}`} onClick={e => e.target === e.currentTarget && zoom === 1 && onClose()}>
+            <img
+              key={f.url}
+              src={f.url}
+              alt={file.title}
+              onLoad={e => setFitWidth(e.currentTarget.getBoundingClientRect().width)}
+              draggable={false}
+              onDoubleClick={() => setZoom(z => (z === 1 ? 2 : 1))}
+              style={zoom !== 1 && fitWidth ? { width: fitWidth * zoom, maxWidth: 'none', maxHeight: 'none' } : undefined}
+            />
+          </div>
+        )}
+        {f && (
+          <div className="zoom-bar" dir="ltr">
+            <button onClick={() => zoomBy(-1)} disabled={zoom === ZOOMS[0]} aria-label="הקטנה">
+              <Icon name="zoomOut" />
+            </button>
+            <button className="zoom-level" onClick={() => setZoom(1)} aria-label="גודל רגיל">
+              {Math.round(zoom * 100)}%
+            </button>
+            <button onClick={() => zoomBy(1)} disabled={zoom === ZOOMS[ZOOMS.length - 1]} aria-label="הגדלה">
+              <Icon name="zoomIn" />
+            </button>
+          </div>
+        )}
         {files.length > 1 && (
           <>
             <button className="viewer-nav prev" onClick={() => go(-1)} aria-label="הקודם">

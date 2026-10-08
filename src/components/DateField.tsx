@@ -47,7 +47,7 @@ export function DateField({
   const [open, setOpen] = useState(false)
   return (
     <>
-      <button type="button" className={`in date-field ${value ? '' : 'empty'}`} onClick={() => setOpen(true)} aria-label={label ?? placeholder}>
+      <button type="button" className={`in date-field ${value ? '' : 'is-empty'}`} onClick={() => setOpen(true)} aria-label={label ?? placeholder}>
         <span>{value ? fmtDate(value) : placeholder}</span>
         <Icon name="calendar" />
       </button>

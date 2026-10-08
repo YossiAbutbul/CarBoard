@@ -144,7 +144,7 @@
 
 /* ─── calendar ─── */
 .date-field { display: flex; align-items: center; justify-content: space-between; gap: 8px; text-align: right; cursor: pointer; }
-.date-field.empty span { color: #b3bac3; }
+.date-field.is-empty span { color: #b3bac3; }
 .date-field svg.i { width: 18px; height: 18px; color: var(--muted); flex: none; }
 .cal-overlay { position: fixed; inset: 0; z-index: 80; display: flex; align-items: flex-end; justify-content: center; background: rgba(11, 22, 38, 0.45); animation: fade 0.2s ease-out; }
 .cal-sheet { width: 100%; max-width: 460px; background: #fff; border-radius: 22px 22px 0 0; padding: 10px 16px calc(16px + env(safe-area-inset-bottom)); animation: up 0.28s var(--ease); }
@@ -356,3 +356,22 @@
 .brand span { font-size: 22px; font-weight: 400; letter-spacing: -0.03em; color: #8fc0ff; }
 .brand b { font-weight: 800; color: #fff; }
 .onb-step .brand { margin-bottom: 18px; }
+
+/* viewer zoom */
+.viewer-stage .pdf-pages { display: block; justify-items: initial; padding: 4px 0 76px; }
+.viewer-stage .pdf-pages canvas { display: block; margin: 0 auto 12px; max-width: none; }
+.viewer-zoom { width: 100%; height: 100%; display: grid; place-items: center; overflow: auto; scrollbar-width: none; }
+.viewer-zoom.zoomed { display: block; }
+.viewer-zoom.zoomed img { display: block; margin: 0 auto; }
+.viewer-zoom img { max-width: 100%; max-height: 100%; object-fit: contain; border-radius: 8px; animation: rise 0.25s var(--ease); cursor: zoom-in; }
+.viewer-zoom.zoomed img { cursor: zoom-out; }
+.zoom-bar { position: absolute; bottom: 14px; left: 50%; transform: translateX(-50%); z-index: 2; display: flex; align-items: center; gap: 2px; padding: 4px; border-radius: 99px; background: rgba(20, 28, 42, 0.85); backdrop-filter: blur(10px); box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4), inset 0 0 0 1px rgba(255, 255, 255, 0.1); }
+.zoom-bar button { width: 40px; height: 36px; display: grid; place-items: center; border-radius: 99px; color: #fff; transition: background 0.15s; }
+.zoom-bar button:hover:not(:disabled) { background: rgba(255, 255, 255, 0.12); }
+.zoom-bar button:disabled { opacity: 0.35; }
+.zoom-bar button svg.i { width: 19px; height: 19px; }
+.zoom-bar .zoom-level { width: 58px; font-size: 13px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.pdf-pages, .pdf-thumb { direction: ltr; }
+.pannable { cursor: grab; }
+.pannable img { cursor: grab !important; }
+.pannable.dragging, .pannable.dragging img { cursor: grabbing !important; user-select: none; }

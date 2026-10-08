@@ -33,6 +33,8 @@ import {
   Trash2,
   Wrench,
   X,
+  ZoomIn,
+  ZoomOut,
   type LucideIcon,
 } from 'lucide-react'
 import type { DocKind, ItemKind } from '../types'
@@ -76,6 +78,8 @@ const ICONS = {
   download: Download,
   forward: ArrowLeft, // RTL: "next" points left
   back: ArrowRight,
+  zoomIn: ZoomIn,
+  zoomOut: ZoomOut,
 } satisfies Record<string, LucideIcon>
 
 export type IconName = keyof typeof ICONS
