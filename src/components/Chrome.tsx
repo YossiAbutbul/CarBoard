@@ -73,7 +73,9 @@ export function PageHero({ children, dial }: { children: ReactNode; dial?: boole
       const top = offset(el, null) // ignores the page's entrance animation
       const barTop = parseFloat(getComputedStyle(bar).top) || 14
       const titleAt = barTop + bar.offsetHeight + 2
-      const stickAt = titleAt + title.offsetHeight * TITLE + 14 - el.offsetHeight // the card's top, on screen
+      const headerBottom = titleAt + title.offsetHeight * TITLE + 14 // the collapsed card's bottom, on screen
+      const stickAt = headerBottom - el.offsetHeight // the card's top, on screen
+      page?.style.setProperty('--hero-bottom', `${headerBottom}px`) // things that dock under the header
       el.style.top = `${stickAt}px`
       travel = Math.max(1, top - stickAt)
       dTitle = titleAt - (stickAt + offset(title, el))
