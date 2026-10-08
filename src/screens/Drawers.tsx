@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { ConfirmButton } from '../components/ConfirmButton'
 import { askText } from '../components/Dialog'
+import { checkForUpdate } from '../lib/update'
 import { disablePush, enablePush, loadPrefs, pushState, resavePush, savePrefs, testPush, type PushState } from '../lib/push'
 import { DEFAULT_PREFS, type NotifyPrefs } from '../domain/notify'
 import { Drawer } from '../components/ui'
@@ -198,9 +199,7 @@ export function SettingsDrawer({
           </div>
         </section>
       )}
-      <div className="foot" dir="ltr">
-        CarBoard · v{__APP_VERSION__} · {new Date(__APP_BUILD__).toLocaleString('he-IL', { day: 'numeric', month: 'numeric', hour: '2-digit', minute: '2-digit' })}
-      </div>
+      <VersionLine />
       <div className="credit" dir="ltr">
         © {new Date().getFullYear()} Yossi Abutbul. All rights reserved.
       </div>
@@ -323,5 +322,28 @@ function PushSection({ cloud }: { cloud: boolean }) {
         {msg && <div className="hint" style={{ marginTop: 8 }}>{msg}</div>}
       </div>
     </section>
+  )
+}
+
+/** The version and build time, with a button that checks for a newer version now. */
+function VersionLine() {
+  const [state, setState] = useState<'idle' | 'checking' | 'new' | 'latest' | 'offline'>('idle')
+  const check = async () => {
+    setState('checking')
+    const r = await checkForUpdate().catch(() => 'offline' as const)
+    setState(r)
+    if (r !== 'new') setTimeout(() => setState('idle'), 3000)
+  }
+  const note = { new: 'נמצאה גרסה חדשה', latest: 'זו הגרסה האחרונה', offline: 'אין חיבור לבדיקה' } as Record<string, string>
+  return (
+    <div className="foot">
+      <span dir="ltr">
+        CarBoard · v{__APP_VERSION__} · {new Date(__APP_BUILD__).toLocaleString('he-IL', { day: 'numeric', month: 'numeric', hour: '2-digit', minute: '2-digit' })}
+      </span>
+      <button className={`update-check ${state === 'checking' ? 'spinning' : ''}`} onClick={check} disabled={state === 'checking'} aria-label="בדיקת עדכונים" title="בדיקת עדכונים">
+        <Icon name="refresh" />
+      </button>
+      {note[state] && <div className="update-note">{note[state]}</div>}
+    </div>
   )
 }
