@@ -221,28 +221,48 @@ function Login({ onGuest }: { onGuest(): void }) {
   const [err, setErr] = useState<string | null>(null)
   return (
     <div className="shell">
-      <div className="welcome scenic reveal">
+      <div className="welcome scenic login">
         <Scene />
-        <Brand />
-        <div className="status">
-          <span>כל</span>
-          <span>הרכב.</span>
-          <span>במקום</span>
-          <span>אחד.</span>
+        <header className="login-top">
+          <Brand />
+        </header>
+        <div className="login-hero">
+          <h1 className="status">
+            <span>כל הרכב.</span>
+            <span>במקום אחד.</span>
+          </h1>
+          <p className="login-sub">טסט, ביטוח, טיפולים וק״מ, עם תזכורת בזמן.</p>
+          <ul className="login-feats">
+            {(
+              [
+                ['test', 'תזכורת לטסט ולביטוח'],
+                ['service', 'טיפולים לפי ק״מ או תאריך'],
+                ['docs', 'רישיון, פוליסה וקבלות במקום אחד'],
+              ] as [IconName, string][]
+            ).map(([icon, text], n) => (
+              <li key={icon} style={{ animationDelay: `${0.35 + n * 0.08}s` }}>
+                <span>
+                  <Icon name={icon} />
+                </span>
+                {text}
+              </li>
+            ))}
+          </ul>
         </div>
-        <div style={{ flex: 1 }} />
-        <button
-          className="btn"
-          style={{ background: '#fff' }}
-          onClick={() => signInWithGoogle().catch(e => setErr(e instanceof Error ? e.message : String(e)))}
-        >
-          <GoogleMark />
-          התחברות עם Google
-        </button>
-        <button className="btn guest-btn" onClick={onGuest}>
-          כניסה כאורח
-        </button>
-        <div className="guest-hint">כאורח, הנתונים נשמרים רק במכשיר הזה. אפשר להתחבר אחר כך ולהעביר אותם.</div>
+        <div className="login-actions">
+          <button
+            className="btn"
+            style={{ background: '#fff' }}
+            onClick={() => signInWithGoogle().catch(e => setErr(e instanceof Error ? e.message : String(e)))}
+          >
+            <GoogleMark />
+            התחברות עם Google
+          </button>
+          <button className="btn guest-btn" onClick={onGuest}>
+            כניסה כאורח
+          </button>
+          <div className="guest-hint">כאורח, הנתונים נשמרים רק במכשיר הזה. אפשר להתחבר אחר כך ולהעביר אותם.</div>
+        </div>
         {err && <div className="banner">{err}</div>}
       </div>
     </div>

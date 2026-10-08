@@ -376,3 +376,24 @@
 /* login and no-car screens: the wordmark top-left, the headline starting level with it on the right */
 .welcome.scenic > .brand { position: absolute; top: max(40px, env(safe-area-inset-top)); left: 22px; z-index: 1; }
 .welcome.scenic > .status { margin-top: 0; }
+
+/* ─── login layout: wordmark on top, the pitch above the buttons ─── */
+.welcome.login { padding-bottom: max(22px, env(safe-area-inset-bottom)); }
+.login-top { display: flex; justify-content: flex-end; }
+.login-top .brand { align-self: auto; }
+.login-hero { margin-top: auto; padding-top: 24px; }
+.login-hero .status { margin: 0; font-size: 46px; line-height: 1.05; }
+.login-hero .status span { display: block; animation: rise 0.6s var(--ease) both; }
+.login-hero .status span + span { animation-delay: 0.1s; }
+.login-sub { margin: 14px 0 0; max-width: 340px; font-size: 15.5px; line-height: 1.5; color: rgba(255, 255, 255, 0.72); animation: rise 0.6s var(--ease) both 0.2s; }
+.login-feats { list-style: none; margin: 22px 0 0; padding: 0; display: grid; gap: 8px; }
+.login-feats li { display: flex; align-items: center; gap: 12px; padding: 10px 12px; border-radius: 14px; font-size: 14.5px; font-weight: 500; color: rgba(255, 255, 255, 0.92);
+  background: rgba(255, 255, 255, 0.06); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.09); backdrop-filter: blur(8px); animation: rise 0.6s var(--ease) both; }
+.login-feats li span { flex: none; width: 32px; height: 32px; display: grid; place-items: center; border-radius: 10px; background: rgba(77, 155, 255, 0.18); color: #9fd0ff; }
+.login-feats li svg.i { width: 17px; height: 17px; }
+.login-actions { margin-top: 26px; animation: rise 0.6s var(--ease) both 0.6s; }
+.login-actions .btn { margin: 0; }
+.login-actions .btn + .btn { margin-top: 10px; }
+.login-actions .guest-hint { margin: 12px 0 0; }
+.login-actions .guest-btn { background: rgba(255, 255, 255, 0.08); color: #fff; box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.22); }
+.login-actions .guest-btn:hover { background: rgba(255, 255, 255, 0.13); }
