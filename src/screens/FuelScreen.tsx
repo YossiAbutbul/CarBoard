@@ -4,8 +4,9 @@ import { Icon } from '../components/Icon'
 import { Glance, GlanceCell, PageHero, TopBar, useCountUp } from '../components/Chrome'
 import { useApp } from '../data/AppData'
 import { useBackLayer } from '../lib/back'
-import { averageEconomy, byDate, economy, economyOf, monthlySpend, perLiter } from '../domain/fuel'
-import { fmtDate, fmtMoney, fmtNum, fmtShortDate } from '../lib/i18n'
+import { byDate, economy, economyOf, monthlySpend, perLiter } from '../domain/fuel'
+import { fmtDate, fmtDays, fmtMoney, fmtNum, fmtShortDate } from '../lib/i18n'
+import { diffDays, todayIso } from '../lib/dates'
 import type { Fuel } from '../types'
 import type { OpenSheet } from '../App'
 
@@ -21,7 +22,7 @@ export function FuelScreen({ open, openCars, openSettings }: { open: OpenSheet; 
   const monthTotal = fills.filter(f => f.date.startsWith(month)).reduce((n, f) => n + (f.price ?? 0), 0)
   const monthShown = useCountUp(monthTotal)
   if (!car) return null
-  const avg = averageEconomy(fills)
+  const last = list[0] ?? null // the newest fill-up
   const lastPrice = list.map(perLiter).find(p => p != null) ?? null
   const months = [...new Set(list.map(f => f.date.slice(0, 7)))]
 
@@ -35,7 +36,11 @@ export function FuelScreen({ open, openCars, openSettings }: { open: OpenSheet; 
         </div>
         <Glance>
           <GlanceCell k="החודש" v={fmtMoney(monthShown)} d={`${fills.filter(f => f.date.startsWith(month)).length} תדלוקים`} />
-          <GlanceCell k="ק״מ לליטר" v={avg ? avg.toFixed(1) : 'אין'} d={avg ? 'ממוצע, בין מילויים מלאים' : 'אחרי 2 מילויים מלאים'} />
+          <GlanceCell
+            k="תדלוק אחרון"
+            v={last ? (diffDays(todayIso(), last.date) <= 0 ? 'היום' : `לפני ${fmtDays(diffDays(todayIso(), last.date))}`) : 'אין'}
+            d={last ? [last.price != null && fmtMoney(last.price), last.station].filter(Boolean).join(' · ') || fmtShortDate(last.date) : 'עוד לא נרשם'}
+          />
           <GlanceCell k="מחיר לליטר" v={lastPrice ? `₪${lastPrice.toFixed(2)}` : 'אין'} d={lastPrice ? 'בתדלוק האחרון' : 'עוד אין'} />
         </Glance>
       </PageHero>
