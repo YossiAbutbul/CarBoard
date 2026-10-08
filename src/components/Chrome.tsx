@@ -60,7 +60,7 @@ export function PageHero({ children, dial }: { children: ReactNode; dial?: boole
     const glance = el?.querySelector<HTMLElement>(':scope > .glance')
     if (!el || !bar || !title || !glance) return
     const TITLE = 0.66 // greeting scale when collapsed
-    const ROW = 0.84 // summary row scale when collapsed
+    const ROW = 0.9 // summary row scale when collapsed
     let travel = 0 // how far the card scrolls before it sticks
     let dTitle = 0
     let dRow = 0
@@ -79,7 +79,11 @@ export function PageHero({ children, dial }: { children: ReactNode; dial?: boole
       const barTop = parseFloat(getComputedStyle(bar).top) || 14
       const titleAt = barTop + bar.offsetHeight + 2
       const rowAt = titleAt + title.offsetHeight * TITLE + 10
-      const stickAt = rowAt + glance.offsetHeight * ROW + 14 - el.offsetHeight // the card's top, on screen
+      // collapsed boxes show only the label and value: their status line is clipped off
+      const d = glance.querySelector<HTMLElement>('.d')
+      const cut = d ? d.offsetHeight + 3 : 0
+      el.style.setProperty('--cut', `${cut}px`)
+      const stickAt = rowAt + (glance.offsetHeight - cut) * ROW + 12 - el.offsetHeight // the card's top, on screen
       el.style.top = `${stickAt}px`
       travel = Math.max(1, top - stickAt)
       dTitle = titleAt - (stickAt + rel(title))

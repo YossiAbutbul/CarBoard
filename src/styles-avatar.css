@@ -444,3 +444,6 @@ html.scenic-page, html.scenic-page body { background: #08111f; }
 .hero > .glance { z-index: 2; }
 .hero.collapsed { box-shadow: 0 12px 30px rgba(8, 17, 31, 0.3); }
 .hero { overflow: clip; } /* clip, not hidden: hidden would stop the bar inside from sticking */
+/* collapsed summary boxes: label and value only */
+.hero > .glance button { clip-path: inset(0 0 calc(var(--p, 0) * var(--cut, 0px)) 0 round 16px); }
+.hero > .glance .d { opacity: calc(1 - var(--p, 0) * 2.2); }
