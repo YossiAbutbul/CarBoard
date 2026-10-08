@@ -317,7 +317,12 @@
 .scene.lite .g3 { width: 160px; height: 160px; top: 30%; right: 20%; opacity: 0.18; }
 .scene.lite .road { transform: rotate(-12deg) scale(1.6); }
 .scene.lite .streak { opacity: 0; height: 1.5px; }
-.scene.lite .s1 { top: 70%; } .scene.lite .s2 { top: 78%; } .scene.lite .s3 { top: 86%; } .scene.lite .s4 { top: 62%; }
+/* in the header the streaks run through the top half, around the greeting, not behind the stats */
+.scene.lite .s1 { top: 22%; } .scene.lite .s2 { top: 30%; } .scene.lite .s3 { top: 38%; } .scene.lite .s4 { top: 14%; }
+.scene.lite .streak { animation-name: streak-lite; }
+@keyframes streak-lite { 0% { transform: translateX(0); opacity: 0; } 8% { opacity: 0.7; } 70% { opacity: 0.6; } 100% { transform: translateX(380%); opacity: 0; } }
+/* and anything that still passes behind a stat box is softened into a glow */
+.hero .glance button { backdrop-filter: blur(18px) saturate(1.2); -webkit-backdrop-filter: blur(18px) saturate(1.2); background: rgba(255, 255, 255, 0.08); }
 .scene.lite .grain { opacity: 0.05; }
 .splash-name small { display: block; margin-top: 4px; font-size: 13px; font-weight: 500; letter-spacing: 0; opacity: 0.6; text-align: center; }
 
