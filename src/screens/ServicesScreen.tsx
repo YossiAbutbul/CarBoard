@@ -52,7 +52,7 @@ export function ServicesScreen({ open, openCars, openSettings }: { open: OpenShe
           <GlanceCell k="סה״כ טיפולים" v={fmtNum(list.length)} d={years.length ? `מאז ${years[years.length - 1]}` : 'עוד אין'} />
           <GlanceCell
             k="טיפול אחרון"
-            v={last ? (diffDays(todayIso(), last.date) <= 0 ? 'היום' : `לפני ${fmtDays(diffDays(todayIso(), last.date))}`) : '—'}
+            v={last ? (diffDays(todayIso(), last.date) <= 0 ? 'היום' : `לפני ${fmtDays(diffDays(todayIso(), last.date))}`) : 'אין'}
             d={last ? fmtKm(last.km) : 'לא נרשם'}
           />
         </Glance>

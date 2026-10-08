@@ -196,3 +196,4 @@
 .fuel-perl-box b { font-size: 17px; font-weight: 800; font-variant-numeric: tabular-nums; direction: ltr; }
 .fuel-price { display: grid; justify-items: end; gap: 1px; }
 .fuel-price small { font-size: 11.5px; font-weight: 500; color: var(--muted); }
+.fuel-perl-box small { font-size: 12.5px; font-weight: 500; opacity: 0.75; }

@@ -137,7 +137,7 @@ export function FuelSheet({ record, onClose }: { record?: Fuel; onClose(): void 
         {/* worked out from liters and total; shown as a box of its own, not typed */}
         <div className="fuel-perl-box" aria-live="polite">
           <span>מחיר לליטר</span>
-          <b>{perLiter ? `₪${perLiter.toFixed(2)}` : '—'}</b>
+          {perLiter ? <b>₪{perLiter.toFixed(2)}</b> : <small>יחושב לבד</small>}
         </div>
         <div className="row2">
           <div>

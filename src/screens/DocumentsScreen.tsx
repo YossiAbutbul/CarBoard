@@ -42,7 +42,7 @@ export function DocumentsScreen({ open, openCars, openSettings }: { open: OpenSh
           <GlanceCell k="מסמכים" v={fmtNum(docs.length)} d={expired ? `${expired} פגי תוקף` : 'הכל בתוקף'} s={expired ? 'overdue' : 'ok'} />
           <GlanceCell
             k="הבא לחידוש"
-            v={next ? fmtDays(diffDays(next.expiry!, todayIso())) : '—'}
+            v={next ? fmtDays(diffDays(next.expiry!, todayIso())) : 'אין'}
             d={next ? next.title : 'אין תאריכים'}
             onClick={next ? () => open({ t: 'doc', doc: next }) : undefined}
           />

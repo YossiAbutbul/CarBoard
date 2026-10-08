@@ -172,7 +172,7 @@ function ReminderCell({ r, title, open, tour }: { r: Reminder; title: string; op
     <GlanceCell
       k={title}
       // the unit moves to the line below so the number fits the narrow cell
-      v={r.status === 'unset' ? '—' : r.headline.replace(' ק״מ', '')}
+      v={r.status === 'unset' ? 'אין' : r.headline.replace(' ק״מ', '')}
       d={r.headline.endsWith('ק״מ') ? `ק״מ · ${STATUS_TEXT[r.status]}` : STATUS_TEXT[r.status]}
       s={r.status}
       onClick={() => open({ t: 'item', item: r.item })}

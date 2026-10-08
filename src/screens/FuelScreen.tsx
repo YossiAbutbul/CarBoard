@@ -35,8 +35,8 @@ export function FuelScreen({ open, openCars, openSettings }: { open: OpenSheet; 
         </div>
         <Glance>
           <GlanceCell k="החודש" v={fmtMoney(monthShown)} d={`${fills.filter(f => f.date.startsWith(month)).length} תדלוקים`} />
-          <GlanceCell k="ק״מ לליטר" v={avg ? avg.toFixed(1) : '—'} d={avg ? 'ממוצע, בין מילויים מלאים' : 'אחרי 2 מילויים מלאים'} />
-          <GlanceCell k="מחיר לליטר" v={lastPrice ? `₪${lastPrice.toFixed(2)}` : '—'} d={lastPrice ? 'בתדלוק האחרון' : 'עוד אין'} />
+          <GlanceCell k="ק״מ לליטר" v={avg ? avg.toFixed(1) : 'אין'} d={avg ? 'ממוצע, בין מילויים מלאים' : 'אחרי 2 מילויים מלאים'} />
+          <GlanceCell k="מחיר לליטר" v={lastPrice ? `₪${lastPrice.toFixed(2)}` : 'אין'} d={lastPrice ? 'בתדלוק האחרון' : 'עוד אין'} />
         </Glance>
       </PageHero>
 
@@ -199,27 +199,38 @@ function FuelReceipt({ fill, fills, onClose, onEdit }: { fill: Fuel; fills: Fuel
             <span dir="ltr">#{no}</span>
           </div>
           <div className="r-cut" />
-          <div className="r-row">
-            <span>ליטרים</span>
-            <span dir="ltr">{fill.liters != null ? fill.liters.toFixed(2) : '—'}</span>
-          </div>
-          <div className="r-row">
-            <span>מחיר לליטר</span>
-            <span dir="ltr">{pl != null ? money2(pl) : '—'}</span>
-          </div>
-          <div className="r-row">
-            <span>ק״מ ברכב</span>
-            <span dir="ltr">{fill.km != null ? fmtNum(fill.km) : '—'}</span>
-          </div>
+          {/* only what was logged: a missing value is left out, not shown as a dash */}
+          {fill.liters != null && (
+            <div className="r-row">
+              <span>ליטרים</span>
+              <span dir="ltr">{fill.liters.toFixed(2)}</span>
+            </div>
+          )}
+          {pl != null && (
+            <div className="r-row">
+              <span>מחיר לליטר</span>
+              <span dir="ltr">{money2(pl)}</span>
+            </div>
+          )}
+          {fill.km != null && (
+            <div className="r-row">
+              <span>ק״מ ברכב</span>
+              <span dir="ltr">{fmtNum(fill.km)}</span>
+            </div>
+          )}
           <div className="r-row">
             <span>סוג מילוי</span>
             <span>{fill.full ? 'מלא' : 'חלקי'}</span>
           </div>
-          <div className="r-cut" />
-          <div className="r-row r-total">
-            <span>סה״כ</span>
-            <span dir="ltr">{fill.price != null ? money2(fill.price) : '—'}</span>
-          </div>
+          {fill.price != null && (
+            <>
+              <div className="r-cut" />
+              <div className="r-row r-total">
+                <span>סה״כ</span>
+                <span dir="ltr">{money2(fill.price)}</span>
+              </div>
+            </>
+          )}
           {eco && (
             <div className="r-eco">
               {eco.kmPerLiter.toFixed(1)} ק״מ לליטר · {fmtNum(eco.km)} ק״מ מאז המילוי המלא הקודם
