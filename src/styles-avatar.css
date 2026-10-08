@@ -566,6 +566,7 @@ html, body { overscroll-behavior-y: none; }
 .name-row { display: flex; align-items: center; justify-content: space-between; width: 100%; padding: 12px 14px; border-radius: 14px; background: var(--card); font-size: 15px; font-weight: 600; color: var(--ink); text-align: right; }
 .name-row svg.i { width: 18px; height: 18px; color: var(--muted); }
 .dialog.install img { display: block; width: 64px; height: 64px; margin: 2px auto 12px; border-radius: 15px; }
+.install-spin { width: 16px; height: 16px; border-width: 2px; vertical-align: -2px; margin-inline-end: 4px; }
 .dialog-btns.one { grid-template-columns: 1fr; }
 .install-steps { margin: 14px 0 0; padding: 12px 14px; list-style: none; counter-reset: s; text-align: start; background: var(--card); border-radius: 14px; font-size: 14px; line-height: 1.5; display: grid; gap: 8px; }
 .install-steps li { counter-increment: s; display: flex; align-items: center; flex-wrap: wrap; gap: 4px; }

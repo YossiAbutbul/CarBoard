@@ -41,7 +41,14 @@ const snoozed = () => {
 const settled = () => Boolean(document.querySelector('[data-tour=cars]')) && !document.querySelector('.tour, .onb, .sheet, .drawer, .dialog-overlay')
 
 export function InstallPrompt() {
-  const [mode, setMode] = useState<'prompt' | 'ios' | null>(null)
+  // after "install": `installing` until the browser says it is done, then `installed`
+  const [mode, setMode] = useState<'prompt' | 'ios' | 'installing' | 'installed' | null>(null)
+
+  useEffect(() => {
+    const done = () => setMode(m => (m === 'installing' ? 'installed' : m))
+    window.addEventListener('appinstalled', done)
+    return () => window.removeEventListener('appinstalled', done)
+  }, [])
 
   useEffect(() => {
     if (standalone() || snoozed()) return
@@ -71,7 +78,9 @@ export function InstallPrompt() {
     }
     setMode(null)
   }
-  useBackLayer(mode !== null, later)
+  const after = mode === 'installing' || mode === 'installed'
+  const close = after ? () => setMode(null) : later
+  useBackLayer(mode !== null, close)
   if (!mode) return null
 
   const install = async () => {
@@ -80,17 +89,39 @@ export function InstallPrompt() {
     await e.prompt()
     const { outcome } = await e.userChoice
     deferred = null
-    if (outcome === 'accepted') setMode(null)
+    if (outcome === 'accepted') setMode('installing')
     else later()
   }
 
   return createPortal(
-    <div className="dialog-overlay" onClick={later}>
+    <div className="dialog-overlay" onClick={close}>
       <div className="dialog install" role="dialog" aria-modal="true" aria-label="התקנת CarBoard" onClick={e => e.stopPropagation()}>
         <img src="/icon-192.png" alt="" width={64} height={64} />
-        <b>התקינו את CarBoard</b>
-        <p>נפתחת מהמסך הראשי כמו אפליקציה, במסך מלא, ושולחת תזכורות לטלפון.</p>
-        {mode === 'ios' ? (
+        {mode === 'installing' ? (
+          <>
+            <b>
+              <span className="spin install-spin" /> מתקינים…
+            </b>
+            <p>אפשר לסגור את הדפדפן. בעוד רגע CarBoard תופיע במסך הבית, ומשם פותחים אותה.</p>
+          </>
+        ) : mode === 'installed' ? (
+          <>
+            <b>CarBoard מותקנת</b>
+            <p>פותחים אותה מהמסך הראשי. את הדפדפן אפשר לסגור.</p>
+          </>
+        ) : (
+          <>
+            <b>התקינו את CarBoard</b>
+            <p>נפתחת מהמסך הראשי כמו אפליקציה, במסך מלא, ושולחת תזכורות לטלפון.</p>
+          </>
+        )}
+        {after ? (
+          <div className="dialog-btns one">
+            <button className="dialog-ok" onClick={close}>
+              הבנתי
+            </button>
+          </div>
+        ) : mode === 'ios' ? (
           <>
             <ol className="install-steps">
               <li>
