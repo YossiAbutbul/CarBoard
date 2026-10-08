@@ -214,9 +214,14 @@ export function GlanceCell({
   )
 }
 
+/** When the app started; the splash can be mounted more than once while loading, and must not restart. */
+const APP_START = performance.now()
+export const sinceStart = () => performance.now() - APP_START
+
 export function Splash() {
+  // a negative delay picks the animations up where the first splash left them
   return (
-    <div className="splash">
+    <div className="splash" style={{ '--since': `${-Math.round(sinceStart())}ms` } as React.CSSProperties}>
       <Dial className="splash-dial" />
       <div className="splash-name" dir="ltr">
         CarBoard

@@ -6,7 +6,7 @@ import { localStore } from './data/localStore'
 import { firebaseStore } from './data/firebaseStore'
 import { auth, cloudEnabled, signInWithGoogle } from './data/firebase'
 import { Icon, type IconName } from './components/Icon'
-import { Splash } from './components/Chrome'
+import { Splash, sinceStart } from './components/Chrome'
 import { GoogleMark } from './components/GoogleMark'
 import { Scene } from './components/Scene'
 import { Brand } from './components/Brand'
@@ -97,10 +97,10 @@ function Main({ email, accountName, guest = false }: { email: string | null; acc
   const [sheet, setSheet] = useState<SheetState | null>(null)
   const [drawer, setDrawer] = useState<null | 'cars' | 'settings'>(null)
   const close = () => setSheet(null)
-  // Let the loading animation play once, even when local data loads instantly.
-  const [splashDone, setSplashDone] = useState(false)
+  // Let the loading animation play once, even when local data loads instantly (counted from app start).
+  const [splashDone, setSplashDone] = useState(() => sinceStart() >= 1100)
   useEffect(() => {
-    const t = setTimeout(() => setSplashDone(true), 1100)
+    const t = setTimeout(() => setSplashDone(true), Math.max(0, 1100 - sinceStart()))
     return () => clearTimeout(t)
   }, [])
   const openCars = () => setDrawer('cars')
