@@ -28,6 +28,7 @@ export function HomeScreen({
 }) {
   const { car, km, reminders, actions } = useApp()
   const [hidden, setHidden] = useState(false)
+  const [confirming, setConfirming] = useState(false)
   const kmShown = useCountUp(km.value)
 
   if (!car)
@@ -127,12 +128,18 @@ export function HomeScreen({
           <div className="row2">
             <button
               className="btn pri"
+              disabled={confirming}
               onClick={async () => {
-                await actions.addReading(car.id, km.value, 'confirm')
-                dismiss()
+                setConfirming(true)
+                try {
+                  await actions.addReading(car.id, km.value, 'confirm')
+                  dismiss()
+                } finally {
+                  setConfirming(false)
+                }
               }}
             >
-              <Icon name="check" /> נכון
+              {confirming ? <span className="spin inline" /> : <><Icon name="check" /> נכון</>}
             </button>
             <button className="btn" onClick={() => open({ t: 'odo' })}>
               לעדכן

@@ -40,12 +40,12 @@ export function ConfirmButton({
   if (icon)
     return (
       <button className={`icon-btn confirm-icon ${className}`} style={style} onClick={click} aria-label={label} disabled={busy}>
-        <Icon name="trash" />
+        {busy ? <span className="spin" /> : <Icon name="trash" />}
       </button>
     )
   return (
     <button className={className} style={style} onClick={click} disabled={busy}>
-      {children}
+      {busy ? <span className="spin inline" /> : children}
     </button>
   )
 }

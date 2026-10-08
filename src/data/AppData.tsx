@@ -6,6 +6,7 @@ import { estimateKm, type KmEstimate } from '../domain/odometer'
 import { buildReminders, needsAttention, type Reminder } from '../domain/reminders'
 import { setBadge } from '../lib/badge'
 import { defaultItems } from '../domain/defaults'
+import { tracked } from '../lib/activity'
 
 interface Ctx {
   store: Store
@@ -49,7 +50,9 @@ async function addMissing(store: Store, d: Data) {
 }
 const CAR_KEY = 'car-records:car'
 
-export function AppDataProvider({ store, children }: { store: Store; children: ReactNode }) {
+export function AppDataProvider({ store: raw, children }: { store: Store; children: ReactNode }) {
+  // every request counts for the activity bar (family requests too)
+  const store = useMemo(() => tracked({ ...raw, family: raw.family && tracked(raw.family) } as Store), [raw])
   const [data, setData] = useState<Data>(emptyData)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
