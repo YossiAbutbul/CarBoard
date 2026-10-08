@@ -61,6 +61,7 @@ export async function sendTo(db: Firestore, uid: string, payload: Payload) {
     } catch (e) {
       const code = (e as { statusCode?: number }).statusCode
       if (code === 404 || code === 410) await s.ref.delete() // unsubscribed or the app was removed
+      else console.error('push failed', code, (e as { body?: string }).body?.slice(0, 200))
     }
   }
   return sent

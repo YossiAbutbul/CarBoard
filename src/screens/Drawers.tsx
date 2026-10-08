@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { ConfirmButton } from '../components/ConfirmButton'
 import { askText } from '../components/Dialog'
-import { disablePush, enablePush, loadPrefs, pushState, savePrefs, testPush, type PushState } from '../lib/push'
+import { disablePush, enablePush, loadPrefs, pushState, resavePush, savePrefs, testPush, type PushState } from '../lib/push'
 import { DEFAULT_PREFS, type NotifyPrefs } from '../domain/notify'
 import { Drawer } from '../components/ui'
 import { Plate } from '../components/Chrome'
@@ -215,7 +215,12 @@ function PushSection({ cloud }: { cloud: boolean }) {
   const [msg, setMsg] = useState<string | null>(null)
   const [prefs, setPrefs] = useState<NotifyPrefs>(DEFAULT_PREFS)
   useEffect(() => {
-    pushState().then(setState).catch(() => setState('unsupported'))
+    pushState()
+      .then(s => {
+        setState(s)
+        if (s === 'on' && cloud) resavePush().catch(() => {}) // heals a phone whose earlier save failed
+      })
+      .catch(() => setState('unsupported'))
     if (cloud) loadPrefs().then(setPrefs).catch(() => {})
   }, [cloud])
   const toggle = (next: NotifyPrefs) => {

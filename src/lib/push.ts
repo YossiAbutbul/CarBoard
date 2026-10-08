@@ -34,12 +34,26 @@ const subId = async (endpoint: string) => {
   return Array.from(new Uint8Array(hash).slice(0, 12), b => b.toString(16).padStart(2, '0')).join('')
 }
 
+/** With notifications already on: save this phone again, in case an earlier save failed. */
+export async function resavePush() {
+  const reg = await navigator.serviceWorker.ready
+  const sub = await reg.pushManager.getSubscription()
+  if (sub) await saveSub(sub)
+}
+
 export async function enablePush(): Promise<PushState> {
   const uid = auth?.currentUser?.uid
   if (!uid || !db || !VAPID) return 'unsupported'
   if ((await Notification.requestPermission()) !== 'granted') return 'blocked'
   const reg = await navigator.serviceWorker.ready
   const sub = (await reg.pushManager.getSubscription()) ?? (await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: b64ToBytes(VAPID) }))
+  await saveSub(sub)
+  return 'on'
+}
+
+async function saveSub(sub: PushSubscription) {
+  const uid = auth?.currentUser?.uid
+  if (!uid || !db) return
   const j = sub.toJSON() as { endpoint: string; keys: { p256dh: string; auth: string } }
   await setDoc(doc(db, 'users', uid, 'push', await subId(j.endpoint)), {
     endpoint: j.endpoint,
@@ -47,7 +61,6 @@ export async function enablePush(): Promise<PushState> {
     created: Date.now(),
     ua: navigator.userAgent.slice(0, 160),
   })
-  return 'on'
 }
 
 export async function disablePush(): Promise<PushState> {

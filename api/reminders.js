@@ -138,6 +138,7 @@ async function sendTo(db, uid, payload) {
     } catch (e) {
       const code = e.statusCode;
       if (code === 404 || code === 410) await s.ref.delete();
+      else console.error("push failed", code, e.body?.slice(0, 200));
     }
   }
   return sent;
