@@ -3,7 +3,7 @@ import { Icon, kindIcon } from '../components/Icon'
 import { Glance, GlanceCell, PageHero, TopBar, useCountUp } from '../components/Chrome'
 import { Scene } from '../components/Scene'
 import { Brand } from '../components/Brand'
-import { useApp } from '../data/AppData'
+import { REQUIRED, useApp } from '../data/AppData'
 import { STATUS_TEXT } from '../domain/labels'
 import type { Reminder } from '../domain/reminders'
 import { fmtNum, greeting, longDate } from '../lib/i18n'
@@ -147,7 +147,8 @@ export function HomeScreen({
         </button>
       </div>
       <div className="tiles" style={{ marginTop: 0 }} data-tour="tiles">
-        {reminders.map(r => (
+        {/* the ones that cannot be deleted (test, insurance) first, the rest by urgency */}
+        {[...reminders.filter(r => REQUIRED.includes(r.item.kind)), ...reminders.filter(r => !REQUIRED.includes(r.item.kind))].map(r => (
           <Tile key={r.item.id} r={r} open={open} />
         ))}
       </div>

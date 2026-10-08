@@ -441,7 +441,8 @@ html.scenic-page, html.scenic-page body { background: #08111f; }
 .hero > .greet h1 { transform-origin: 100% 0; will-change: transform; position: relative; z-index: 2; }
 .hero { overflow: clip; } /* clip, not hidden: hidden would stop the bar inside from sticking */
 /* collapsing: everything but the bar and the greeting fades out early, so nothing overlaps on the way */
-.hero > .greet .date, .hero > .greet .state-pill { opacity: calc(1 - var(--p, 0) * 3.5); }
+.hero > .greet .state-pill { opacity: calc(1 - var(--p, 0) * 3.5); }
+.hero > .greet .date { position: relative; z-index: 2; will-change: transform; }
 .hero > .glance { opacity: calc(1 - var(--p, 0) * 2.5); }
 .hero.collapsed > .glance { visibility: hidden; }
 /* the quick actions dock under the collapsed header and stay; only the content below scrolls */

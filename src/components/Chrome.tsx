@@ -51,17 +51,19 @@ export function TopBar({ openCars, openSettings }: { openCars(): void; openSetti
 export function PageHero({ children, dial }: { children: ReactNode; dial?: boolean }) {
   const ref = useRef<HTMLElement>(null)
   // The card collapses as you scroll and stays pinned as a short header: the bar (CSS-sticky, so the
-  // browser keeps it still) and the greeting, shrunk under it. The date, status pill and summary row
-  // fade out. Only transforms and opacity change, so the page below never jumps.
+  // browser keeps it still), then the date and the greeting, shrunk under it. The status pill and the
+  // summary row fade out. Only transforms and opacity change, so the page below never jumps.
   useEffect(() => {
     const el = ref.current
     const bar = el?.querySelector<HTMLElement>(':scope > .bar')
+    const date = el?.querySelector<HTMLElement>(':scope > .greet .date') ?? null
     const title = el?.querySelector<HTMLElement>(':scope > .greet h1')
     if (!el || !bar || !title) return
     const page = el.parentElement
     const TITLE = 0.7 // greeting scale when collapsed
     let travel = 1 // how far the card scrolls before it sticks
     let dTitle = 0
+    let dDate = 0
     const offset = (e: HTMLElement, upTo: HTMLElement | null) => {
       let y = 0
       for (let n: HTMLElement | null = e; n && n !== upTo; n = n.offsetParent as HTMLElement | null) y += n.offsetTop
@@ -69,33 +71,55 @@ export function PageHero({ children, dial }: { children: ReactNode; dial?: boole
     }
     const measure = () => {
       title.style.transform = ''
+      if (date) date.style.transform = ''
       el.style.top = ''
       const top = offset(el, null) // ignores the page's entrance animation
       const barTop = parseFloat(getComputedStyle(bar).top) || 14
-      const titleAt = barTop + bar.offsetHeight + 2
+      const dateAt = barTop + bar.offsetHeight + 2
+      const titleAt = dateAt + (date ? date.offsetHeight + 2 : 0)
       const headerBottom = titleAt + title.offsetHeight * TITLE + 14 // the collapsed card's bottom, on screen
       const stickAt = headerBottom - el.offsetHeight // the card's top, on screen
-      page?.style.setProperty('--hero-bottom', `${headerBottom}px`) // things that dock under the header
       el.style.top = `${stickAt}px`
+      page?.style.setProperty('--hero-bottom', `${headerBottom}px`) // things that dock under the header
       travel = Math.max(1, top - stickAt)
       dTitle = titleAt - (stickAt + offset(title, el))
-      // always leave enough room to scroll the card fully closed, even on a short page
-      if (page) page.style.minHeight = `calc(100dvh + ${Math.ceil(travel)}px)`
+      dDate = date ? dateAt - (stickAt + offset(date, el)) : 0
+      fitScroll()
       on()
+    }
+    // When the content overflows the screen, allow exactly enough scrolling to finish collapsing,
+    // so a short page never stops half-way and a long one gains nothing. If it all fits, no scroll.
+    const fitScroll = () => {
+      if (!page) return
+      page.style.minHeight = ''
+      const doc = document.documentElement
+      const overflow = doc.scrollHeight - window.innerHeight
+      if (overflow <= 0 || overflow >= travel) return
+      page.style.minHeight = `${page.offsetHeight + (travel - overflow)}px`
     }
     const on = () => {
       const p = Math.min(1, Math.max(0, window.scrollY / travel))
       el.style.setProperty('--p', String(p))
       title.style.transform = `translateY(${p * dTitle}px) scale(${1 - p * (1 - TITLE)})`
+      if (date) date.style.transform = `translateY(${p * dDate}px)`
       el.classList.toggle('collapsed', p >= 1)
     }
     measure()
+    // content below changes height (reminders added or deleted): fit the scroll again
+    const content = page ? Array.from(page.children).filter(c => c !== el) : []
+    const ro = new ResizeObserver(() => fitScroll())
+    content.forEach(c => ro.observe(c))
+    const mo = new MutationObserver(() => fitScroll()) // cards added or removed
+    if (page) mo.observe(page, { childList: true, subtree: true })
     window.addEventListener('scroll', on, { passive: true })
     window.addEventListener('resize', measure)
     return () => {
+      ro.disconnect()
+      mo.disconnect()
       window.removeEventListener('scroll', on)
       window.removeEventListener('resize', measure)
       title.style.transform = ''
+      if (date) date.style.transform = ''
       if (page) page.style.minHeight = ''
     }
   }, [])
