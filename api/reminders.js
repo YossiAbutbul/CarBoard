@@ -89,27 +89,26 @@ function fmtDays(n) {
 var longDateFmt = new Intl.DateTimeFormat("he-IL", { weekday: "long", day: "numeric", month: "long" });
 
 // src/domain/notify.ts
+var NOTIFY_DAYS = [30, 14, 7, 1, 0];
+var DEFAULT_PREFS = { days: [7, 1, 0], late: true };
 var targetKey = (it) => `${it.id}:${it.due_km ?? ""}:${it.due_date ?? ""}`;
-function stepFor(days) {
-  if (days < 0) return "late";
-  if (days === 0) return "d0";
-  if (days <= 1) return "d1";
-  if (days <= 7) return "d7";
-  if (days <= 14) return "d14";
-  return null;
+var ahead = (s) => s === "late" ? -1 : Number(s.slice(1));
+function stepFor(days, prefs) {
+  if (days < 0) return prefs.late ? "late" : null;
+  const t = [...prefs.days].sort((a, b) => a - b).find((d) => days <= d);
+  return t == null ? null : `d${t}`;
 }
-function notesFor(car, items, readings, sent, today = todayIso()) {
+function notesFor(car, items, readings, sent, today = todayIso(), prefs = DEFAULT_PREFS) {
   const km = estimateKm(readings.filter((r) => r.car_id === car.id), today);
   const notes = [];
   for (const it of items.filter((i) => i.car_id === car.id)) {
     const d = dueInfo(it, km, today);
     if (d.status === "unset" || d.days == null) continue;
-    const step = stepFor(d.days);
+    const step = stepFor(d.days, prefs);
     if (!step) continue;
     const key = targetKey(it);
     const done = sent[key] ?? [];
-    const order = ["d14", "d7", "d1", "d0", "late"];
-    if (done.some((s) => order.indexOf(s) >= order.indexOf(step))) continue;
+    if (done.some((s) => ahead(s) <= ahead(step))) continue;
     const when = step === "late" ? "\u05E2\u05D1\u05E8 \u05D4\u05DE\u05D5\u05E2\u05D3. \u05DB\u05D3\u05D0\u05D9 \u05DC\u05D8\u05E4\u05DC \u05D1\u05D4\u05E7\u05D3\u05DD." : d.by === "km" && d.kmLeft != null ? `\u05E0\u05E9\u05D0\u05E8\u05D5 ${fmtNum(d.kmLeft)} \u05E7\u05F4\u05DE (\u05D1\u05E2\u05E8\u05DA ${fmtDays(d.days)})` : step === "d0" ? `\u05D4\u05D9\u05D5\u05DD${it.due_date ? `, ${fmtDate(it.due_date)}` : ""}` : `\u05D1\u05E2\u05D5\u05D3 ${fmtDays(d.days)}${it.due_date ? `, ${fmtDate(it.due_date)}` : ""}`;
     notes.push({ key, step, title: `${it.label} \xB7 ${car.name}`, body: when, tag: `${car.id}:${it.id}` });
   }
@@ -145,12 +144,15 @@ async function sendTo(db, uid, payload) {
 }
 var todayInIsrael = () => new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Jerusalem" }).format(/* @__PURE__ */ new Date());
 async function remindUser(db, uid, today) {
-  const [cars, items, readings, mark] = await Promise.all([
+  const [cars, items, readings, mark, prefDoc] = await Promise.all([
     db.collection(`users/${uid}/cars`).get(),
     db.collection(`users/${uid}/items`).get(),
     db.collection(`users/${uid}/readings`).get(),
-    db.doc(`users/${uid}/meta/notified`).get()
+    db.doc(`users/${uid}/meta/notified`).get(),
+    db.doc(`users/${uid}/meta/prefs`).get()
   ]);
+  const p = prefDoc.data();
+  const prefs = Array.isArray(p?.days) ? { days: p.days.filter((d) => NOTIFY_DAYS.includes(d)), late: p.late !== false } : DEFAULT_PREFS;
   const sent = mark.data()?.sent ?? {};
   const all = {
     items: items.docs.map((d) => d.data()),
@@ -158,7 +160,7 @@ async function remindUser(db, uid, today) {
   };
   let count = 0;
   for (const c of cars.docs) {
-    for (const n of notesFor(c.data(), all.items, all.readings, sent, today)) {
+    for (const n of notesFor(c.data(), all.items, all.readings, sent, today, prefs)) {
       if (await sendTo(db, uid, { title: n.title, body: n.body, tag: n.tag, url: "/" }) > 0) count++;
       sent[n.key] = [...sent[n.key] ?? [], n.step];
     }

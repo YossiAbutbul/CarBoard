@@ -572,3 +572,4 @@ html, body { overscroll-behavior-y: none; }
 .switch.on { background: var(--blue); }
 .switch.on::after { transform: translateX(-18px); }
 .switch:disabled { opacity: 0.6; }
+.when-chips button { background: #fff; }

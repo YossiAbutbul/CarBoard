@@ -2,7 +2,7 @@ import { cert, getApps, initializeApp } from 'firebase-admin/app'
 import { getFirestore, type Firestore } from 'firebase-admin/firestore'
 import webpush from 'web-push'
 import type { Car, Item, Reading } from '../src/types'
-import { notesFor, type Sent } from '../src/domain/notify'
+import { DEFAULT_PREFS, NOTIFY_DAYS, notesFor, type NotifyPrefs, type Sent } from '../src/domain/notify'
 
 /*
  * Server side of push reminders (Vercel functions). Firebase Admin reads every user's reminders;
@@ -71,12 +71,18 @@ export const todayInIsrael = () => new Intl.DateTimeFormat('en-CA', { timeZone: 
 
 /** One user's reminders for today: sends what is due and records it, so nothing repeats. */
 export async function remindUser(db: Firestore, uid: string, today: string) {
-  const [cars, items, readings, mark] = await Promise.all([
+  const [cars, items, readings, mark, prefDoc] = await Promise.all([
     db.collection(`users/${uid}/cars`).get(),
     db.collection(`users/${uid}/items`).get(),
     db.collection(`users/${uid}/readings`).get(),
     db.doc(`users/${uid}/meta/notified`).get(),
+    db.doc(`users/${uid}/meta/prefs`).get(),
   ])
+  // the user's choice of when; anything odd falls back to the default
+  const p = prefDoc.data() as Partial<NotifyPrefs> | undefined
+  const prefs: NotifyPrefs = Array.isArray(p?.days)
+    ? { days: p.days.filter(d => NOTIFY_DAYS.includes(d)), late: p.late !== false }
+    : DEFAULT_PREFS
   const sent: Sent = (mark.data()?.sent as Sent) ?? {}
   const all = {
     items: items.docs.map(d => d.data() as Item),
@@ -84,7 +90,7 @@ export async function remindUser(db: Firestore, uid: string, today: string) {
   }
   let count = 0
   for (const c of cars.docs) {
-    for (const n of notesFor(c.data() as Car, all.items, all.readings, sent, today)) {
+    for (const n of notesFor(c.data() as Car, all.items, all.readings, sent, today, prefs)) {
       if ((await sendTo(db, uid, { title: n.title, body: n.body, tag: n.tag, url: '/' })) > 0) count++
       sent[n.key] = [...(sent[n.key] ?? []), n.step]
     }

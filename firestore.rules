@@ -64,6 +64,17 @@ service cloud.firestore {
         );
       }
 
+      // ── when to send push reminders: days before (30, 14, 7, 1, 0) and once overdue ──
+      match /meta/prefs {
+        allow read, delete: if signedIn(uid);
+        allow create, update: if signedIn(uid)
+          && request.resource.data.keys().hasOnly(['days', 'late'])
+          && request.resource.data.days is list
+          && request.resource.data.days.size() <= 5
+          && request.resource.data.days.hasOnly([30, 14, 7, 1, 0])
+          && request.resource.data.late is bool;
+      }
+
       // ── push: one record per phone with notifications on (the daily job reads them) ──
       match /push/{subId} {
         allow read, delete: if signedIn(uid);

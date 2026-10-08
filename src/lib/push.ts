@@ -1,4 +1,5 @@
-import { deleteDoc, doc, setDoc } from 'firebase/firestore'
+import { deleteDoc, doc, getDoc, setDoc } from 'firebase/firestore'
+import { DEFAULT_PREFS, type NotifyPrefs } from '../domain/notify'
 import { auth, db } from '../data/firebase'
 
 /*
@@ -58,6 +59,18 @@ export async function disablePush(): Promise<PushState> {
     await sub.unsubscribe()
   }
   return 'off'
+}
+
+/** When to remind (saved to the account, read by the daily job). */
+export async function loadPrefs(): Promise<NotifyPrefs> {
+  const uid = auth?.currentUser?.uid
+  if (!uid || !db) return DEFAULT_PREFS
+  const snap = await getDoc(doc(db, 'users', uid, 'meta', 'prefs')).catch(() => null)
+  return (snap?.data() as NotifyPrefs | undefined) ?? DEFAULT_PREFS
+}
+export async function savePrefs(p: NotifyPrefs) {
+  const uid = auth?.currentUser?.uid
+  if (uid && db) await setDoc(doc(db, 'users', uid, 'meta', 'prefs'), { days: [...p.days].sort((a, b) => b - a), late: p.late })
 }
 
 /** Asks the server to send a test notice to this account's phones. */

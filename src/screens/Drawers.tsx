@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react'
 import { ConfirmButton } from '../components/ConfirmButton'
 import { askText } from '../components/Dialog'
-import { disablePush, enablePush, pushState, testPush, type PushState } from '../lib/push'
+import { disablePush, enablePush, loadPrefs, pushState, savePrefs, testPush, type PushState } from '../lib/push'
+import { DEFAULT_PREFS, type NotifyPrefs } from '../domain/notify'
 import { Drawer } from '../components/ui'
 import { Plate } from '../components/Chrome'
 import { CarToy } from '../components/CarAvatar'
@@ -212,9 +213,23 @@ function PushSection({ cloud }: { cloud: boolean }) {
   const [state, setState] = useState<PushState | null>(null)
   const [busy, setBusy] = useState(false)
   const [msg, setMsg] = useState<string | null>(null)
+  const [prefs, setPrefs] = useState<NotifyPrefs>(DEFAULT_PREFS)
   useEffect(() => {
     pushState().then(setState).catch(() => setState('unsupported'))
-  }, [])
+    if (cloud) loadPrefs().then(setPrefs).catch(() => {})
+  }, [cloud])
+  const toggle = (next: NotifyPrefs) => {
+    setPrefs(next)
+    savePrefs(next).catch(e => setMsg(e instanceof Error ? e.message : String(e)))
+  }
+  const WHEN: [string, number | 'late'][] = [
+    ['חודש לפני', 30],
+    ['שבועיים', 14],
+    ['שבוע', 7],
+    ['יום לפני', 1],
+    ['ביום עצמו', 0],
+    ['כשעבר', 'late'],
+  ]
   const run = async (fn: () => Promise<void>) => {
     setBusy(true)
     setMsg(null)
@@ -234,7 +249,7 @@ function PushSection({ cloud }: { cloud: boolean }) {
         ? 'ההתראות חסומות בהגדרות הדפדפן או הטלפון. אפשרו אותן שם ונסו שוב.'
         : state === 'unsupported'
           ? 'הדפדפן הזה לא תומך בהתראות.'
-          : 'תזכורת 14 ימים, 7 ימים ויום אחד לפני כל מועד, ביום עצמו, ופעם אחת אם עבר. כל בוקר ב־9:00.'
+          : 'תזכורת לפני כל מועד, כל בוקר ב־9:00.'
   return (
     <section className="drawer-sec">
       <div className="drawer-label">התראות</div>
@@ -258,6 +273,34 @@ function PushSection({ cloud }: { cloud: boolean }) {
             />
           )}
         </div>
+        {cloud && state === 'on' && (
+          <>
+            <div className="drawer-label" style={{ margin: '14px 0 6px' }}>
+              מתי להזכיר
+            </div>
+            <div className="chips when-chips">
+              {WHEN.map(([label, v]) => {
+                const on = v === 'late' ? prefs.late : prefs.days.includes(v)
+                return (
+                  <button
+                    key={label}
+                    className={on ? 'on' : ''}
+                    aria-pressed={on}
+                    onClick={() =>
+                      toggle(
+                        v === 'late'
+                          ? { ...prefs, late: !prefs.late }
+                          : { ...prefs, days: on ? prefs.days.filter(d => d !== v) : [...prefs.days, v] },
+                      )
+                    }
+                  >
+                    {label}
+                  </button>
+                )
+              })}
+            </div>
+          </>
+        )}
         {cloud && state === 'on' && (
           <button
             className="btn"

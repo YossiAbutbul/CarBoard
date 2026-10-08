@@ -255,4 +255,11 @@ describe('push notifications', () => {
     expect(notesFor(car1, [r], rd, {}, today)[0].step).toBe('late')
     expect(notesFor(car1, [r], rd, { [targetKey(r)]: ['late'] }, today)).toEqual([])
   })
+  it('follows the chosen days', () => {
+    const r = mk({ id: 'i1', due_date: addDays(today, 25) })
+    expect(notesFor(car1, [r], rd, {}, today, { days: [7, 0], late: false })).toEqual([])
+    expect(notesFor(car1, [r], rd, {}, today, { days: [30, 7], late: false })[0].step).toBe('d30')
+    const late = mk({ id: 'i2', due_date: addDays(today, -2) })
+    expect(notesFor(car1, [late], rd, {}, today, { days: [7], late: false })).toEqual([])
+  })
 })
