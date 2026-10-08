@@ -67,6 +67,15 @@ export function averageEconomy(fills: Fuel[]) {
 /** The economy of the stretch this full tank closes, if it has one. */
 export const economyOf = (fills: Fuel[], id: string) => economy(fills).find(e => e.id === id) ?? null
 
+/** The average price per liter in each of the last `months` months (total ₪ ÷ total liters), oldest first; null for a month with no data. */
+export function monthlyPerLiter(fills: Fuel[], months = 12, today = new Date()) {
+  return monthlySpend(fills, months, today).map(({ month }) => {
+    const these = fills.filter(f => f.date.startsWith(month) && f.price != null && f.liters)
+    const liters = these.reduce((n, f) => n + f.liters!, 0)
+    return { month, avg: liters ? these.reduce((n, f) => n + f.price!, 0) / liters : null }
+  })
+}
+
 /** ₪ spent in each of the last `months` months (oldest first), including months with nothing. */
 export function monthlySpend(fills: Fuel[], months = 6, today = new Date()) {
   const out: { month: string; total: number; count: number }[] = []

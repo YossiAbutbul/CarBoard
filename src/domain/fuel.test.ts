@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { Fuel } from '../types'
-import { averageEconomy, economy, findDuplicateFuel, monthlySpend, perLiter } from './fuel'
+import { averageEconomy, economy, findDuplicateFuel, monthlyPerLiter, monthlySpend, perLiter } from './fuel'
 
 const f = (id: string, date: string, km: number | null, liters: number | null, full = true, price: number | null = null): Fuel => ({
   id,
@@ -43,6 +43,15 @@ describe('fuel', () => {
     expect(findDuplicateFuel([a], { ...a, id: 'b', time: null })).toBe(a) // same numbers, typed by hand
     expect(findDuplicateFuel([a], { ...a, id: 'b', time: null, price: 200 })).toBeNull()
     expect(findDuplicateFuel([a], { ...a, id: 'b', date: '2026-09-17' })).toBeNull()
+  })
+
+  it('averages the price per liter by month, weighted by liters', () => {
+    const m = monthlyPerLiter([f('a', '2026-10-01', null, 10, true, 70), f('b', '2026-10-20', null, 30, true, 225), f('c', '2026-08-03', null, 20, true, 140)], 3, new Date(2026, 9, 8))
+    expect(m).toEqual([
+      { month: '2026-08', avg: 7 },
+      { month: '2026-09', avg: null },
+      { month: '2026-10', avg: 7.375 },
+    ])
   })
 
   it('price per liter, and monthly totals including empty months', () => {

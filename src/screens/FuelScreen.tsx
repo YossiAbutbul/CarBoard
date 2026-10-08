@@ -4,7 +4,7 @@ import { Icon } from '../components/Icon'
 import { Glance, GlanceCell, PageHero, TopBar, useCountUp } from '../components/Chrome'
 import { useApp } from '../data/AppData'
 import { useBackLayer } from '../lib/back'
-import { byDate, economy, economyOf, monthlySpend, perLiter } from '../domain/fuel'
+import { byDate, economyOf, monthlyPerLiter, monthlySpend, perLiter } from '../domain/fuel'
 import { fmtDate, fmtDays, fmtMoney, fmtNum, fmtShortDate } from '../lib/i18n'
 import { diffDays, todayIso } from '../lib/dates'
 import type { Fuel } from '../types'
@@ -104,90 +104,125 @@ export function FuelScreen({ open, openCars, openSettings }: { open: OpenSheet; 
   )
 }
 
-/** Spending per month (bars), or the price per liter over the recent fill-ups (a line). */
+type Range = 'm1' | 'm6' | 'y1'
+interface Point {
+  key: string
+  label: string
+  value: number
+}
+
+/**
+ * Spending (bars) or the price per liter (a line), over a month, half a year or a year. A month
+ * shows each fill-up; longer ranges add them up by month, so a lot of data stays readable.
+ */
 function FuelChart({ fills }: { fills: Fuel[] }) {
   const [view, setView] = useState<'spend' | 'price'>('spend')
-  const spend = monthlySpend(fills, 6)
-  // price per liter of each fill-up that has liters and a total, oldest first (the last 8)
-  const eco = [...fills].sort(byDate).filter(f => perLiter(f) != null).slice(-8).map(f => ({ id: f.id, date: f.date, v: perLiter(f)! }))
+  const [range, setRange] = useState<Range>('m6')
+  const monthLabel = (m: string) => MONTHS[Number(m.slice(5)) - 1]
+  const lastMonth = [...fills].filter(f => diffDays(todayIso(), f.date) <= 30).sort(byDate)
+  const points: Point[] =
+    view === 'spend'
+      ? range === 'm1'
+        ? lastMonth.filter(f => f.price != null).map(f => ({ key: f.id, label: fmtShortDate(f.date), value: f.price! }))
+        : monthlySpend(fills, range === 'm6' ? 6 : 12).map(s => ({ key: s.month, label: monthLabel(s.month), value: s.total }))
+      : range === 'm1'
+        ? lastMonth.filter(f => perLiter(f) != null).map(f => ({ key: f.id, label: fmtShortDate(f.date), value: perLiter(f)! }))
+        : monthlyPerLiter(fills, range === 'm6' ? 6 : 12)
+            .filter(m => m.avg != null)
+            .map(m => ({ key: m.month, label: monthLabel(m.month), value: m.avg! }))
   const W = 320
   const H = 120
+  const many = points.length > 8
+  // with many points, only the latest and the highest carry their number
+  const showValue = (i: number) => !many || i === points.length - 1 || points[i].value === Math.max(...points.map(p => p.value))
+  const fmtValue = (v: number) => (view === 'spend' ? fmtNum(v) : v.toFixed(2))
+  const empty = view === 'spend' ? !points.some(p => p.value > 0) : points.length < 2
+
   return (
     <section className="card fuel-chart">
-      <div className="fuel-chart-head">
-        <div className="seg" role="tablist">
-          <button role="tab" aria-selected={view === 'spend'} className={view === 'spend' ? 'on' : ''} onClick={() => setView('spend')}>
-            הוצאות
-          </button>
-          <button role="tab" aria-selected={view === 'price'} className={view === 'price' ? 'on' : ''} onClick={() => setView('price')}>
-            מחיר לליטר
-          </button>
-        </div>
+      <div className="seg" role="tablist">
+        <button role="tab" aria-selected={view === 'spend'} className={view === 'spend' ? 'on' : ''} onClick={() => setView('spend')}>
+          הוצאות
+        </button>
+        <button role="tab" aria-selected={view === 'price'} className={view === 'price' ? 'on' : ''} onClick={() => setView('price')}>
+          מחיר לליטר
+        </button>
       </div>
-      {view === 'spend' ? (
-        <svg viewBox={`0 0 ${W} ${H + 22}`} className="chart" role="img" aria-label="הוצאות דלק לפי חודש">
-          {(() => {
-            const max = Math.max(1, ...spend.map(s => s.total))
-            const bw = W / spend.length
-            return spend.map((s, i) => {
-              const h = (s.total / max) * (H - 18)
-              const x = W - (i + 1) * bw + bw * 0.2 // right to left: the latest month on the left end reads last in Hebrew
-              return (
-                <g key={s.month}>
-                  <rect x={x} y={H - h} width={bw * 0.6} height={Math.max(h, s.total ? 2 : 0)} rx="6" className={i === spend.length - 1 ? 'bar now' : 'bar'} />
-                  {s.total > 0 && (
-                    <text x={x + bw * 0.3} y={H - h - 5} className="val">
-                      {fmtNum(s.total)}
-                    </text>
-                  )}
-                  <text x={x + bw * 0.3} y={H + 16} className="lab">
-                    {MONTHS[Number(s.month.slice(5)) - 1]}
-                  </text>
-                </g>
-              )
-            })
-          })()}
-          <line x1="0" x2={W} y1={H} y2={H} className="axis" />
-        </svg>
-      ) : eco.length < 2 ? (
-        <div className="chart-empty">צריך לפחות 2 תדלוקים עם ליטרים וסכום כדי לראות מגמה.</div>
+      <div className="chart-range" role="radiogroup" aria-label="טווח">
+        {(
+          [
+            ['m1', 'חודש'],
+            ['m6', 'חצי שנה'],
+            ['y1', 'שנה'],
+          ] as [Range, string][]
+        ).map(([r, label]) => (
+          <button key={r} role="radio" aria-checked={range === r} className={range === r ? 'on' : ''} onClick={() => setRange(r)}>
+            {label}
+          </button>
+        ))}
+      </div>
+      {empty ? (
+        <div className="chart-empty">{view === 'spend' ? 'אין תדלוקים בתקופה הזאת.' : 'צריך לפחות 2 תדלוקים עם ליטרים וסכום בתקופה הזאת.'}</div>
       ) : (
-        <svg viewBox={`0 0 ${W} ${H + 22}`} className="chart" role="img" aria-label="מחיר לליטר לאורך זמן">
-          {(() => {
-            const vals = eco.map(e => e.v)
-            const lo = Math.min(...vals) * 0.97
-            const hi = Math.max(...vals) * 1.02
-            const step = (W - 40) / (eco.length - 1)
-            // oldest on the right, newest on the left (Hebrew reading order)
-            const pt = (v: number, i: number) => [W - 20 - i * step, H - 10 - ((v - lo) / (hi - lo || 1)) * (H - 30)] as const
-            const pts = eco.map((e, i) => pt(e.v, i))
-            const path = pts.map(([x, y], i) => `${i ? 'L' : 'M'}${x.toFixed(1)},${y.toFixed(1)}`).join(' ')
-            const area = `${path} L${pts[pts.length - 1][0].toFixed(1)},${H} L${pts[0][0].toFixed(1)},${H} Z`
-            return (
-              <>
-                <path d={area} className="area" />
-                <path d={path} className="line" />
-                {eco.map((e, i) => (
-                  <g key={e.id}>
-                    <circle cx={pts[i][0]} cy={pts[i][1]} r="4" className={i === eco.length - 1 ? 'dot now' : 'dot'} />
-                    <text x={pts[i][0]} y={pts[i][1] - 9} className="val">
-                      {e.v.toFixed(2)}
-                    </text>
-                    <text x={pts[i][0]} y={H + 16} className="lab">
-                      {fmtShortDate(e.date)}
-                    </text>
-                  </g>
-                ))}
-                <line x1="0" x2={W} y1={H} y2={H} className="axis" />
-              </>
-            )
-          })()}
+        <svg viewBox={`0 0 ${W} ${H + 22}`} className={`chart ${many ? 'many' : ''}`} role="img" aria-label={view === 'spend' ? 'הוצאות דלק' : 'מחיר לליטר'}>
+          {view === 'spend'
+            ? (() => {
+                const max = Math.max(1, ...points.map(p => p.value))
+                const bw = W / Math.max(points.length, 4)
+                const x0 = W - bw * points.length // a few bars stay at the right (start), not stretched across
+                return points.map((p, i) => {
+                  const h = (p.value / max) * (H - 18)
+                  // oldest on the right, newest on the left (Hebrew reading order)
+                  const x = x0 + (points.length - 1 - i) * bw + bw * 0.2
+                  return (
+                    <g key={p.key}>
+                      <rect x={x} y={H - h} width={bw * 0.6} height={Math.max(h, p.value ? 2 : 0)} rx={many ? 3 : 6} className={i === points.length - 1 ? 'bar now' : 'bar'} />
+                      {p.value > 0 && showValue(i) && (
+                        <text x={x + bw * 0.3} y={H - h - 5} className="val">
+                          {fmtValue(p.value)}
+                        </text>
+                      )}
+                      <text x={x + bw * 0.3} y={H + 16} className="lab">
+                        {p.label}
+                      </text>
+                    </g>
+                  )
+                })
+              })()
+            : (() => {
+                const vals = points.map(p => p.value)
+                const lo = Math.min(...vals) * 0.97
+                const hi = Math.max(...vals) * 1.02
+                const step = (W - 40) / (points.length - 1)
+                const pts = points.map((p, i) => [W - 20 - i * step, H - 10 - ((p.value - lo) / (hi - lo || 1)) * (H - 30)] as const)
+                const path = pts.map(([x, y], i) => `${i ? 'L' : 'M'}${x.toFixed(1)},${y.toFixed(1)}`).join(' ')
+                const area = `${path} L${pts[pts.length - 1][0].toFixed(1)},${H} L${pts[0][0].toFixed(1)},${H} Z`
+                return (
+                  <>
+                    <path d={area} className="area" />
+                    <path d={path} className="line" />
+                    {points.map((p, i) => (
+                      <g key={p.key}>
+                        <circle cx={pts[i][0]} cy={pts[i][1]} r={many ? 3 : 4} className={i === points.length - 1 ? 'dot now' : 'dot'} />
+                        {showValue(i) && (
+                          <text x={pts[i][0]} y={pts[i][1] - 9} className="val">
+                            {fmtValue(p.value)}
+                          </text>
+                        )}
+                        <text x={pts[i][0]} y={H + 16} className="lab">
+                          {p.label}
+                        </text>
+                      </g>
+                    ))}
+                  </>
+                )
+              })()}
+          <line x1="0" x2={W} y1={H} y2={H} className="axis" />
         </svg>
       )}
     </section>
   )
 }
-
 /** A fill-up drawn as a paper receipt. Only a view: nothing here is a photo or saved as a file. */
 function FuelReceipt({ fill, fills, onClose, onEdit }: { fill: Fuel; fills: Fuel[]; onClose(): void; onEdit(): void }) {
   useBackLayer(true, onClose)

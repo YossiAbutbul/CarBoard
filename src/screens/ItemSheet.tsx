@@ -6,6 +6,7 @@ import type { Item, ItemKind } from '../types'
 import { FileThumb, Sheet, useDirty } from '../components/ui'
 import { FileViewer } from '../components/FileViewer'
 import { REQUIRED, useApp } from '../data/AppData'
+import { keepAfterRenewal } from '../components/renewal'
 import { dueInfo } from '../domain/due'
 import { INSURERS, KIND, STATUS_TEXT } from '../domain/labels'
 import { compressImage } from '../lib/image'
@@ -113,7 +114,8 @@ export function ItemSheet({ item, onClose, onDone }: { item?: Item; onClose(): v
           provider: provider.trim() || null,
           number: policy.trim() || null,
           expiry: draft.due_date,
-          files,
+          // renewed (a new file and a later date): the old policy's files go, after asking
+          files: await keepAfterRenewal(doc ?? undefined, files, draft.due_date, policy.trim() || null),
         })
       onClose()
     } catch (e) {

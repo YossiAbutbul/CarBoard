@@ -7,7 +7,7 @@ import { Icon, docIcon } from '../components/Icon'
 import { Glance, GlanceCell, PageHero, TopBar } from '../components/Chrome'
 import type { CarDocument } from '../types'
 import { useState } from 'react'
-import { FileViewer, FilesGallery, carFiles } from '../components/FileViewer'
+import { FileViewer, carFiles } from '../components/FileViewer'
 import type { OpenSheet } from '../App'
 
 function expiryState(expiry: string | null): { s: string; text: string; days: number | null } {
@@ -23,7 +23,8 @@ export function DocumentsScreen({ open, openCars, openSettings }: { open: OpenSh
   const { data, car, actions } = useApp()
   const [viewAll, setViewAll] = useState(false)
   if (!car) return null
-  const files = carFiles(data, car.id)
+  // the documents' files only; a service's receipt stays with its service
+  const files = carFiles(data, car.id).filter(f => f.source === 'doc')
   const docs = data.documents
     .filter(d => d.car_id === car.id)
     .sort((a, b) => ((a.expiry ?? '9') < (b.expiry ?? '9') ? -1 : 1))
@@ -73,21 +74,10 @@ export function DocumentsScreen({ open, openCars, openSettings }: { open: OpenSh
           {docs.map(d => (
             <DocCard key={d.id} d={d} onOpen={() => open({ t: 'doc', doc: d })} />
           ))}
-          <button className="doc-card add" onClick={() => open({ t: 'doc' })}>
-            <Icon name="plus" />
-            <span>מסמך חדש</span>
-          </button>
         </div>
       )}
 
-      {files.length > 0 && (
-        <>
-          <div className="sec">
-            <h2>כל הקבצים</h2>
-          </div>
-          <FilesGallery files={files} />
-        </>
-      )}
+      {/* each file shows once, in its document's card; the header's "קבצים" opens them all */}
       {viewAll && (
         <FileViewer
           files={files}
