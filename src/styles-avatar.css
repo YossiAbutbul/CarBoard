@@ -497,6 +497,11 @@ svg.i { stroke-width: 1.8; }
 .drawer-head button svg.i { stroke-width: 2.2; }
 
 /* 4 · a solid bottom bar */
+/* the selected tab: one pill behind its icon and its name together */
+.nav > div { gap: 4px; padding: 0 6px; }
+.nav button { padding: 6px 0 5px; border-radius: 16px; transition: background 0.25s var(--ease), color 0.2s; }
+.nav button span.ico { height: 26px; background: none !important; }
+.nav button.on { background: var(--card); }
 .nav { background: #fff; backdrop-filter: none; -webkit-backdrop-filter: none; box-shadow: 0 -1px 0 var(--line); }
 
 /* 6 · real buttons */

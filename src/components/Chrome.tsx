@@ -36,7 +36,7 @@ export function TopBar({ openCars, openSettings }: { openCars(): void; openSetti
       </button>
       <button className="title" onClick={openCars} aria-label="החלפת רכב">
         <span>
-          {car?.name} <span className="caret">▾</span>
+          {car?.name}
         </span>
         {car?.plate && <Plate number={car.plate} size="sm" />}
       </button>
