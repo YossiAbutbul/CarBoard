@@ -22,6 +22,23 @@ export function formatPlate(plate: string) {
   return d
 }
 
+/**
+ * The plate as it is typed: 7 digits read xx-xxx-xx, and the 8th switches to xxx-xx-xxx.
+ * A dash appears only once a digit follows it, so deleting stays natural.
+ */
+export function typingPlate(s: string) {
+  const d = plateDigits(s).slice(0, 8)
+  const sizes = d.length === 8 ? [3, 2, 3] : [2, 3, 2]
+  const out: string[] = []
+  let i = 0
+  for (const n of sizes) {
+    if (i >= d.length) break
+    out.push(d.slice(i, i + n))
+    i += n
+  }
+  return out.join('-')
+}
+
 /** Manufacturer names come with a country suffix: "קיה ד. קוריאה" → "קיה". */
 const cleanMake = (s: string) => s.split(/\s+/).filter(w => !w.includes('.') && !/יפן|קוריאה|גרמניה|צרפת|ארה"ב|סין|צ'כיה|ספרד|אנגליה|איטליה|טורקיה|הודו|תאילנד|רומניה|שוודיה|מכסיקו|סלובקיה|הונגריה|פולין|בלגיה|הולנד|אוסטריה|פורטוגל|דרום|אפריקה/.test(w)).join(' ') || s
 

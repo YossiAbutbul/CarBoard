@@ -164,8 +164,8 @@ service cloud.firestore {
       allow update: if request.auth != null
         && request.resource.data.owner == resource.data.owner
         && request.resource.data.members.size() <= 12
-        && request.resource.data.keys().hasOnly(['members', 'names', 'owner', 'created', 'joinCode'])
-        && (joining(fid) || leaving() || renaming() || ownerRemoves() || ownerRestarts());
+        && request.resource.data.keys().hasOnly(['members', 'names', 'owner', 'created', 'joinCode', 'title'])
+        && (sameTitle() && (joining(fid) || leaving() || renaming() || ownerRemoves() || ownerRestarts()) || retitling());
       allow delete: if request.auth != null && resource.data.owner == request.auth.uid;
     }
     function namesTouchOnly(keys) {
@@ -187,6 +187,16 @@ service cloud.firestore {
       return resource.data.members.hasAny([request.auth.uid])
         && request.resource.data.members.toSet() == resource.data.members.toSet().difference([request.auth.uid].toSet())
         && namesTouchOnly([request.auth.uid]);
+    }
+    function sameTitle() {
+      return request.resource.data.get('title', '') == resource.data.get('title', '');
+    }
+    // a member renames the family, and changes nothing else
+    function retitling() {
+      return resource.data.members.hasAny([request.auth.uid])
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['title'])
+        && request.resource.data.title is string
+        && request.resource.data.title.size() <= 40;
     }
     // a member changes their own display name
     function renaming() {

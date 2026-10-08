@@ -22,7 +22,7 @@ export function CarsDrawer({ open, onClose }: { open: OpenSheet; onClose(): void
   const { data, car, setCarId, actions, family, store } = useApp()
   const ownerName = (uid?: string) => (uid && uid !== store.userId ? family?.members.find(m => m.uid === uid)?.name || 'בן משפחה' : null)
   return (
-    <Drawer title={family ? 'רכבי המשפחה' : 'הרכבים שלי'} side="start" onClose={onClose}>
+    <Drawer title={family ? (family.title ? `רכבי ${family.title}` : 'רכבי המשפחה') : 'הרכבים שלי'} side="start" onClose={onClose}>
       <div className="car-list">
         {data.cars.map(c => (
           <div key={c.id} className={`car-row ${c.id === car?.id ? 'on' : ''}`}>
@@ -458,11 +458,33 @@ ${url}`)
           </>
         ) : (
           <>
+            <div className="family-head">
+              <span className="ic">
+                <Icon name="family" />
+              </span>
+              <div className="t">{family.title || 'המשפחה שלי'}</div>
+              <button
+                className="icon-btn"
+                aria-label="שינוי שם המשפחה"
+                disabled={busy}
+                onClick={() =>
+                  run(async () => {
+                    const title = await askText({ title: 'שם המשפחה', input: { value: family.title, placeholder: 'משפחת ישראלי' }, confirm: 'שמירה' })
+                    if (title == null || title.trim() === family.title) return
+                    await api.retitle(title)
+                    await reload()
+                  })
+                }
+              >
+                <Icon name="edit" />
+              </button>
+            </div>
             <div className="members">
               {family.members.map(m => (
-                <span key={m.uid} className="member">
+                <span key={m.uid} className={`member ${m.uid === family.me ? 'me' : ''}`}>
                   <b>{(m.name || '?').slice(0, 1)}</b>
-                  {m.uid === family.me ? `${m.name || 'אני'} (אני)` : m.name || 'בן משפחה'}
+                  <span>{m.uid === family.me ? m.name || 'אני' : m.name || 'בן משפחה'}</span>
+                  {m.uid === family.me && <small>את/ה</small>}
                 </span>
               ))}
             </div>

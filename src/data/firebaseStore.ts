@@ -58,9 +58,9 @@ export function firebaseStore(userId: string): Store {
     if (!fid) return
     const f = await getDoc(doc(fs, 'families', fid)).catch(() => null)
     if (!f?.exists()) return
-    const d = f.data() as { members: string[]; names?: Record<string, string>; owner: string }
+    const d = f.data() as { members: string[]; names?: Record<string, string>; owner: string; title?: string }
     if (!d.members.includes(userId)) return
-    family = { id: fid, owner: d.owner, me: userId, members: d.members.map(u => ({ uid: u, name: d.names?.[u] ?? '' })) }
+    family = { id: fid, owner: d.owner, me: userId, title: d.title ?? '', members: d.members.map(u => ({ uid: u, name: d.names?.[u] ?? '' })) }
     roots = [userId, ...d.members.filter(u => u !== userId)]
   }
 
@@ -129,6 +129,11 @@ export function firebaseStore(userId: string): Store {
     },
     async rename(name) {
       if (family) await updateDoc(doc(fs, 'families', family.id), { [`names.${userId}`]: name.slice(0, 40) })
+    },
+    async retitle(title) {
+      if (!family) return
+      await updateDoc(doc(fs, 'families', family.id), { title: title.trim().slice(0, 40) })
+      family = { ...family, title: title.trim().slice(0, 40) }
     },
   }
 

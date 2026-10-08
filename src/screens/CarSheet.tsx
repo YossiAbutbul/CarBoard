@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import type { BodyType, Car } from '../types'
 import { Sheet, useDirty } from '../components/ui'
 import { useApp } from '../data/AppData'
-import { formatPlate, lookupPlate, plateDigits, type PlateInfo } from '../lib/govil'
+import { formatPlate, lookupPlate, plateDigits, typingPlate, type PlateInfo } from '../lib/govil'
 import { fmtDate } from '../lib/i18n'
 import { Icon } from '../components/Icon'
 import { BODY_TYPES, PAINTS, ToyCar, bodyLabel, guessBody, paintFromRegistry } from '../components/CarAvatar'
@@ -111,10 +111,14 @@ export function CarSheet({ car, onClose }: { car?: Car; onClose(): void }) {
           <input
             className="num"
             inputMode="numeric"
-            placeholder="123-45-678"
+            placeholder="12-345-67"
             value={plate}
             onChange={e => {
-              setPlate(e.target.value)
+              // backspace on a dash takes the digit before it (else the dash just comes back)
+              const v = e.target.value
+              const onlyDash = v.length < plate.length && plateDigits(v) === plateDigits(plate)
+              const at = e.target.selectionStart ?? v.length
+              setPlate(typingPlate(onlyDash ? v.slice(0, Math.max(0, at - 1)) + v.slice(at) : v))
               if (plateDigits(e.target.value) !== plateDigits(plate)) setInfo(null)
             }}
             aria-label="מספר רכב"

@@ -8,6 +8,7 @@ export interface Family {
   id: string
   owner: string // who made it
   me: string
+  title: string // the family's name, '' until someone names it
   members: FamilyMember[]
 }
 /** Sharing cars with family (cloud only). */
@@ -19,6 +20,7 @@ export interface FamilyApi {
   join(code: string, name: string): Promise<void>
   leave(): Promise<void>
   rename(name: string): Promise<void>
+  retitle(title: string): Promise<void> // any member can rename the family
 }
 
 export interface Store {
