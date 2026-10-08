@@ -93,9 +93,12 @@ export function PageHero({ children, dial }: { children: ReactNode; dial?: boole
       if (!page) return
       page.style.minHeight = ''
       const doc = document.documentElement
-      const overflow = doc.scrollHeight - window.innerHeight
-      if (overflow <= 0 || overflow >= travel) return
-      page.style.minHeight = `${page.offsetHeight + (travel - overflow)}px`
+      if (doc.scrollHeight - window.innerHeight <= 0) return // it all fits: no scrolling
+      // Room to scroll the card fully closed, measured against the screen with the browser's
+      // address bar hidden (100lvh): on phones it hides while scrolling, which makes the screen taller.
+      const outside = doc.scrollHeight - page.offsetHeight // space above and below the page
+      page.style.minHeight = `calc(100vh + ${Math.ceil(travel - outside)}px)`
+      page.style.minHeight = `calc(100lvh + ${Math.ceil(travel - outside)}px)` // ignored where lvh is unknown
     }
     const on = () => {
       const p = Math.min(1, Math.max(0, window.scrollY / travel))

@@ -533,3 +533,30 @@ svg.i { stroke-width: 1.8; }
 .tile .v, .glance .v, .confirm .num, .big-in { font-weight: 600; }
 .tile .v small { font-weight: 500; }
 .tl-price { font-weight: 600; }
+
+/* compact sizing, round two (from a real phone) */
+.greet h1, .page .hero .greet h1 { font-size: 25px; margin: 2px 0 10px; }
+.greet .date { font-size: 12px; }
+.state-pill { padding: 5px 11px; font-size: 12px; gap: 7px; }
+.state-pill::before { width: 7px; height: 7px; }
+.glance { gap: 7px; margin-top: 16px; }
+.glance button { padding: 8px 10px; gap: 2px; border-radius: 14px; }
+.glance .k { font-size: 10.5px; }
+.glance .v { font-size: 16px; }
+.glance .d { font-size: 10px; }
+.hero { padding-bottom: 14px; }
+.hero .bar .title { font-size: 14px; }
+.actions { gap: 7px; }
+.actions button { padding: 9px 4px 7px; gap: 4px; font-size: 11px; }
+.actions button svg.i { width: 19px; height: 19px; }
+.sec { margin: 16px 2px 8px; }
+.sec h2 { font-size: 16px; }
+.sec .add-btn { height: 30px; padding: 0 11px; font-size: 12.5px; }
+.tiles { gap: 7px; }
+.tile { min-height: 78px; padding: 11px 12px; }
+.tile .l { font-size: 12.5px; }
+.tile .s { font-size: 11px; }
+.tile .state, .tile .chip { font-size: 11px; }
+.tile .v { font-size: 18px; padding-top: 6px; }
+.tile .l svg.i { width: 16px; height: 16px; }
+.nav button svg.i { width: 21px; height: 21px; }
