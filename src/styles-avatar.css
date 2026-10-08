@@ -695,3 +695,9 @@ html, body { overscroll-behavior-y: none; }
 .car-row-info .s { color: #8a94a1; }
 .car-row-acts .icon-btn { width: 32px; height: 32px; color: #9aa3ae; }
 .car-row.on .car-row-acts .icon-btn { color: #7b8794; }
+/* long names: the name and details use the card's full width; the actions sit low, beside the plate */
+.car-row { position: relative; }
+.car-row-main { flex: 1; }
+.car-row-acts { position: absolute; left: 8px; bottom: 8px; }
+.car-row-info { padding-inline-end: 0; }
+.car-row-info .plate-il { margin-top: 6px; }
