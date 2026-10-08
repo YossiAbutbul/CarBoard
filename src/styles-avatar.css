@@ -686,3 +686,12 @@ html, body { overscroll-behavior-y: none; }
 .car-row-acts .confirm-icon:hover, .car-row-acts .confirm-icon:active { background: #fdecec; color: var(--overdue); }
 .car-row-acts .icon-btn svg.i { width: 17px; height: 17px; }
 .car-row-info .t { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; white-space: normal; line-height: 1.25; }
+/* refined further: the check sits inside the picture's corner, the actions are quieter, more room */
+.car-row { padding: 12px 8px 12px 12px; }
+.car-row-badge { top: 5px; right: 5px; width: 18px; height: 18px; box-shadow: 0 1px 3px rgba(28, 105, 212, 0.35); }
+.car-row-badge svg.i { width: 11px; height: 11px; }
+.car-row-pic { width: 80px; height: 60px; }
+.car-row-main { grid-template-columns: 80px 1fr; gap: 14px; }
+.car-row-info .s { color: #8a94a1; }
+.car-row-acts .icon-btn { width: 32px; height: 32px; color: #9aa3ae; }
+.car-row.on .car-row-acts .icon-btn { color: #7b8794; }
