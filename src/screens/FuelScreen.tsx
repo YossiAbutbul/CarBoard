@@ -71,7 +71,7 @@ export function FuelScreen({ open, openCars, openSettings }: { open: OpenSheet; 
                       <span className="fuel-main">
                         <span className="t">{f.station ?? 'תדלוק'}</span>
                         <span className="s">
-                          {[fmtShortDate(f.date), f.liters != null && `${f.liters} ל׳`, perLiter(f) != null && `₪${perLiter(f)!.toFixed(2)} לל׳`, f.km != null && `${fmtNum(f.km)} ק״מ`].filter(Boolean).join(' · ')}
+                          {[f.time ? `${fmtShortDate(f.date)} ${f.time}` : fmtShortDate(f.date), f.liters != null && `${f.liters} ל׳`, perLiter(f) != null && `₪${perLiter(f)!.toFixed(2)} לל׳`, f.km != null && `${fmtNum(f.km)} ק״מ`].filter(Boolean).join(' · ')}
                         </span>
                       </span>
                       <span className="fuel-price">{f.price != null ? fmtMoney(f.price) : ''}</span>
