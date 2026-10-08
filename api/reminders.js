@@ -2,7 +2,6 @@
 
 // server/lib.ts
 import { cert, getApps, initializeApp } from "firebase-admin/app";
-import { getAuth } from "firebase-admin/auth";
 import { getFirestore } from "firebase-admin/firestore";
 import webpush from "web-push";
 
@@ -120,7 +119,7 @@ function notesFor(car, items, readings, sent, today = todayIso()) {
 // server/lib.ts
 function admin() {
   if (!getApps().length) initializeApp({ credential: cert(JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT)) });
-  return { db: getFirestore(), auth: getAuth() };
+  return { db: getFirestore() };
 }
 var vapidSet = false;
 function vapid() {

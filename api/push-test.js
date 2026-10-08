@@ -2,7 +2,6 @@
 
 // server/lib.ts
 import { cert, getApps, initializeApp } from "firebase-admin/app";
-import { getAuth } from "firebase-admin/auth";
 import { getFirestore } from "firebase-admin/firestore";
 import webpush from "web-push";
 
@@ -15,7 +14,18 @@ var longDateFmt = new Intl.DateTimeFormat("he-IL", { weekday: "long", day: "nume
 // server/lib.ts
 function admin() {
   if (!getApps().length) initializeApp({ credential: cert(JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT)) });
-  return { db: getFirestore(), auth: getAuth() };
+  return { db: getFirestore() };
+}
+async function userFromToken(idToken) {
+  if (!idToken) return null;
+  const r = await fetch(`https://identitytoolkit.googleapis.com/v1/accounts:lookup?key=${process.env.VITE_FIREBASE_API_KEY}`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ idToken })
+  });
+  if (!r.ok) return null;
+  const j = await r.json();
+  return j.users?.[0]?.localId ?? null;
 }
 var vapidSet = false;
 function vapid() {
@@ -49,13 +59,9 @@ async function handler(req, res) {
   };
   if (req.method !== "POST") return send(405, { error: "POST only" });
   const token = (req.headers.authorization ?? "").replace(/^Bearer /, "");
-  const { db, auth } = admin();
-  let uid;
-  try {
-    uid = (await auth.verifyIdToken(token)).uid;
-  } catch {
-    return send(401, { error: "not signed in" });
-  }
+  const uid = await userFromToken(token);
+  if (!uid) return send(401, { error: "not signed in" });
+  const { db } = admin();
   const sent = await sendTo(db, uid, { title: "CarBoard", body: "\u05D4\u05D4\u05EA\u05E8\u05D0\u05D5\u05EA \u05E4\u05D5\u05E2\u05DC\u05D5\u05EA. \u05E0\u05D6\u05DB\u05D9\u05E8 \u05DC\u05DA \u05DC\u05E4\u05E0\u05D9 \u05DB\u05DC \u05DE\u05D5\u05E2\u05D3.", tag: "test", url: "/" });
   send(200, { sent });
 }

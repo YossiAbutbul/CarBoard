@@ -1,5 +1,4 @@
 import { cert, getApps, initializeApp } from 'firebase-admin/app'
-import { getAuth } from 'firebase-admin/auth'
 import { getFirestore, type Firestore } from 'firebase-admin/firestore'
 import webpush from 'web-push'
 import type { Car, Item, Reading } from '../src/types'
@@ -15,7 +14,24 @@ import { notesFor, type Sent } from '../src/domain/notify'
 
 export function admin() {
   if (!getApps().length) initializeApp({ credential: cert(JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT!)) })
-  return { db: getFirestore(), auth: getAuth() }
+  return { db: getFirestore() }
+}
+
+/**
+ * Who is signed in, from the app's Firebase ID token. Google's sign-in service checks the token
+ * (signature, expiry) and returns the user; Admin's own checker is not used (its jwks-rsa needs a
+ * module loader Vercel functions do not have).
+ */
+export async function userFromToken(idToken: string): Promise<string | null> {
+  if (!idToken) return null
+  const r = await fetch(`https://identitytoolkit.googleapis.com/v1/accounts:lookup?key=${process.env.VITE_FIREBASE_API_KEY}`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ idToken }),
+  })
+  if (!r.ok) return null
+  const j = (await r.json()) as { users?: { localId: string }[] }
+  return j.users?.[0]?.localId ?? null
 }
 
 let vapidSet = false

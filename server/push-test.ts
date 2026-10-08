@@ -1,5 +1,5 @@
 import type { IncomingMessage, ServerResponse } from 'node:http'
-import { admin, sendTo } from './lib'
+import { admin, sendTo, userFromToken } from './lib'
 
 /** "Send a test notification" from settings: to the signed-in user's own phones only. */
 export default async function handler(req: IncomingMessage, res: ServerResponse) {
@@ -10,13 +10,9 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
   }
   if (req.method !== 'POST') return send(405, { error: 'POST only' })
   const token = (req.headers.authorization ?? '').replace(/^Bearer /, '')
-  const { db, auth } = admin()
-  let uid: string
-  try {
-    uid = (await auth.verifyIdToken(token)).uid
-  } catch {
-    return send(401, { error: 'not signed in' })
-  }
+  const uid = await userFromToken(token)
+  if (!uid) return send(401, { error: 'not signed in' })
+  const { db } = admin()
   const sent = await sendTo(db, uid, { title: 'CarBoard', body: 'ההתראות פועלות. נזכיר לך לפני כל מועד.', tag: 'test', url: '/' })
   send(200, { sent })
 }
