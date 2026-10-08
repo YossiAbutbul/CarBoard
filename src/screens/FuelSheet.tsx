@@ -55,10 +55,10 @@ export function FuelSheet({ record, onClose }: { record?: Fuel; onClose(): void 
       if (!lines.length) return setScanNote('לא הצלחנו לקרוא את הקבלה. אפשר למלא ידנית.')
       // the reading is automatic and can be wrong: show what was read, and fill in only after a yes
       const ok = await ask({
-        title: 'זה מה שנקרא מהקבלה',
+        title: 'זה מה שנקרא מהקבלה. נכון?',
         text: `${lines.join('\n')}\n\nהקריאה אוטומטית ועלולה לטעות. בדקו שהערכים נכונים.`,
-        confirm: 'מילוי בטופס',
-        cancel: 'ביטול',
+        confirm: 'כן, למלא',
+        cancel: 'לא, אמלא בעצמי',
       })
       if (!ok) return
       if (r.liters != null) setLiters(String(r.liters))
