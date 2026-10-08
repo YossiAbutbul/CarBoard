@@ -1,5 +1,5 @@
 import { initializeApp } from 'firebase/app'
-import { ReCaptchaV3Provider, initializeAppCheck } from 'firebase/app-check'
+import { ReCaptchaEnterpriseProvider, initializeAppCheck } from 'firebase/app-check'
 import { delMany, keys } from 'idb-keyval'
 import { GoogleAuthProvider, getAuth, signInWithPopup, signInWithRedirect, signOut as fbSignOut } from 'firebase/auth'
 import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager } from 'firebase/firestore'
@@ -20,15 +20,15 @@ export const cloudEnabled = Boolean(config.apiKey && config.projectId && config.
 const app = cloudEnabled ? initializeApp(config) : null
 
 // App Check: Firebase answers only this app (verified by reCAPTCHA in the background), not scripts
-// using the API key. On when VITE_RECAPTCHA_SITE_KEY is set. On localhost it uses a debug token,
-// printed in the console the first time, which is added once in Firebase → App Check → Manage debug tokens.
-const siteKey = env.VITE_RECAPTCHA_SITE_KEY as string | undefined
+// using the API key. On when VITE_RECAPTCHA_ENTERPRISE_KEY is set (a reCAPTCHA key in this Google
+// Cloud project). On localhost it uses a debug token registered in Firebase → App Check.
+const siteKey = env.VITE_RECAPTCHA_ENTERPRISE_KEY as string | undefined
 if (app && siteKey) {
   if (location.hostname === 'localhost') {
     ;(self as unknown as { FIREBASE_APPCHECK_DEBUG_TOKEN: string | boolean }).FIREBASE_APPCHECK_DEBUG_TOKEN =
       (env.VITE_APPCHECK_DEBUG_TOKEN as string | undefined) || true
   }
-  initializeAppCheck(app, { provider: new ReCaptchaV3Provider(siteKey), isTokenAutoRefreshEnabled: true })
+  initializeAppCheck(app, { provider: new ReCaptchaEnterpriseProvider(siteKey), isTokenAutoRefreshEnabled: true })
 }
 export const auth = app ? getAuth(app) : null
 // Offline cache: the app opens and works without a connection, and syncs when it is back.
