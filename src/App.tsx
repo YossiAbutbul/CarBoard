@@ -3,7 +3,7 @@ import { addDays, todayIso } from './lib/dates'
 import { userMessage } from './lib/errors'
 import { ErrorBanner, ErrorPage } from './components/ErrorPage'
 import { onAuthStateChanged, type User } from 'firebase/auth'
-import type { Car, CarDocument, Item, ItemKind, ServiceRecord } from './types'
+import type { Car, CarDocument, Fuel, Item, ItemKind, ServiceRecord } from './types'
 import { AppDataProvider, useApp } from './data/AppData'
 import { localStore } from './data/localStore'
 import { firebaseStore } from './data/firebaseStore'
@@ -17,6 +17,8 @@ import { isGuest, moveGuestData, setGuest } from './data/guest'
 import { HomeScreen } from './screens/HomeScreen'
 import { ServicesScreen } from './screens/ServicesScreen'
 import { DocumentsScreen } from './screens/DocumentsScreen'
+import { FuelScreen } from './screens/FuelScreen'
+import { FuelSheet } from './screens/FuelSheet'
 import { CarsDrawer, SettingsDrawer } from './screens/Drawers'
 import { getLocalName, storeLocalName } from './lib/profile'
 import { OdometerSheet } from './screens/OdometerSheet'
@@ -34,8 +36,9 @@ export type SheetState =
   | { t: 'item'; item?: Item }
   | { t: 'doc'; doc?: CarDocument }
   | { t: 'car'; car?: Car }
+  | { t: 'fuel'; record?: Fuel }
 export type OpenSheet = (s: SheetState) => void
-type Tab = 'home' | 'services' | 'docs'
+type Tab = 'home' | 'services' | 'fuel' | 'docs'
 
 export default function App() {
   const [user, setUser] = useState<User | null>(null)
@@ -253,6 +256,8 @@ function Main({ email, accountName, guest = false }: { email: string | null; acc
           <HomeScreen open={setSheet} openCars={openCars} openSettings={openSettings} userName={userName} />
         ) : tab === 'services' ? (
           <ServicesScreen open={setSheet} openCars={openCars} openSettings={openSettings} />
+        ) : tab === 'fuel' ? (
+          <FuelScreen open={setSheet} openCars={openCars} openSettings={openSettings} />
         ) : (
           <DocumentsScreen open={setSheet} openCars={openCars} openSettings={openSettings} />
         )}
@@ -260,6 +265,11 @@ function Main({ email, accountName, guest = false }: { email: string | null; acc
 
       {car && tab === 'services' && (
         <button className="fab" onClick={() => setSheet({ t: 'service' })} aria-label="טיפול חדש">
+          <Icon name="plus" />
+        </button>
+      )}
+      {car && tab === 'fuel' && (
+        <button className="fab" onClick={() => setSheet({ t: 'fuel' })} aria-label="תדלוק חדש">
           <Icon name="plus" />
         </button>
       )}
@@ -276,6 +286,7 @@ function Main({ email, accountName, guest = false }: { email: string | null; acc
             [
               ['home', 'car', 'הרכב'],
               ['services', 'service', 'טיפולים'],
+              ['fuel', 'fuel', 'דלק'],
               ['docs', 'docs', 'מסמכים'],
             ] as [Tab, IconName, string][]
           ).map(([id, icon, label]) => (
@@ -303,6 +314,7 @@ function Main({ email, accountName, guest = false }: { email: string | null; acc
         <ItemSheet item={sheet.item} onClose={close} onDone={it => setSheet({ t: 'service', kind: it.kind })} />
       )}
       {sheet?.t === 'doc' && <DocumentSheet doc={sheet.doc} onClose={close} />}
+      {sheet?.t === 'fuel' && <FuelSheet record={sheet.record} onClose={close} />}
       {sheet?.t === 'car' && <CarSheet car={sheet.car} onClose={close} />}
       {drawer === 'cars' && <CarsDrawer open={setSheet} onClose={() => setDrawer(null)} />}
       {drawer === 'settings' && <SettingsDrawer email={email} guest={guest} name={localName} onName={saveName} onTour={startTour} onClose={() => setDrawer(null)} />}

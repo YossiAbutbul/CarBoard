@@ -1,7 +1,7 @@
 rules_version = '2';
 
 // CarBoard. Each user has a folder, users/<uid>/…, holding only the app's own data:
-//   <table>/<id>               cars, readings, items, services, documents
+//   <table>/<id>               cars, readings, items, services, documents, fuel
 //   files/<id>                 an uploaded file's record: name, type, size, piece count
 //   files/<id>/parts/<n>       the file itself, in pieces of 700 KB (base64)
 //   meta/quota                 bytes and files stored; every file added or removed must update it
@@ -34,12 +34,12 @@ service cloud.firestore {
 
       // ── app data: the owner and their family ──
       match /{table}/{id} {
-        allow read: if canAccess(uid) && table in ['cars', 'readings', 'items', 'services', 'documents'];
+        allow read: if canAccess(uid) && table in ['cars', 'readings', 'items', 'services', 'documents', 'fuel'];
         // a car only by its owner; the rest by the family too
-        allow delete: if table in ['readings', 'items', 'services', 'documents'] && canAccess(uid)
+        allow delete: if table in ['readings', 'items', 'services', 'documents', 'fuel'] && canAccess(uid)
           || table == 'cars' && signedIn(uid);
         allow create, update: if canAccess(uid)
-          && table in ['cars', 'readings', 'items', 'services', 'documents']
+          && table in ['cars', 'readings', 'items', 'services', 'documents', 'fuel']
           && request.resource.data.id == id
           && request.resource.data.keys().size() <= 24
           && (!('notes' in request.resource.data) || request.resource.data.notes == null || request.resource.data.notes.size() <= 2000)

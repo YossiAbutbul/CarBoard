@@ -42,4 +42,4 @@ export interface Store {
   wipeFiles?(): Promise<void>
 }
 
-export const emptyData = (): Data => ({ cars: [], readings: [], items: [], services: [], documents: [] })
+export const emptyData = (): Data => ({ cars: [], readings: [], items: [], services: [], documents: [], fuel: [] })

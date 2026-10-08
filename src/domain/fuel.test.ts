@@ -1,0 +1,49 @@
+import { describe, expect, it } from 'vitest'
+import type { Fuel } from '../types'
+import { averageEconomy, economy, monthlySpend, perLiter } from './fuel'
+
+const f = (id: string, date: string, km: number | null, liters: number | null, full = true, price: number | null = null): Fuel => ({
+  id,
+  car_id: 'c',
+  date,
+  km,
+  liters,
+  price,
+  station: null,
+  full,
+})
+
+describe('fuel', () => {
+  it('measures km per liter between full tanks', () => {
+    const e = economy([f('a', '2026-09-01', 10000, 40), f('b', '2026-09-15', 10600, 40)])
+    expect(e).toHaveLength(1)
+    expect(e[0]).toMatchObject({ id: 'b', km: 600, liters: 40, kmPerLiter: 15 })
+  })
+
+  it('adds the partial fills in between to the next full tank', () => {
+    const e = economy([f('a', '2026-09-01', 10000, 40), f('p', '2026-09-08', 10300, 10, false), f('b', '2026-09-15', 10700, 30)])
+    expect(e[0]).toMatchObject({ km: 700, liters: 40, kmPerLiter: 17.5 })
+  })
+
+  it('skips a stretch with a fill of unknown liters, and starts again from the next full tank', () => {
+    const e = economy([f('a', '2026-09-01', 10000, 40), f('p', '2026-09-08', null, null, false), f('b', '2026-09-15', 10700, 30), f('c', '2026-09-30', 11300, 40)])
+    expect(e.map(x => x.id)).toEqual(['c'])
+    expect(e[0].kmPerLiter).toBe(15)
+  })
+
+  it('averages over all stretches by total km and liters', () => {
+    expect(averageEconomy([f('a', '2026-09-01', 0, 10), f('b', '2026-09-02', 100, 10), f('c', '2026-09-03', 400, 10)])).toBe(20)
+    expect(averageEconomy([f('a', '2026-09-01', 0, 10)])).toBeNull()
+  })
+
+  it('price per liter, and monthly totals including empty months', () => {
+    expect(perLiter(f('a', '2026-09-01', null, 40, true, 280))).toBe(7)
+    expect(perLiter(f('a', '2026-09-01', null, null, true, 280))).toBeNull()
+    const m = monthlySpend([f('a', '2026-10-02', null, null, true, 300), f('b', '2026-08-20', null, null, true, 250)], 3, new Date(2026, 9, 8))
+    expect(m).toEqual([
+      { month: '2026-08', total: 250, count: 1 },
+      { month: '2026-09', total: 0, count: 0 },
+      { month: '2026-10', total: 300, count: 1 },
+    ])
+  })
+})

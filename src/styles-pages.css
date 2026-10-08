@@ -132,3 +132,55 @@
 .plate-status.ok { color: #146b3f; font-weight: 600; animation: fade 0.25s ease-out; }
 .plate-status.bad { color: var(--overdue); animation: fade 0.25s ease-out; }
 .confirm-icon.armed:hover { color: #fff; }
+
+/* ── fuel ── */
+.fuel-perl { min-height: 18px; margin-top: 6px; font-size: 12.5px; font-weight: 600; color: var(--blue); text-align: center; }
+.fuel-full { display: flex; align-items: center; gap: 12px; margin-top: 16px; padding: 12px 14px; border-radius: 14px; background: #fff; box-shadow: inset 0 0 0 1px var(--line); }
+.fuel-full > div { flex: 1; }
+.fuel-full .t { font-size: 14px; font-weight: 600; }
+.fuel-full .s { font-size: 12px; color: var(--muted); line-height: 1.4; }
+.fuel-list { display: grid; gap: 8px; }
+.fuel-row { display: flex; align-items: center; gap: 12px; width: 100%; padding: 12px 14px; border-radius: 16px; background: var(--card); text-align: right; animation: page-in 0.25s ease-out both; transition: transform 0.15s; }
+.fuel-row:active { transform: scale(0.98); }
+.fuel-ic { flex: none; width: 38px; height: 38px; display: grid; place-items: center; border-radius: 12px; background: #fff; color: var(--ink); }
+.fuel-ic svg.i { width: 19px; height: 19px; }
+.fuel-main { flex: 1; min-width: 0; display: grid; gap: 2px; }
+.fuel-main .t { font-size: 14.5px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.fuel-main .s { font-size: 12.5px; color: var(--muted); }
+.fuel-price { flex: none; font-size: 16px; font-weight: 700; font-variant-numeric: tabular-nums; }
+/* the trend chart */
+.fuel-chart { margin: 4px 0 18px; padding: 12px 12px 8px; }
+.fuel-chart .seg { margin-bottom: 10px; }
+.chart { display: block; width: 100%; height: auto; overflow: visible; direction: ltr; }
+.chart .bar { fill: #c9d6e8; }
+.chart .bar.now { fill: var(--blue); }
+.chart .axis { stroke: var(--line); stroke-width: 1; }
+.chart .val { font-size: 10.5px; font-weight: 700; fill: var(--ink); text-anchor: middle; font-variant-numeric: tabular-nums; }
+.chart .lab { font-size: 10.5px; fill: var(--muted); text-anchor: middle; }
+.chart .line { fill: none; stroke: var(--blue); stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; }
+.chart .area { fill: rgba(28, 105, 212, 0.1); }
+.chart .dot { fill: #fff; stroke: var(--blue); stroke-width: 2; }
+.chart .dot.now { fill: var(--blue); }
+.chart-empty { padding: 26px 12px; font-size: 13px; color: var(--muted); text-align: center; line-height: 1.5; }
+/* the receipt: thermal paper with torn edges; only drawn, never a file */
+.fuel-receipt { width: min(320px, 100%); animation: pop-in 0.25s cubic-bezier(0.2, 0.9, 0.3, 1.2) both; }
+.receipt-paper { position: relative; margin: 10px 0; padding: 24px 22px 20px; background: #fffdf8; color: #1c2430; filter: drop-shadow(0 18px 40px rgba(0, 0, 0, 0.35)); }
+/* torn edges: a row of small triangles above and below the paper */
+.receipt-paper::before, .receipt-paper::after { content: ''; position: absolute; left: 0; right: 0; height: 10px; background-size: 14px 10px; background-repeat: repeat-x; }
+.receipt-paper::before { top: -10px; background-image: linear-gradient(135deg, transparent 50%, #fffdf8 50%), linear-gradient(225deg, transparent 50%, #fffdf8 50%); background-position: 0 0, 7px 0; background-size: 14px 10px; }
+.receipt-paper::after { bottom: -10px; background-image: linear-gradient(45deg, transparent 50%, #fffdf8 50%), linear-gradient(-45deg, transparent 50%, #fffdf8 50%); background-position: 0 0, 7px 0; background-size: 14px 10px; transform: scaleY(-1); }
+.r-head { display: grid; justify-items: center; gap: 3px; text-align: center; }
+.r-head svg.i { width: 26px; height: 26px; margin-bottom: 4px; }
+.r-head b { font-size: 18px; letter-spacing: 0.02em; }
+.r-head span { font-size: 12px; color: #6b7480; }
+.r-cut { margin: 14px 0; border-top: 2px dashed #c9cdd3; }
+.r-row { display: flex; justify-content: space-between; gap: 12px; padding: 4px 0; font-size: 14px; }
+.r-row span:last-child { font-variant-numeric: tabular-nums; font-weight: 600; }
+.r-total { font-size: 19px; font-weight: 800; }
+.r-total span:last-child { font-weight: 800; }
+.r-eco { margin-top: 12px; padding: 8px 10px; border-radius: 8px; background: #eef4fd; color: #1c69d4; font-size: 12.5px; font-weight: 600; text-align: center; }
+.r-bars { height: 34px; margin: 16px 10px 8px; background: repeating-linear-gradient(90deg, #1c2430 0 2px, transparent 2px 4px, #1c2430 4px 5px, transparent 5px 8px, #1c2430 8px 11px, transparent 11px 12px); opacity: 0.85; }
+.r-foot { font-size: 10.5px; color: #8b929c; text-align: center; letter-spacing: 0.03em; }
+.receipt-btns { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 14px; }
+.receipt-btns .btn { margin: 0; height: 46px; }
+.receipt-btns .btn:not(.pri) { background: #fff; }
