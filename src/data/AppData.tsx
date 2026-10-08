@@ -1,5 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
-import type { Car, Data, Item } from '../types'
+import type { Car, Data, Item, Table } from '../types'
+
+type Row = { id: string } & Record<string, unknown>
 import { emptyData, type Family, type Store } from './store'
 import { makeActions, type Actions } from './actions'
 import { estimateKm, type KmEstimate } from '../domain/odometer'
@@ -51,9 +53,36 @@ async function addMissing(store: Store, d: Data) {
 const CAR_KEY = 'car-records:car'
 
 export function AppDataProvider({ store: raw, children }: { store: Store; children: ReactNode }) {
-  // every request counts for the activity bar (family requests too)
-  const store = useMemo(() => tracked({ ...raw, family: raw.family && tracked(raw.family) } as Store), [raw])
   const [data, setData] = useState<Data>(emptyData)
+  const dataRef = useRef(data)
+  // Every request counts for the activity bar (family requests too). Everything is read once; after
+  // that each save, change or delete is also applied to the copy in memory, so the screen updates
+  // without reading everything again (a full read costs ~5 requests per family member).
+  const store = useMemo(() => {
+    const s = tracked({ ...raw, family: raw.family && tracked(raw.family) } as Store)
+    const apply = (t: Table, f: (rows: Row[]) => Row[]) => {
+      dataRef.current = { ...dataRef.current, [t]: f(dataRef.current[t] as unknown as Row[]) }
+    }
+    return {
+      ...s,
+      family: s.family,
+      loadAll: () => s.loadAll(),
+      async insert(t, r) {
+        await s.insert(t, r)
+        // a car I add is mine (shown in the family's list as such; never stored)
+        const row = t === 'cars' && raw.userId ? { ...(r as unknown as Row), owner: raw.userId } : (r as unknown as Row)
+        apply(t, rows => [...rows.filter(x => x.id !== row.id), row])
+      },
+      async update(t, id, patch) {
+        await s.update(t, id, patch)
+        apply(t, rows => rows.map(x => (x.id === id ? { ...x, ...(patch as object) } : x)))
+      },
+      async remove(t, id) {
+        await s.remove(t, id)
+        apply(t, rows => rows.filter(x => x.id !== id))
+      },
+    } as Store
+  }, [raw])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [family, setFamily] = useState<Family | null>(null)
@@ -64,10 +93,12 @@ export function AppDataProvider({ store: raw, children }: { store: Store; childr
       return null
     }
   })
-  const dataRef = useRef(data)
+  const lastFull = useRef(0)
 
-  const refresh = useCallback(async () => {
+  /** Read everything again: at start, after joining or leaving a family, and on return after a while. */
+  const reload = useCallback(async () => {
     try {
+      lastFull.current = Date.now()
       let d = await store.loadAll()
       // A car missing a required reminder (made before it existed, or deleted earlier) gets it back.
       const added = await addMissingDefaults(store, d)
@@ -83,9 +114,24 @@ export function AppDataProvider({ store: raw, children }: { store: Store; childr
     }
   }, [store])
 
+  /** After a change: show the copy in memory, which the store has already updated. No requests. */
+  const refresh = useCallback(async () => {
+    setData(dataRef.current)
+  }, [])
+
   useEffect(() => {
-    refresh()
-  }, [refresh])
+    reload()
+  }, [reload])
+
+  // Family members change things too: back in the app after 5 minutes away, read everything again.
+  useEffect(() => {
+    if (store.mode !== 'cloud') return
+    const onShow = () => {
+      if (document.visibilityState === 'visible' && Date.now() - lastFull.current > 5 * 60 * 1000) reload()
+    }
+    document.addEventListener('visibilitychange', onShow)
+    return () => document.removeEventListener('visibilitychange', onShow)
+  }, [store, reload])
 
   const setCarId = useCallback((id: string) => {
     setCarIdState(id)
@@ -110,7 +156,7 @@ export function AppDataProvider({ store: raw, children }: { store: Store; childr
   }, [reminders])
 
   return (
-    <C.Provider value={{ store, data, loading, error, setCarId, actions, car, km, reminders, family, reload: refresh }}>{children}</C.Provider>
+    <C.Provider value={{ store, data, loading, error, setCarId, actions, car, km, reminders, family, reload }}>{children}</C.Provider>
   )
 }
 
