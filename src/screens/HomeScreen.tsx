@@ -61,7 +61,7 @@ export function HomeScreen({
 
   const urgent = reminders.filter(r => r.status === 'due' || r.status === 'overdue')
   const soon = reminders.filter(r => r.status === 'soon')
-  const service = reminders.find(r => r.item.kind === 'service')
+  const insurance = reminders.find(r => r.item.kind === 'insurance')
   const test = reminders.find(r => r.item.kind === 'test')
   const state = urgent.length ? (urgent.some(r => r.status === 'overdue') ? 'overdue' : 'due') : soon.length ? 'soon' : 'ok'
   const stateText = urgent.length
@@ -89,7 +89,7 @@ export function HomeScreen({
             onClick={() => open({ t: 'odo' })}
             tour="km"
           />
-          {service && <ReminderCell r={service} title="טיפול הבא" open={open} tour="service" />}
+          {insurance && <ReminderCell r={insurance} title="ביטוח" open={open} tour="insurance" />}
           {test && <ReminderCell r={test} title="טסט" open={open} tour="test" />}
         </Glance>
       </PageHero>

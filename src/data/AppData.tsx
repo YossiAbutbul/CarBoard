@@ -22,7 +22,8 @@ interface Ctx {
 const C = createContext<Ctx | null>(null)
 
 /** Reminders every car always has: the home header shows service and test, and oil was added later. */
-export const REQUIRED: Item['kind'][] = ['service', 'test', 'oil']
+// shown in the top row of the home screen, so they cannot be deleted
+export const REQUIRED: Item['kind'][] = ['test', 'insurance']
 
 let backfill: Promise<number> | null = null
 /** One run at a time, so two quick refreshes cannot add the same reminder twice. */

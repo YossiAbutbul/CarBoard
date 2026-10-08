@@ -10,7 +10,7 @@ export default defineConfig({
   plugins: [
     react(),
     VitePWA({
-      registerType: 'autoUpdate',
+      registerType: 'prompt', // the app shows an update banner; the user picks when to reload
       manifest: {
         name: 'CarBoard · הרכב שלי',
         short_name: 'CarBoard',

@@ -30,7 +30,7 @@ export function Intro({ name, onName, onAddCar }: { name: string; onName(n: stri
   const [draft, setDraft] = useState(name)
   const next = () => {
     if (step === 1) onName(draft.trim())
-    setStep(s => s + 1)
+    setStep(s => Math.min(s + 1, 2))
   }
   const first = draft.trim().split(' ')[0]
 
@@ -134,7 +134,7 @@ interface Stop {
 
 const stops = (name: string): Stop[] => [
   { target: 'km', title: 'הק״מ של הרכב', text: 'נעריך אותו כל יום לפי הנסיעות שלך, ופעם בשבוע נבקש לאשר. לחיצה מעדכנת.' },
-  { target: 'service', title: 'הטיפול הבא', text: 'לפי ק״מ או לפי תאריך, מה שמגיע קודם. אחרי טיפול הוא זז לבד.' },
+  { target: 'insurance', title: 'ביטוח', text: 'מתי הפוליסה נגמרת. לחיצה פותחת את החברה, מספר הפוליסה והצילום.' },
   { target: 'test', title: 'טסט', text: 'התאריך הגיע ממשרד התחבורה. אפשר לצרף צילום של הרישיון.' },
   { target: 'actions', title: 'פעולות מהירות', text: 'עדכון ק״מ, תזכורת חדשה, טיפול שעשית או מסמך.' },
   { target: 'tiles', title: 'מצב הרכב', text: 'כל התזכורות. לחיצה על כרטיס פותחת פרטים, היסטוריה וקבלות.' },
