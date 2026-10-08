@@ -585,7 +585,9 @@ html, body { overscroll-behavior-y: none; }
 .crash p { margin: 0; color: var(--muted); font-size: 14px; }
 .crash .btn { min-width: 180px; }
 .crash pre { max-width: 100%; margin: 16px 0 0; padding: 10px; border-radius: 10px; background: #f3f5f8; color: #7a8491; font-size: 11px; white-space: pre-wrap; word-break: break-word; text-align: left; }
-.switch-spin { flex: none; width: 24px; height: 24px; margin-inline: 11px; }
+.switch.working { animation: switch-wait 1s ease-in-out infinite; }
+.switch.working:disabled { opacity: 1; }
+@keyframes switch-wait { 50% { opacity: 0.45; } }
 .when-chips button { background: #fff; }
 
 /* update banner, v2: a small card with an icon, a title and a clear button */
