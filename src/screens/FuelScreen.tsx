@@ -70,11 +70,13 @@ export function FuelScreen({ open, openCars, openSettings }: { open: OpenSheet; 
                       </span>
                       <span className="fuel-main">
                         <span className="t">{f.station ?? 'תדלוק'}</span>
-                        <span className="s">
-                          {[f.time ? `${fmtShortDate(f.date)} ${f.time}` : fmtShortDate(f.date), f.liters != null && `${f.liters} ל׳`, perLiter(f) != null && `₪${perLiter(f)!.toFixed(2)} לל׳`, f.km != null && `${fmtNum(f.km)} ק״מ`].filter(Boolean).join(' · ')}
-                        </span>
+                        {/* when and how much; the km is on the receipt, to keep the row light */}
+                        <span className="s">{[f.time ? `${fmtShortDate(f.date)} ${f.time}` : fmtShortDate(f.date), f.liters != null && `${f.liters} ל׳`].filter(Boolean).join(' · ')}</span>
                       </span>
-                      <span className="fuel-price">{f.price != null ? fmtMoney(f.price) : ''}</span>
+                      <span className="fuel-price">
+                        {f.price != null ? fmtMoney(f.price) : ''}
+                        {perLiter(f) != null && <small>₪{perLiter(f)!.toFixed(2)} לל׳</small>}
+                      </span>
                     </button>
                   ))}
               </div>
