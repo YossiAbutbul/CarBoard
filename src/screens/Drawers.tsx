@@ -308,8 +308,7 @@ function PushSection({ cloud }: { cloud: boolean }) {
         )}
         {cloud && state === 'on' && (
           <button
-            className="btn"
-            style={{ marginTop: 12, background: '#fff' }}
+            className="test-link"
             disabled={busy}
             onClick={() =>
               run(async () => {
@@ -318,7 +317,7 @@ function PushSection({ cloud }: { cloud: boolean }) {
               })
             }
           >
-            {busy ? <span className="spin" /> : 'שליחת התראת ניסיון'}
+            {busy ? 'שולח…' : 'שליחת התראת ניסיון'}
           </button>
         )}
         {msg && <div className="hint" style={{ marginTop: 8 }}>{msg}</div>}
