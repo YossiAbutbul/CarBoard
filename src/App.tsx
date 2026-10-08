@@ -129,6 +129,37 @@ function Main({ email, accountName, guest = false }: { email: string | null; acc
     setTimeout(() => setGuide('tour'), 450) // let the drawer close and the page arrive
   }
 
+  // Swipe in from a screen edge to open a drawer: from the right for the cars, from the left for settings.
+  const canSwipe = Boolean(car) && !sheet && !drawer && guide === 'done'
+  useEffect(() => {
+    if (!canSwipe) return
+    const EDGE = 28
+    let start: { x: number; y: number; from: 'right' | 'left' } | null = null
+    const down = (e: TouchEvent) => {
+      const p = e.touches[0]
+      start = p.clientX > window.innerWidth - EDGE ? { x: p.clientX, y: p.clientY, from: 'right' } : p.clientX < EDGE ? { x: p.clientX, y: p.clientY, from: 'left' } : null
+    }
+    const move = (e: TouchEvent) => {
+      if (!start) return
+      const p = e.touches[0]
+      const dx = p.clientX - start.x
+      if (Math.abs(p.clientY - start.y) > Math.abs(dx)) return (start = null) // a vertical scroll
+      if (start.from === 'right' && dx < -50) setDrawer('cars')
+      else if (start.from === 'left' && dx > 50) setDrawer('settings')
+      else return
+      start = null
+    }
+    const up = () => (start = null)
+    window.addEventListener('touchstart', down, { passive: true })
+    window.addEventListener('touchmove', move, { passive: true })
+    window.addEventListener('touchend', up)
+    return () => {
+      window.removeEventListener('touchstart', down)
+      window.removeEventListener('touchmove', move)
+      window.removeEventListener('touchend', up)
+    }
+  }, [canSwipe])
+
   if (loading || !splashDone) return <Splash />
 
   return (

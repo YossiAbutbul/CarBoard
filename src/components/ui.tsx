@@ -53,6 +53,42 @@ export function Drawer({ title, side, onClose, children }: { title: string; side
     setLeaving(true)
     setTimeout(onClose, 220)
   }
+  // Drag the panel back toward its edge to close it (start = right edge in RTL, end = left).
+  const panel = useRef<HTMLElement>(null)
+  const drag = useRef<{ x: number; y: number; t: number; dx: number; axis: 'x' | 'y' | null } | null>(null)
+  const dir = side === 'start' ? 1 : -1 // the direction that closes it
+  const touch = {
+    onTouchStart(e: React.TouchEvent) {
+      const p = e.touches[0]
+      drag.current = { x: p.clientX, y: p.clientY, t: Date.now(), dx: 0, axis: null }
+    },
+    onTouchMove(e: React.TouchEvent) {
+      const d = drag.current
+      const el = panel.current
+      if (!d || !el) return
+      const p = e.touches[0]
+      const dx = p.clientX - d.x
+      const dy = p.clientY - d.y
+      if (!d.axis && Math.hypot(dx, dy) > 8) d.axis = Math.abs(dx) > Math.abs(dy) ? 'x' : 'y'
+      if (d.axis !== 'x') return
+      d.dx = dir > 0 ? Math.max(0, dx) : Math.min(0, dx)
+      el.style.animation = 'none'
+      el.style.transition = 'none'
+      el.style.transform = `translateX(${d.dx}px)`
+    },
+    onTouchEnd() {
+      const d = drag.current
+      const el = panel.current
+      drag.current = null
+      if (!d || !el || d.axis !== 'x') return
+      const fast = Math.abs(d.dx) / Math.max(1, Date.now() - d.t) > 0.5
+      el.style.transition = 'transform 0.22s cubic-bezier(0.2, 0.8, 0.2, 1)'
+      if (Math.abs(d.dx) > el.offsetWidth * 0.3 || (fast && Math.abs(d.dx) > 30)) {
+        el.style.transform = `translateX(${dir * 100}%)`
+        setTimeout(onClose, 200)
+      } else el.style.transform = ''
+    },
+  }
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => e.key === 'Escape' && close()
     window.addEventListener('keydown', onKey)
@@ -65,7 +101,7 @@ export function Drawer({ title, side, onClose, children }: { title: string; side
   }, [])
   return (
     <div className={`drawer-overlay ${leaving ? 'out' : ''}`} onClick={close}>
-      <aside className={`drawer ${side}`} role="dialog" aria-modal="true" aria-label={title} onClick={e => e.stopPropagation()}>
+      <aside ref={panel} className={`drawer ${side}`} role="dialog" aria-modal="true" aria-label={title} onClick={e => e.stopPropagation()} {...touch}>
         <div className="drawer-head">
           <h2>{title}</h2>
           <button onClick={close} aria-label="סגירה">
