@@ -31,6 +31,7 @@ export function ServiceSheet({ onClose, kind = 'service', record }: { onClose():
   if (!car) return null
 
   async function save() {
+    if (record && !dirty) return onClose() // nothing changed: nothing to write
     const n = Number(kmV.replace(/\D/g, ''))
     if (!n) return setErr('חסר מספר ק״מ')
     setBusy(true)

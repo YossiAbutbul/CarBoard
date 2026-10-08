@@ -112,7 +112,7 @@ export function SettingsDrawer({
           className="name-row"
           onClick={async () => {
             const next = await askText({ title: 'השם שלך', text: 'מופיע בברכה במסך הבית.', input: { value: name, placeholder: 'למשל: יוסי' }, confirm: 'שמירה' })
-            if (next !== null) {
+            if (next !== null && next.trim() !== name.trim()) {
               onName(next)
               store.family?.rename(next).catch(() => {}) // the family sees the new name too
             }

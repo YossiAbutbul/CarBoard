@@ -124,8 +124,11 @@ function KmHistorySheet({ onClose }: { onClose(): void }) {
 
   async function saveEdit(id: string) {
     setHistErr(null)
+    const n = Number(editValue.replace(/\D/g, ''))
+    // the same km as before: nothing to write
+    if (data.readings.find(r => r.id === id)?.km === n) return setEditId(null)
     try {
-      await actions.updateReading(id, Number(editValue.replace(/\D/g, '')))
+      await actions.updateReading(id, n)
       setEditId(null)
     } catch (x) {
       setHistErr(x instanceof Error ? x.message : String(x))

@@ -42,6 +42,7 @@ export function DocumentSheet({ doc, onClose }: { doc?: CarDocument; onClose(): 
   }
 
   async function save() {
+    if (doc && !dirty) return onClose() // nothing changed: nothing to write
     try {
       await actions.saveDocument({
         id: doc?.id ?? uid(),

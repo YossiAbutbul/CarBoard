@@ -97,6 +97,8 @@ export function ItemSheet({ item, onClose, onDone }: { item?: Item; onClose(): v
   }
 
   async function save() {
+    // nothing changed on a saved reminder: nothing to write
+    if (item && !dirty && data.items.some(i => i.id === item.id)) return onClose()
     setBusy(true)
     try {
       await actions.saveItem(draft)

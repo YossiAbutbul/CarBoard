@@ -63,6 +63,7 @@ export function CarSheet({ car, onClose }: { car?: Car; onClose(): void }) {
   }, [digits]) // eslint-disable-line react-hooks/exhaustive-deps
 
   async function save() {
+    if (editing && !dirty) return onClose() // nothing changed: nothing to write
     const kmN = Number(kmNow.replace(/\D/g, ''))
     if (!plateDigits(plate) && !name.trim()) return setErr('צריך מספר רכב או שם')
     if (!editing && !kmNow) return setErr('כמה ק״מ יש לרכב היום?')
