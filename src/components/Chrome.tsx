@@ -1,6 +1,5 @@
 import { Scene } from './Scene'
-import { Children, isValidElement, useEffect, useRef, useState, type ReactNode } from 'react'
-import { createPortal } from 'react-dom'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { useApp } from '../data/AppData'
 import { Icon } from './Icon'
 
@@ -51,33 +50,41 @@ export function TopBar({ openCars, openSettings }: { openCars(): void; openSetti
 /** The dark header used by every page. */
 export function PageHero({ children, dial }: { children: ReactNode; dial?: boolean }) {
   const ref = useRef<HTMLElement>(null)
-  const [pinned, setPinned] = useState(false)
-  // While scrolling, the card eases back a little (--p goes 0 → 1), and once its top bar is
-  // out of view a compact copy of the bar stays pinned at the top of the screen.
+  // The card collapses as you scroll: it sticks with its top pulled up by the greeting's height,
+  // the greeting fades, and the bar slides down so the bar and the summary row stay pinned.
   useEffect(() => {
-    const on = () => {
-      const el = ref.current
-      if (!el) return
-      el.style.setProperty('--p', String(Math.min(1, Math.max(0, window.scrollY / 220))))
-      setPinned(window.scrollY > 64)
+    const el = ref.current
+    const bar = el?.querySelector<HTMLElement>(':scope > .bar')
+    const greet = el?.querySelector<HTMLElement>(':scope > .greet')
+    const glance = el?.querySelector<HTMLElement>(':scope > .glance')
+    if (!el || !bar || !greet || !glance) return
+    let gap = 0
+    const measure = () => {
+      gap = glance.offsetTop - (bar.offsetTop + bar.offsetHeight)
+      el.style.top = `${-gap}px`
+      on()
     }
-    on()
+    const on = () => {
+      const y = Math.min(Math.max(window.scrollY, 0), gap)
+      const p = gap ? y / gap : 0
+      el.style.setProperty('--p', String(p))
+      bar.style.transform = `translateY(${y}px)`
+      el.classList.toggle('collapsed', p >= 1)
+    }
+    measure()
     window.addEventListener('scroll', on, { passive: true })
-    return () => window.removeEventListener('scroll', on)
+    window.addEventListener('resize', measure)
+    return () => {
+      window.removeEventListener('scroll', on)
+      window.removeEventListener('resize', measure)
+      bar.style.transform = ''
+    }
   }, [])
-  const bar = Children.toArray(children).find(c => isValidElement(c) && c.type === TopBar)
   return (
     <section className="hero" ref={ref}>
       <Scene lite />
       {dial && <Dial />}
       {children}
-      {bar &&
-        createPortal(
-          <div className={`hero pinned-bar ${pinned ? 'show' : ''}`} aria-hidden={!pinned}>
-            {bar}
-          </div>,
-          document.body,
-        )}
     </section>
   )
 }
