@@ -1,9 +1,17 @@
+import { useEffect } from 'react'
+
 /**
  * The animated backdrop of the login, the first-run steps and (lite) every page header: drifting glows,
  * a slowly turning speedometer, and headlight streaks passing by. Decorative only.
  */
 export function Scene({ lite = false }: { lite?: boolean }) {
   const ticks = Array.from({ length: 60 }, (_, i) => i)
+  // full-screen scenes: the page behind them is navy too, so scrolling or bouncing past the edge never shows white
+  useEffect(() => {
+    if (lite) return
+    document.documentElement.classList.add('scenic-page')
+    return () => document.documentElement.classList.remove('scenic-page')
+  }, [lite])
   return (
     <div className={`scene ${lite ? 'lite' : ''}`} aria-hidden="true">
       <i className="glow g1" />
