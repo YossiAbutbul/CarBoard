@@ -580,11 +580,16 @@ html, body { overscroll-behavior-y: none; }
 .switch.on { background: var(--blue); }
 .switch.on::after { transform: translateX(-18px); }
 .switch:disabled { opacity: 0.6; }
-.crash { min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; padding: 24px; text-align: center; background: #fff; }
-.crash b { font-size: 20px; }
-.crash p { margin: 0; color: var(--muted); font-size: 14px; }
-.crash .btn { min-width: 180px; }
-.crash pre { max-width: 100%; margin: 16px 0 0; padding: 10px; border-radius: 10px; background: #f3f5f8; color: #7a8491; font-size: 11px; white-space: pre-wrap; word-break: break-word; text-align: left; }
+/* error pages (404, crash, data that would not load): the sign-in screen's layout */
+.err-page .login-hero .status { font-size: 38px; line-height: 1.1; }
+.err-art { flex: 1; min-height: 160px; display: grid; place-items: center; animation: rise 0.7s var(--ease) both; }
+.err-code { font-size: clamp(120px, 42vw, 190px); font-weight: 800; letter-spacing: -0.06em; line-height: 1; color: transparent; -webkit-text-stroke: 2px rgba(143, 192, 255, 0.55); background: linear-gradient(180deg, rgba(143, 192, 255, 0.22), rgba(143, 192, 255, 0)); -webkit-background-clip: text; background-clip: text; direction: ltr; }
+.err-gauge { width: min(210px, 56vw); color: #8fc0ff; }
+.err-needle { transform-origin: 256px 282px; animation: needle-drop 1.4s cubic-bezier(0.3, 1.6, 0.5, 1) both 0.3s; }
+@keyframes needle-drop { from { transform: rotate(130deg); } to { transform: rotate(0); } }
+.err-copy { display: block; margin: 14px auto 0; padding: 6px 10px; font-size: 12.5px; font-weight: 500; color: rgba(255, 255, 255, 0.5); text-decoration: underline; text-underline-offset: 3px; }
+.err-copy:hover { color: rgba(255, 255, 255, 0.8); }
+.err-copy.inline { display: inline; margin: 0; padding: 0; color: inherit; opacity: 0.8; font-size: inherit; }
 .switch.working { animation: switch-wait 1s ease-in-out infinite; }
 .switch.working:disabled { opacity: 1; }
 @keyframes switch-wait { 50% { opacity: 0.45; } }

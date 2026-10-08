@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { userMessage } from '../lib/errors'
 import type { BodyType, Car } from '../types'
 import { Sheet, useDirty } from '../components/ui'
 import { useApp } from '../data/AppData'
@@ -102,7 +103,7 @@ export function CarSheet({ car, onClose }: { car?: Car; onClose(): void }) {
       else setCarId(await actions.addCar(fields, kmN, info?.licenceUntil ?? null))
       onClose()
     } catch (e) {
-      setErr(e instanceof Error ? e.message : String(e))
+      setErr(userMessage(e))
     } finally {
       setBusy(false)
     }

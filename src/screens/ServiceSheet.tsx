@@ -1,4 +1,5 @@
 import { DateField } from '../components/DateField'
+import { userMessage } from '../lib/errors'
 import { useMemo, useState } from 'react'
 import type { ItemKind, ServiceRecord } from '../types'
 import { Sheet, useDirty } from '../components/ui'
@@ -53,7 +54,7 @@ export function ServiceSheet({ onClose, kind = 'service', record }: { onClose():
       else await actions.saveService(fields)
       onClose()
     } catch (e) {
-      setErr(e instanceof Error ? e.message : String(e))
+      setErr(userMessage(e))
     } finally {
       setBusy(false)
     }

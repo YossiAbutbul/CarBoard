@@ -7,6 +7,7 @@ import { DialogHost } from './components/Dialog'
 import { InstallPrompt } from './components/InstallPrompt'
 import { ActivityBar } from './components/ActivityBar'
 import { ErrorBoundary } from './components/ErrorBoundary'
+import { NotFound } from './components/ErrorPage'
 import './styles.css'
 import './styles-pages.css'
 import './styles-avatar.css'
@@ -36,11 +37,12 @@ if (join) {
   history.replaceState(null, '', location.pathname)
 }
 
+// The app lives at one address; every other one (Vercel sends them all here) is a 404 page.
+const knownPath = ['/', '/index.html'].includes(location.pathname)
+
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <ErrorBoundary>
-      <App />
-    </ErrorBoundary>
+    <ErrorBoundary>{knownPath ? <App /> : <NotFound />}</ErrorBoundary>
     <UpdateBanner />
     <DialogHost />
     <InstallPrompt />

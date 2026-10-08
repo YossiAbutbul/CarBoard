@@ -1,4 +1,5 @@
 import { DateField } from '../components/DateField'
+import { userMessage } from '../lib/errors'
 import { ConfirmButton } from '../components/ConfirmButton'
 import { useState } from 'react'
 import type { Item, ItemKind } from '../types'
@@ -77,7 +78,7 @@ export function ItemSheet({ item, onClose, onDone }: { item?: Item; onClose(): v
         refs.push(await actions.upload(docKind ?? 'doc', f.type.startsWith('image/') ? await compressImage(f) : f))
       setFiles(fs => [...fs, ...refs])
     } catch (e) {
-      setErr(e instanceof Error ? e.message : String(e))
+      setErr(userMessage(e))
     } finally {
       setUploading(false)
     }
@@ -91,7 +92,7 @@ export function ItemSheet({ item, onClose, onDone }: { item?: Item; onClose(): v
       const ref = await actions.upload('receipt', file.type.startsWith('image/') ? await compressImage(file) : file)
       await actions.updateService(serviceId, { receipt: ref })
     } catch (e) {
-      setErr(e instanceof Error ? e.message : String(e))
+      setErr(userMessage(e))
     } finally {
       setReceiptBusy(null)
     }
@@ -116,7 +117,7 @@ export function ItemSheet({ item, onClose, onDone }: { item?: Item; onClose(): v
         })
       onClose()
     } catch (e) {
-      setErr(e instanceof Error ? e.message : String(e))
+      setErr(userMessage(e))
     } finally {
       setBusy(false)
     }

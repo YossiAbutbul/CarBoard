@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { addDays, todayIso } from './lib/dates'
+import { userMessage } from './lib/errors'
+import { ErrorBanner, ErrorPage } from './components/ErrorPage'
 import { onAuthStateChanged, type User } from 'firebase/auth'
 import type { Car, CarDocument, Item, ItemKind, ServiceRecord } from './types'
 import { AppDataProvider, useApp } from './data/AppData'
@@ -185,7 +187,7 @@ function Main({ email, accountName, guest = false }: { email: string | null; acc
       if (family) await api.leave()
       await api.join(code, myName)
       await reload()
-    })().catch(e => ask({ title: 'ההצטרפות נכשלה', text: e instanceof Error ? e.message : String(e), confirm: 'הבנתי', cancel: 'סגירה' }))
+    })().catch(e => ask({ title: 'ההצטרפות נכשלה', text: userMessage(e), confirm: 'הבנתי', cancel: 'סגירה' }))
   }, [loading, store, family, reload, userName, email])
 
   // Swipe in from a screen edge to open a drawer: from the right for the cars, from the left for settings.
@@ -220,10 +222,13 @@ function Main({ email, accountName, guest = false }: { email: string | null; acc
   }, [canSwipe])
 
   if (loading || !splashDone) return <Splash />
+  // nothing loaded at all: a page with a way to try again (the technical part only in "copy details")
+  if (error && !data.cars.length)
+    return <ErrorPage title="לא הצלחנו לטעון את הנתונים" text={error} action={{ label: 'נסו שוב', onClick: () => void reload() }} />
 
   return (
     <div className="shell">
-      {error && <div className="banner">שגיאה בטעינת הנתונים: {error}</div>}
+      {error && <ErrorBanner text={error} />}
       <div className="page" key={car && guide === 'ready' ? 'ready' : car ? tab : 'empty'}>
         {car && guide === 'ready' ? (
           <Ready
@@ -344,7 +349,7 @@ function Login({ onGuest }: { onGuest(): void }) {
           <button
             className="btn"
             style={{ background: '#fff' }}
-            onClick={() => signInWithGoogle().catch(e => setErr(e instanceof Error ? e.message : String(e)))}
+            onClick={() => signInWithGoogle().catch(e => setErr(userMessage(e)))}
           >
             <GoogleMark />
             התחברות עם Google
