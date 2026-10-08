@@ -16,8 +16,13 @@ export function UpdateBanner() {
   if (!update) return null
   return (
     <div className="update-banner" role="status">
-      <span className="update-dot" />
-      <span className="update-text">גרסה חדשה זמינה</span>
+      <span className="update-ic">
+        <Icon name="refresh" />
+      </span>
+      <span className="update-text">
+        <b>גרסה חדשה מוכנה</b>
+        <small>שיפורים ותיקונים. לוקח שנייה.</small>
+      </span>
       <button
         className="update-go"
         disabled={busy}

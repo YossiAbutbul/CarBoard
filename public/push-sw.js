@@ -12,7 +12,7 @@ self.addEventListener('push', event => {
       body: data.body || '',
       tag: data.tag, // a newer notice for the same reminder replaces the older one
       icon: '/icon-192.png',
-      badge: '/favicon-32.png',
+      badge: '/badge-96.png', // white shape on transparent: Android paints it in the status bar
       dir: 'rtl',
       lang: 'he',
       data: { url: data.url || '/' },

@@ -33,6 +33,7 @@ import {
   Trash2,
   Wrench,
   X,
+  RefreshCw,
   ZoomIn,
   ZoomOut,
   type LucideIcon,
@@ -79,6 +80,7 @@ const ICONS = {
   forward: ArrowLeft, // RTL: "next" points left
   back: ArrowRight,
   zoomIn: ZoomIn,
+  refresh: RefreshCw,
   zoomOut: ZoomOut,
 } satisfies Record<string, LucideIcon>
 
