@@ -4,6 +4,7 @@ import { registerSW } from 'virtual:pwa-register'
 import App from './App'
 import { UpdateBanner } from './components/UpdateBanner'
 import { DialogHost } from './components/Dialog'
+import { InstallPrompt } from './components/InstallPrompt'
 import './styles.css'
 import './styles-pages.css'
 import './styles-avatar.css'
@@ -38,5 +39,6 @@ createRoot(document.getElementById('root')!).render(
     <App />
     <UpdateBanner />
     <DialogHost />
+    <InstallPrompt />
   </StrictMode>,
 )
