@@ -1,9 +1,10 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import type { Data } from '../types'
 import { useApp } from '../data/AppData'
 import { fmtDate } from '../lib/i18n'
 import { Icon } from './Icon'
+import { drawPage, isCancelled, openPdf } from '../lib/pdf'
 
 export interface AppFile {
   ref: string
@@ -47,10 +48,57 @@ export function useFile(ref: string | null) {
   return state
 }
 
+/** The first page of a PDF, small, with a PDF badge. */
+export function PdfThumb({ url, width = 120 }: { url: string; width?: number }) {
+  const ref = useRef<HTMLCanvasElement>(null)
+  const [failed, setFailed] = useState(false)
+  useEffect(() => {
+    if (ref.current) drawPage(url, 1, ref.current, width).catch(e => !isCancelled(e) && setFailed(true))
+  }, [url, width])
+  return (
+    <span className="pdf-thumb">
+      {failed ? <Icon name="other" /> : <canvas ref={ref} />}
+      <b>PDF</b>
+    </span>
+  )
+}
+
+/** Every page of a PDF, as wide as its container. */
+function PdfPages({ url }: { url: string }) {
+  const box = useRef<HTMLDivElement>(null)
+  const [pages, setPages] = useState(0)
+  const [failed, setFailed] = useState(false)
+  useEffect(() => {
+    let live = true
+    setPages(0)
+    openPdf(url)
+      .then(d => live && setPages(d.numPages))
+      .catch(() => live && setFailed(true))
+    return () => {
+      live = false
+    }
+  }, [url])
+  useEffect(() => {
+    const el = box.current
+    if (!el || !pages) return
+    const width = Math.min(el.clientWidth, 900)
+    el.querySelectorAll('canvas').forEach((c, i) => drawPage(url, i + 1, c, width).catch(() => {}))
+  }, [url, pages])
+  if (failed) return <div className="pdf-failed">אי אפשר להציג את הקובץ. אפשר להוריד אותו מלמעלה.</div>
+  return (
+    <div className="pdf-pages" ref={box}>
+      {!pages && <span className="spin" />}
+      {Array.from({ length: pages }, (_, i) => (
+        <canvas key={i} />
+      ))}
+    </div>
+  )
+}
+
 function Thumb({ fileRef }: { fileRef: string }) {
   const f = useFile(fileRef)
   if (!f) return <span className="spin" style={{ width: 16, height: 16 }} />
-  if (f.pdf) return <Icon name="other" />
+  if (f.pdf) return <PdfThumb url={f.url} width={90} />
   return <img src={f.url} alt="" loading="lazy" />
 }
 
@@ -119,7 +167,7 @@ export function FileViewer({ files, start = 0, onClose }: { files: AppFile[]; st
         </button>
       </div>
       <div className="viewer-stage" onClick={e => e.target === e.currentTarget && onClose()}>
-        {!f ? <span className="spin" /> : f.pdf ? <iframe src={f.url} title={file.title} /> : <img key={f.url} src={f.url} alt={file.title} />}
+        {!f ? <span className="spin" /> : f.pdf ? <PdfPages key={f.url} url={f.url} /> : <img key={f.url} src={f.url} alt={file.title} />}
         {files.length > 1 && (
           <>
             <button className="viewer-nav prev" onClick={() => go(-1)} aria-label="הקודם">

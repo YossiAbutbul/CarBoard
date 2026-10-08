@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Icon, kindIcon } from '../components/Icon'
 import { Glance, GlanceCell, PageHero, TopBar, useCountUp } from '../components/Chrome'
 import { Scene } from '../components/Scene'
+import { Brand } from '../components/Brand'
 import { useApp } from '../data/AppData'
 import { STATUS_TEXT } from '../domain/labels'
 import type { Reminder } from '../domain/reminders'
@@ -29,7 +30,7 @@ export function HomeScreen({
     return (
       <div className="welcome scenic reveal">
         <Scene />
-        <div className="eyebrow" style={{ color: 'rgba(255,255,255,.7)' }} dir="ltr">CarBoard</div>
+        <Brand />
         <div className="status">
           <span>כל</span>
           <span>הרכב.</span>

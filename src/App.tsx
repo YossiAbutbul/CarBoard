@@ -9,6 +9,7 @@ import { Icon, type IconName } from './components/Icon'
 import { Splash } from './components/Chrome'
 import { GoogleMark } from './components/GoogleMark'
 import { Scene } from './components/Scene'
+import { Brand } from './components/Brand'
 import { isGuest, moveGuestData, setGuest } from './data/guest'
 import { HomeScreen } from './screens/HomeScreen'
 import { ServicesScreen } from './screens/ServicesScreen'
@@ -222,7 +223,7 @@ function Login({ onGuest }: { onGuest(): void }) {
     <div className="shell">
       <div className="welcome scenic reveal">
         <Scene />
-        <div className="eyebrow" style={{ color: 'rgba(255,255,255,.7)' }} dir="ltr">CarBoard</div>
+        <Brand />
         <div className="status">
           <span>כל</span>
           <span>הרכב.</span>

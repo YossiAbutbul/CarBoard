@@ -12,8 +12,8 @@
 .receipt-row .t { font-size: 14.5px; font-weight: 500; }
 .receipt-row .s { font-size: 12.5px; color: var(--muted); }
 .thumb-x { position: relative; }
-.thumb-x button { position: absolute; top: -6px; left: -6px; width: 20px; height: 20px; border-radius: 50%; display: grid; place-items: center; background: var(--ink); color: #fff; }
-.thumb-x button svg.i { width: 11px; height: 11px; stroke-width: 2.2; }
+.thumb-x > button:not(.file-thumb) { position: absolute; top: -6px; left: -6px; width: 20px; height: 20px; border-radius: 50%; display: grid; place-items: center; background: var(--ink); color: #fff; }
+.thumb-x > button:not(.file-thumb) svg.i { width: 11px; height: 11px; stroke-width: 2.2; }
 
 :root {
   --bg: #ffffff;
@@ -267,9 +267,9 @@ html, body { overscroll-behavior-y: none; }
 .drawer-head button, .sheet-head button { background: none; color: var(--muted); transition: color 0.15s; }
 .drawer-head button:hover, .sheet-head button:hover, .drawer-head button:focus-visible, .sheet-head button:focus-visible { color: var(--ink); }
 .drawer-head button svg.i, .sheet-head button svg.i { width: 20px; height: 20px; }
-.thumb-x button { background: none; color: #fff; top: -4px; left: -4px; filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.7)); transition: color 0.15s; }
-.thumb-x button:hover, .thumb-x button:focus-visible { color: var(--overdue); }
-.thumb-x button svg.i { width: 16px; height: 16px; stroke-width: 2.6; }
+.thumb-x > button:not(.file-thumb) { background: none; color: #fff; top: -4px; left: -4px; filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.7)); transition: color 0.15s; }
+.thumb-x > button:not(.file-thumb):hover, .thumb-x > button:not(.file-thumb):focus-visible { color: var(--overdue); }
+.thumb-x > button:not(.file-thumb) svg.i { width: 16px; height: 16px; stroke-width: 2.6; }
 
 
 @keyframes pulse { 50% { opacity: 0.35; } }

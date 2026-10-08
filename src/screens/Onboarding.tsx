@@ -2,6 +2,7 @@ import { useEffect, useLayoutEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { Icon } from '../components/Icon'
 import { Scene } from '../components/Scene'
+import { Brand } from '../components/Brand'
 import { Plate } from '../components/Chrome'
 import { CarToy } from '../components/CarAvatar'
 import type { Car } from '../types'
@@ -44,7 +45,7 @@ export function Intro({ name, onName, onAddCar }: { name: string; onName(n: stri
 
       {step === 0 && (
         <div className="onb-step" key="0">
-          <div className="eyebrow" dir="ltr">CarBoard</div>
+          <Brand />
           <h1>
             כל הרכב.
             <br />

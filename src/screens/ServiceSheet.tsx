@@ -35,7 +35,7 @@ export function ServiceSheet({ onClose, kind = 'service', record }: { onClose():
     setBusy(true)
     setErr(null)
     try {
-      const ref = receipt ? await actions.upload('receipt', await compressImage(receipt)) : (record?.receipt ?? null)
+      const ref = receipt ? await actions.upload('receipt', receipt.type.startsWith('image/') ? await compressImage(receipt) : receipt) : (record?.receipt ?? null)
       const fields = {
         car_id: car!.id,
         type,
@@ -94,8 +94,8 @@ export function ServiceSheet({ onClose, kind = 'service', record }: { onClose():
         <textarea className="in" value={notes} onChange={e => setNotes(e.target.value)} placeholder="מה הוחלף, מה המליצו…" />
         <label className="lbl">קבלה</label>
         <label className="file-btn">
-          <Icon name={receipt ? 'check' : 'camera'} /> {receipt ? 'צולמה קבלה' : 'צילום קבלה'}
-          <input type="file" accept="image/*" capture="environment" onChange={e => setReceipt(e.target.files?.[0] ?? null)} />
+          <Icon name={receipt ? 'check' : 'camera'} /> {receipt ? (receipt.type === 'application/pdf' ? 'צורף קובץ' : 'צולמה קבלה') : 'צילום או קובץ של הקבלה'}
+          <input type="file" accept="image/*,application/pdf" onChange={e => setReceipt(e.target.files?.[0] ?? null)} />
         </label>
         {err && <div className="err">{err}</div>}
         <button className="btn pri" style={{ marginTop: 16 }} disabled={busy} onClick={save}>

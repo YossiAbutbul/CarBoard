@@ -4,6 +4,7 @@ import type { Car } from '../types'
 import { useApp } from '../data/AppData'
 import type { Status } from '../domain/due'
 import { Icon } from './Icon'
+import { PdfThumb, useFile } from './FileViewer'
 
 /** Resolves a stored file ref (idb:/sb:/https:) to a URL the browser can show. */
 export function useFileUrl(ref: string | null | undefined) {
@@ -23,24 +24,26 @@ export function useFileUrl(ref: string | null | undefined) {
   return url
 }
 
-export function FileThumb({ fileRef, onOpen }: { fileRef: string; onOpen?: (url: string) => void }) {
-  const url = useFileUrl(fileRef)
-  if (!url)
+/** A small preview of an uploaded photo or PDF. */
+export function FileThumb({ fileRef, onOpen }: { fileRef: string; onOpen?: () => void }) {
+  const f = useFile(fileRef)
+  const open = (e: React.MouseEvent) => {
+    e.stopPropagation()
+    onOpen?.()
+  }
+  if (!f)
     return (
       <span className="ic" style={{ width: 48, height: 36 }}>
-        <Icon name="other" />
+        <span className="spin" style={{ width: 14, height: 14 }} />
       </span>
     )
-  return (
-    <img
-      src={url}
-      alt=""
-      onClick={e => {
-        e.stopPropagation()
-        onOpen?.(url)
-      }}
-    />
-  )
+  if (f.pdf)
+    return (
+      <button type="button" className="file-thumb" onClick={open} aria-label="פתיחת הקובץ">
+        <PdfThumb url={f.url} width={56} />
+      </button>
+    )
+  return <img src={f.url} alt="" onClick={open} />
 }
 
 /** A side panel. side="start" opens from the right (RTL start), "end" from the left. */
@@ -167,12 +170,3 @@ export function Ring({ progress, color, children }: { progress: number; color: s
   )
 }
 
-export function Lightbox({ url, onClose }: { url: string; onClose(): void }) {
-  // into <body>, above the bottom bar and any sheet
-  return createPortal(
-    <div className="lightbox" onClick={onClose}>
-      <img src={url} alt="" />
-    </div>,
-    document.body,
-  )
-}

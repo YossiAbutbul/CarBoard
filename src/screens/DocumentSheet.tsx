@@ -2,7 +2,8 @@ import { DateField } from '../components/DateField'
 import { ConfirmButton } from '../components/ConfirmButton'
 import { useState } from 'react'
 import type { CarDocument, DocKind } from '../types'
-import { FileThumb, Lightbox, Sheet } from '../components/ui'
+import { FileThumb, Sheet } from '../components/ui'
+import { FileViewer } from '../components/FileViewer'
 import { useApp } from '../data/AppData'
 import { DOC_KIND } from '../domain/labels'
 import { compressImage } from '../lib/image'
@@ -94,7 +95,7 @@ export function DocumentSheet({ doc, onClose }: { doc?: CarDocument; onClose(): 
         {files.length > 0 && (
           <div className="thumbs" style={{ flexWrap: 'wrap', marginBottom: 8 }}>
             {files.map(f => (
-              <FileThumb key={f} fileRef={f} onOpen={setView} />
+              <FileThumb key={f} fileRef={f} onOpen={() => setView(f)} />
             ))}
           </div>
         )}
@@ -103,7 +104,7 @@ export function DocumentSheet({ doc, onClose }: { doc?: CarDocument; onClose(): 
             <span className="spin" />
           ) : (
             <>
-              <Icon name="camera" /> הוספת צילום
+              <Icon name="camera" /> הוספת צילום או קובץ
             </>
           )}
           <input type="file" accept="image/*,application/pdf" multiple onChange={e => addFiles(e.target.files)} />
@@ -118,7 +119,13 @@ export function DocumentSheet({ doc, onClose }: { doc?: CarDocument; onClose(): 
           </ConfirmButton>
         )}
       </div>
-      {view && <Lightbox url={view} onClose={() => setView(null)} />}
+      {view && (
+        <FileViewer
+          files={files.map(ref => ({ ref, title: title || DOC_KIND[kind].label, sub: '', source: 'doc' as const }))}
+          start={Math.max(0, files.indexOf(view))}
+          onClose={() => setView(null)}
+        />
+      )}
     </Sheet>
   )
 }

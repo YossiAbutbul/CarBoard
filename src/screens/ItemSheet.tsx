@@ -2,7 +2,8 @@ import { DateField } from '../components/DateField'
 import { ConfirmButton } from '../components/ConfirmButton'
 import { useState } from 'react'
 import type { Item, ItemKind } from '../types'
-import { FileThumb, Lightbox, Sheet } from '../components/ui'
+import { FileThumb, Sheet } from '../components/ui'
+import { FileViewer } from '../components/FileViewer'
 import { REQUIRED, useApp } from '../data/AppData'
 import { dueInfo } from '../domain/due'
 import { INSURERS, KIND, STATUS_TEXT } from '../domain/labels'
@@ -207,13 +208,13 @@ export function ItemSheet({ item, onClose, onDone }: { item?: Item; onClose(): v
 
         {docKind && (
           <>
-            <label className="lbl">{isInsurance ? 'תמונה של הביטוח' : 'תמונה של רישיון הרכב'}</label>
+            <label className="lbl">{isInsurance ? 'הפוליסה (תמונה או קובץ)' : 'רישיון הרכב (תמונה או קובץ)'}</label>
             {files.length > 0 && (
               <div className="thumbs" style={{ marginBottom: 10 }}>
                 {files.map(f => (
                   <span key={f} className="thumb-x">
-                    <FileThumb fileRef={f} onOpen={setView} />
-                    <button onClick={() => setFiles(fs => fs.filter(x => x !== f))} aria-label="הסרת תמונה">
+                    <FileThumb fileRef={f} onOpen={() => setView(f)} />
+                    <button onClick={() => setFiles(fs => fs.filter(x => x !== f))} aria-label="הסרה">
                       <Icon name="close" />
                     </button>
                   </span>
@@ -225,7 +226,7 @@ export function ItemSheet({ item, onClose, onDone }: { item?: Item; onClose(): v
                 <span className="spin" />
               ) : (
                 <>
-                  <Icon name="camera" /> {files.length ? 'הוספת עוד תמונה' : isInsurance ? 'צילום או העלאת הפוליסה' : 'צילום או העלאת רישיון הרכב'}
+                  <Icon name="camera" /> {files.length ? 'הוספת עוד תמונה או קובץ' : isInsurance ? 'צילום או קובץ של הפוליסה' : 'צילום או קובץ של רישיון הרכב'}
                 </>
               )}
               <input type="file" accept="image/*,application/pdf" multiple onChange={e => addFiles(e.target.files)} />
@@ -241,7 +242,7 @@ export function ItemSheet({ item, onClose, onDone }: { item?: Item; onClose(): v
               {history.slice(0, 6).map(sv => (
                 <div className="receipt-row" key={sv.id}>
                   {sv.receipt ? (
-                    <FileThumb fileRef={sv.receipt} onOpen={setView} />
+                    <FileThumb fileRef={sv.receipt} onOpen={() => setView(sv.receipt)} />
                   ) : (
                     <span className="ic">
                       <Icon name={sv.type} />
@@ -277,7 +278,16 @@ export function ItemSheet({ item, onClose, onDone }: { item?: Item; onClose(): v
           </ConfirmButton>
         )}
       </div>
-      {view && <Lightbox url={view} onClose={() => setView(null)} />}
+      {view && (
+        <FileViewer
+          files={[
+            ...files.map(ref => ({ ref, title: draft.label, sub: '', source: 'doc' as const })),
+            ...history.filter(sv => sv.receipt).map(sv => ({ ref: sv.receipt!, title: sv.title, sub: `קבלה · ${fmtDate(sv.date)}`, source: 'receipt' as const })),
+          ]}
+          start={Math.max(0, [...files, ...history.filter(sv => sv.receipt).map(sv => sv.receipt!)].indexOf(view))}
+          onClose={() => setView(null)}
+        />
+      )}
     </Sheet>
   )
 }

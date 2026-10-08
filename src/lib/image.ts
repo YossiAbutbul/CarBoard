@@ -7,7 +7,12 @@ const toBlob = (canvas: HTMLCanvasElement, type: string, quality: number) =>
  * A photo that is already smaller than the result is kept as it is.
  */
 export async function compressImage(file: Blob, max = 1400, quality = 0.72): Promise<Blob> {
-  const bmp = await createImageBitmap(file)
+  let bmp: ImageBitmap
+  try {
+    bmp = await createImageBitmap(file)
+  } catch {
+    return file // a format this browser cannot read (e.g. HEIC): upload it as it is
+  }
   const scale = Math.min(1, max / Math.max(bmp.width, bmp.height))
   const canvas = document.createElement('canvas')
   canvas.width = Math.round(bmp.width * scale)

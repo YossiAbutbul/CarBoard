@@ -1,6 +1,7 @@
 import { ConfirmButton } from '../components/ConfirmButton'
 import { useState } from 'react'
-import { FileThumb, Lightbox } from '../components/ui'
+import { FileThumb } from '../components/ui'
+import { FileViewer } from '../components/FileViewer'
 import { Icon, kindIcon } from '../components/Icon'
 import { Glance, GlanceCell, PageHero, TopBar, useCountUp } from '../components/Chrome'
 import { useApp } from '../data/AppData'
@@ -17,6 +18,7 @@ export function ServicesScreen({ open, openCars, openSettings }: { open: OpenShe
   const list = data.services
     .filter(s => s.car_id === car?.id)
     .sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : b.km - a.km))
+  const receipts = list.filter(s => s.receipt)
   const thisYear = String(new Date().getFullYear())
   const yearTotal = list.filter(s => s.date.startsWith(thisYear)).reduce((n, s) => n + (s.price ?? 0), 0)
   const totalShown = useCountUp(yearTotal)
@@ -106,7 +108,7 @@ export function ServicesScreen({ open, openCars, openSettings }: { open: OpenShe
                       <span className="tl-acts">
                         {s.receipt && (
                           <span className="thumbs" style={{ margin: 0 }}>
-                            <FileThumb fileRef={s.receipt} onOpen={setView} />
+                            <FileThumb fileRef={s.receipt} onOpen={() => setView(s.id)} />
                           </span>
                         )}
                         <label className="icon-btn" aria-label={s.receipt ? 'החלפת קבלה' : 'הוספת קבלה'}>
@@ -122,7 +124,13 @@ export function ServicesScreen({ open, openCars, openSettings }: { open: OpenShe
           </ol>
         </section>
       ))}
-      {view && <Lightbox url={view} onClose={() => setView(null)} />}
+      {view && (
+        <FileViewer
+          files={receipts.map(s => ({ ref: s.receipt!, title: s.title, sub: `קבלה · ${fmtDate(s.date)}`, source: 'receipt' as const }))}
+          start={Math.max(0, receipts.findIndex(s => s.id === view))}
+          onClose={() => setView(null)}
+        />
+      )}
     </div>
   )
 }
