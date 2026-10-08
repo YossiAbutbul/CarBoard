@@ -3,7 +3,10 @@ import { addMonths, todayIso } from '../lib/dates'
 import { uid } from '../lib/uid'
 import { KIND } from './labels'
 
-/** The items every new car starts with. Km items count from the current km. */
+/** What a new car starts with; the rest of `defaultItems` are offered when adding a reminder. */
+export const STARTER: Item['kind'][] = ['test', 'insurance', 'service']
+
+/** Every kind of reminder, ready to add. Km items count from the current km. */
 export function defaultItems(carId: string, km: number, licenceUntil: string | null): Item[] {
   const today = todayIso()
   const mk = (kind: Item['kind'], every_km: number | null, every_months: number | null, due_date?: string | null): Item => ({

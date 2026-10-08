@@ -1,6 +1,6 @@
 import type { Car, CarDocument, Data, Item, Reading, ReadingSource, ServiceRecord } from '../types'
 import type { Store } from './store'
-import { defaultItems } from '../domain/defaults'
+import { defaultItems, STARTER } from '../domain/defaults'
 import { readingError } from '../domain/odometer'
 import { addMonths, todayIso } from '../lib/dates'
 import { uid } from '../lib/uid'
@@ -24,7 +24,7 @@ export function makeActions(store: Store, getData: () => Data, refresh: () => Pr
       const c: Car = { ...car, id: uid() }
       await store.insert('cars', c)
       await store.insert('readings', { id: uid(), car_id: c.id, km, date: todayIso(), source: 'start' })
-      for (const it of defaultItems(c.id, km, licenceUntil)) await store.insert('items', it)
+      for (const it of defaultItems(c.id, km, licenceUntil)) if (STARTER.includes(it.kind)) await store.insert('items', it)
       await refresh()
       return c.id
     },

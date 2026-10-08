@@ -7,6 +7,12 @@ import { notesFor, targetKey } from './notify'
 import { makeActions } from '../data/actions'
 import { emptyData, type Store } from '../data/store'
 import { addDays, todayIso } from '../lib/dates'
+import { defaultItems, STARTER } from './defaults'
+
+// a car starts with test, insurance and service only; these tests also need the others
+const addRest = async (actions: ReturnType<typeof makeActions>, carId: string, km: number) => {
+  for (const it of defaultItems(carId, km, null)) if (!STARTER.includes(it.kind)) await actions.saveItem(it)
+}
 
 const reading = (km: number, date: string, id = `${km}-${date}`): Reading => ({ id, car_id: 'c1', km, date, source: 'manual' })
 const item = (p: Partial<Item>): Item => ({ id: 'i1', car_id: 'c1', kind: 'service', label: 'טיפול', every_km: null, every_months: null, due_km: null, due_date: null, ...p })
@@ -117,7 +123,7 @@ describe('actions', () => {
     expect(data().cars).toHaveLength(1)
     expect(data().readings[0]).toMatchObject({ car_id: id, km: 50000, source: 'start' })
     const kinds = data().items.map(i => i.kind).sort()
-    expect(kinds).toEqual(['battery', 'brakes', 'insurance', 'oil', 'service', 'test', 'tyres'])
+    expect(kinds).toEqual(['insurance', 'service', 'test'])
     expect(data().items.find(i => i.kind === 'test')?.due_date).toBe('2027-01-01')
     expect(data().items.find(i => i.kind === 'service')?.due_km).toBe(65000)
   })
@@ -125,6 +131,7 @@ describe('actions', () => {
   it('a periodic service moves the service and oil reminders and records the km', async () => {
     const { actions, data } = setup()
     const id = await actions.addCar(car, 50000, null)
+    await addRest(actions, id, 50000)
     await actions.saveService({ car_id: id, type: 'service', title: 'טיפול', date: todayIso(), km: 52000, price: 900, garage: null, notes: null, receipt: null })
     expect(data().items.find(i => i.kind === 'service')?.due_km).toBe(67000)
     expect(data().items.find(i => i.kind === 'oil')?.due_km).toBe(62000)
@@ -182,6 +189,7 @@ describe('fixes from the walk-through', () => {
   it('fixing the km of the latest service moves the due point again', async () => {
     const { actions, data } = setup()
     const id = await actions.addCar(car, 50000, null)
+    await addRest(actions, id, 50000)
     await actions.saveService({ car_id: id, type: 'service', title: 'טיפול', date: todayIso(), km: 59000, price: null, garage: null, notes: null, receipt: null })
     const s = data().services[0]
     await actions.updateService(s.id, { km: 52000 })
