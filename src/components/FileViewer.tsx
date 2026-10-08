@@ -87,6 +87,61 @@ function useDragPan<T extends HTMLElement>(enabled: boolean) {
   return ref
 }
 
+const MIN_ZOOM = 0.5
+const MAX_ZOOM = 4
+
+/**
+ * Two fingers zoom the file, not the screen: the browser's own pinch-zoom is off inside the viewer
+ * (touch-action in the CSS), and the pinch sets the viewer's zoom instead, keeping the point between
+ * the fingers in place.
+ */
+function usePinch(ref: React.RefObject<HTMLElement | null>, zoom: number, setZoom: (z: number) => void, ready: unknown = true) {
+  const zoomRef = useRef(zoom)
+  zoomRef.current = zoom
+  useEffect(() => {
+    const el = ref.current
+    if (!el) return
+    let start: { dist: number; zoom: number; cx: number; cy: number; px: number; py: number } | null = null
+    const dist = (t: TouchList) => Math.hypot(t[0].clientX - t[1].clientX, t[0].clientY - t[1].clientY)
+    const onStart = (e: TouchEvent) => {
+      if (e.touches.length !== 2) return
+      const r = el.getBoundingClientRect()
+      const cx = (e.touches[0].clientX + e.touches[1].clientX) / 2 - r.left
+      const cy = (e.touches[0].clientY + e.touches[1].clientY) / 2 - r.top
+      // the point of the file under the fingers, at zoom 1
+      start = { dist: dist(e.touches), zoom: zoomRef.current, cx, cy, px: (el.scrollLeft + cx) / zoomRef.current, py: (el.scrollTop + cy) / zoomRef.current }
+    }
+    const onMove = (e: TouchEvent) => {
+      if (!start || e.touches.length !== 2) return
+      e.preventDefault()
+      const z = Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, (start.zoom * dist(e.touches)) / start.dist))
+      const s = start
+      setZoom(Math.round(z * 100) / 100)
+      requestAnimationFrame(() => {
+        el.scrollLeft = s.px * z - s.cx
+        el.scrollTop = s.py * z - s.cy
+      })
+    }
+    const onEnd = (e: TouchEvent) => {
+      if (e.touches.length < 2) start = null
+    }
+    // iPhones: Safari's own pinch gesture
+    const noGesture = (e: Event) => e.preventDefault()
+    el.addEventListener('touchstart', onStart, { passive: true })
+    el.addEventListener('touchmove', onMove, { passive: false })
+    el.addEventListener('touchend', onEnd)
+    el.addEventListener('touchcancel', onEnd)
+    el.addEventListener('gesturestart', noGesture)
+    return () => {
+      el.removeEventListener('touchstart', onStart)
+      el.removeEventListener('touchmove', onMove)
+      el.removeEventListener('touchend', onEnd)
+      el.removeEventListener('touchcancel', onEnd)
+      el.removeEventListener('gesturestart', noGesture)
+    }
+  }, [ref, setZoom, ready]) // `ready`: the element may appear later (once the file has loaded)
+}
+
 /** The first page of a PDF, small, with a PDF badge. */
 export function PdfThumb({ url, width = 120 }: { url: string; width?: number }) {
   const ref = useRef<HTMLCanvasElement>(null)
@@ -103,8 +158,21 @@ export function PdfThumb({ url, width = 120 }: { url: string; width?: number }) 
 }
 
 /** Every page of a PDF, as wide as its container. */
-function PdfPages({ url, zoom }: { url: string; zoom: number }) {
+function PdfPages({ url, zoom, setZoom }: { url: string; zoom: number; setZoom(z: number): void }) {
   const box = useDragPan<HTMLDivElement>(zoom > 1)
+  usePinch(box, zoom, setZoom)
+  // while zooming, stretch the pages at once (the sharp redraw follows when the fingers rest)
+  useEffect(() => {
+    const el = box.current
+    if (!el) return
+    const width = Math.round(Math.min(el.clientWidth - 8, 900) * zoom)
+    el.querySelectorAll('canvas').forEach(c => {
+      const w = parseFloat(c.style.width)
+      if (!w) return
+      c.style.height = `${(parseFloat(c.style.height) * width) / w}px`
+      c.style.width = `${width}px`
+    })
+  }, [zoom, box])
   const [pages, setPages] = useState(0)
   const [failed, setFailed] = useState(false)
   useEffect(() => {
@@ -169,8 +237,11 @@ export function FileViewer({
   const [zoom, setZoom] = useState(1)
   const [fitWidth, setFitWidth] = useState(0) // the photo's width at 100%
   const pan = useDragPan<HTMLDivElement>(zoom > 1)
+  usePinch(pan, zoom, setZoom, f?.url)
   useEffect(() => setZoom(1), [i])
-  const zoomBy = (d: number) => setZoom(z => ZOOMS[Math.max(0, Math.min(ZOOMS.length - 1, ZOOMS.indexOf(z) + d))])
+  // the buttons step to the next size up or down (a pinch can leave the zoom between steps)
+  const zoomBy = (d: number) =>
+    setZoom(z => (d > 0 ? (ZOOMS.find(s => s > z + 0.01) ?? ZOOMS[ZOOMS.length - 1]) : ([...ZOOMS].reverse().find(s => s < z - 0.01) ?? ZOOMS[0])))
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -251,7 +322,7 @@ export function FileViewer({
         {!f ? (
           <span className="spin" />
         ) : f.pdf ? (
-          <PdfPages key={f.url} url={f.url} zoom={zoom} />
+          <PdfPages key={f.url} url={f.url} zoom={zoom} setZoom={setZoom} />
         ) : (
           <div ref={pan} className={`viewer-zoom ${zoom > 1 ? 'zoomed pannable' : ''}`} onClick={e => e.target === e.currentTarget && zoom === 1 && onClose()}>
             <img
@@ -267,13 +338,13 @@ export function FileViewer({
         )}
         {f && (
           <div className="zoom-bar" dir="ltr">
-            <button onClick={() => zoomBy(-1)} disabled={zoom === ZOOMS[0]} aria-label="הקטנה">
+            <button onClick={() => zoomBy(-1)} disabled={zoom <= ZOOMS[0]} aria-label="הקטנה">
               <Icon name="zoomOut" />
             </button>
             <button className="zoom-level" onClick={() => setZoom(1)} aria-label="גודל רגיל">
               {Math.round(zoom * 100)}%
             </button>
-            <button onClick={() => zoomBy(1)} disabled={zoom === ZOOMS[ZOOMS.length - 1]} aria-label="הגדלה">
+            <button onClick={() => zoomBy(1)} disabled={zoom >= ZOOMS[ZOOMS.length - 1]} aria-label="הגדלה">
               <Icon name="zoomIn" />
             </button>
           </div>

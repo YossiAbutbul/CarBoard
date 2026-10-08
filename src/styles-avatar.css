@@ -358,6 +358,8 @@
 /* viewer zoom */
 .viewer-stage .pdf-pages { display: block; justify-items: initial; padding: 4px 0 76px; }
 .viewer-stage .pdf-pages canvas { display: block; margin: 0 auto 12px; max-width: none; }
+/* inside the viewer, two fingers zoom the file (FileViewer's pinch), never the whole screen */
+.viewer, .viewer * { touch-action: pan-x pan-y; }
 .viewer-zoom { width: 100%; height: 100%; display: grid; place-items: center; overflow: auto; scrollbar-width: none; }
 .viewer-zoom.zoomed { display: block; }
 .viewer-zoom.zoomed img { display: block; margin: 0 auto; }
