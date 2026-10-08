@@ -277,7 +277,7 @@ function PushSection({ cloud }: { cloud: boolean }) {
           </span>
           <div style={{ flex: 1 }}>
             <div className="t">התראות לטלפון</div>
-            <div className="s">{switching ? (state === 'on' ? 'מכבה התראות…' : 'מפעיל התראות… אשרו בחלון של הדפדפן אם הוא נפתח.') : note}</div>
+            <div className="s">{switching ? (state === 'on' ? 'מכבה…' : 'מפעיל… אשרו אם נשאלתם') : note}</div>
           </div>
           {/* asking the phone and saving it takes a few seconds: a spinner instead of the switch meanwhile */}
           {cloud && (switching || state === null) ? (
