@@ -38,12 +38,6 @@ export function CarsDrawer({ open, onClose }: { open: OpenSheet; onClose(): void
             >
               <span className="car-row-pic">
                 <CarToy car={c} />
-                {/* the car on screen: a small badge on its picture */}
-                {c.id === car?.id && (
-                  <span className="car-row-badge" aria-hidden="true">
-                    <Icon name="check" />
-                  </span>
-                )}
               </span>
               <span className="car-row-info">
                 <span className="t">{c.name}</span>
