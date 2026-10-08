@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { ConfirmButton } from '../components/ConfirmButton'
 import { askText } from '../components/Dialog'
 import { checkForUpdate } from '../lib/update'
@@ -343,7 +344,8 @@ function VersionLine() {
       <button className={`update-check ${state === 'checking' ? 'spinning' : ''}`} onClick={check} disabled={state === 'checking'} aria-label="בדיקת עדכונים" title="בדיקת עדכונים">
         <Icon name="refresh" />
       </button>
-      {note[state] && <div className="update-note">{note[state]}</div>}
+      {/* a toast over everything, so the settings content does not move */}
+      {note[state] && createPortal(<div className="toast" role="status">{note[state]}</div>, document.body)}
     </div>
   )
 }
