@@ -601,6 +601,8 @@ html, body { overscroll-behavior-y: none; }
 .test-link { display: block; margin: 12px auto 0; padding: 4px 6px; font-size: 12.5px; font-weight: 500; color: var(--muted); text-decoration: underline; text-underline-offset: 3px; }
 .test-link:hover { color: var(--ink); }
 .test-link:disabled { opacity: 0.6; }
+.plate-refresh { display: inline-flex; align-items: center; gap: 5px; margin: 0; padding: 2px 4px; color: var(--blue); text-decoration: none; font-weight: 600; }
+.plate-refresh svg.i { width: 14px; height: 14px; }
 /* version line: check for updates */
 .foot { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 4px 6px; }
 .update-check { width: 28px; height: 28px; display: grid; place-items: center; border-radius: 50%; color: var(--muted); transition: color 0.15s, background 0.15s; }

@@ -62,6 +62,21 @@ export function CarSheet({ car, onClose }: { car?: Car; onClose(): void }) {
     return () => clearTimeout(t)
   }, [digits]) // eslint-disable-line react-hooks/exhaustive-deps
 
+  const [refreshing, setRefreshing] = useState(false)
+  const [refreshNote, setRefreshNote] = useState<string | null>(null)
+  async function refreshTest() {
+    if (!car) return
+    setRefreshing(true)
+    try {
+      const r = await actions.refreshTest(car.id)
+      setRefreshNote(!r.until ? 'לא נמצא תאריך במשרד התחבורה' : r.changed ? `עודכן: טסט עד ${fmtDate(r.until)}` : `אין שינוי: טסט עד ${fmtDate(r.until)}`)
+    } catch {
+      setRefreshNote('אין חיבור למשרד התחבורה. נסו שוב.')
+    } finally {
+      setRefreshing(false)
+    }
+  }
+
   async function save() {
     if (editing && !dirty) return onClose() // nothing changed: nothing to write
     const kmN = Number(kmNow.replace(/\D/g, ''))
@@ -139,9 +154,15 @@ export function CarSheet({ car, onClose }: { car?: Car; onClose(): void }) {
                 {info.licenceUntil && <small> · טסט עד {fmtDate(info.licenceUntil)}</small>}
               </span>
             </>
-          ) : (
+          ) : lookErr ? (
             lookErr
-          )}
+          ) : car?.plate && digits === plateDigits(car.plate) ? (
+            // an existing car: read the test date from the registry again (after a test it moves on)
+            <button className="test-link plate-refresh" disabled={refreshing} onClick={refreshTest}>
+              {refreshing ? <span className="spin" /> : <Icon name="refresh" />}
+              {refreshNote ?? 'עדכון תאריך הטסט ממשרד התחבורה'}
+            </button>
+          ) : null}
         </div>
 
         <label className="lbl">בחר אווטאר</label>

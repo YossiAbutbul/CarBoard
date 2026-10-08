@@ -34,15 +34,7 @@ export function CarsDrawer({ open, onClose }: { open: OpenSheet; onClose(): void
               }}
               aria-current={c.id === car?.id}
             >
-              {/* the photo opens the car's edit sheet (the pencil does too) */}
-              <span
-                className="car-row-pic"
-                onClick={e => {
-                  e.stopPropagation()
-                  onClose()
-                  open({ t: 'car', car: c })
-                }}
-              >
+              <span className="car-row-pic">
                 <CarToy car={c} />
               </span>
               <span className="car-row-info">

@@ -1,6 +1,7 @@
 import type { Car, CarDocument, Data, Item, Reading, ReadingSource, ServiceRecord } from '../types'
 import type { Store } from './store'
 import { defaultItems, STARTER } from '../domain/defaults'
+import { lookupPlate } from '../lib/govil'
 import { readingError } from '../domain/odometer'
 import { addMonths, todayIso } from '../lib/dates'
 import { uid } from '../lib/uid'
@@ -27,6 +28,21 @@ export function makeActions(store: Store, getData: () => Data, refresh: () => Pr
       for (const it of defaultItems(c.id, km, licenceUntil)) if (STARTER.includes(it.kind)) await store.insert('items', it)
       await refresh()
       return c.id
+    },
+    /**
+     * Reads the car's licence date from the registry again (after a test it moves a year on) and
+     * moves the test reminder to it. Writes only when the date really changed.
+     */
+    async refreshTest(carId: string): Promise<{ until: string | null; changed: boolean }> {
+      const car = getData().cars.find(c => c.id === carId)
+      if (!car?.plate) return { until: null, changed: false }
+      const info = await lookupPlate(car.plate)
+      const until = info?.licenceUntil ?? null
+      const test = getData().items.find(i => i.car_id === carId && i.kind === 'test')
+      if (!until || !test || test.due_date === until) return { until, changed: false }
+      await store.update('items', test.id, { due_date: until })
+      await refresh()
+      return { until, changed: true }
     },
     async updateCar(id: string, patch: Partial<Car>) {
       await store.update('cars', id, patch)

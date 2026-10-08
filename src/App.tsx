@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { addDays, todayIso } from './lib/dates'
 import { onAuthStateChanged, type User } from 'firebase/auth'
 import type { Car, CarDocument, Item, ItemKind, ServiceRecord } from './types'
 import { AppDataProvider, useApp } from './data/AppData'
@@ -141,7 +142,28 @@ function Main({ email, accountName, guest = false }: { email: string | null; acc
   useBackLayer(Boolean(car) && tab !== 'home', () => setTab('home'))
 
   // A family invite (from a ?join= link): once signed in and loaded, ask to join.
-  const { store, family, reload } = useApp()
+  const { store, family, reload, data, actions } = useApp()
+
+  // The test date comes from the registry. Once it is two weeks away or past, look again (at most
+  // once a day per car): after a test the ministry moves it a year on, and the reminder follows.
+  const checkedTests = useRef(false)
+  useEffect(() => {
+    if (loading || checkedTests.current) return
+    checkedTests.current = true
+    const soon = addDays(todayIso(), 14)
+    for (const c of data.cars) {
+      const test = data.items.find(i => i.car_id === c.id && i.kind === 'test')
+      if (!c.plate || !test?.due_date || test.due_date > soon) continue
+      const key = `car-records:test-check:${c.id}`
+      try {
+        if (localStorage.getItem(key) === todayIso()) continue
+        localStorage.setItem(key, todayIso())
+      } catch {
+        // storage blocked: check anyway
+      }
+      actions.refreshTest(c.id).catch(() => {}) // offline or the registry is down: try again tomorrow
+    }
+  }, [loading]) // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => {
     if (loading || !store.family) return
     let code: string | null = null
