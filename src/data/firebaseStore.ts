@@ -4,9 +4,13 @@ import type { Store } from './store'
 import { db } from './firebase'
 import { uid } from '../lib/uid'
 import { blobToBase64, compressImage } from '../lib/image'
+import { del as cacheDel, get as cacheGet, set as cacheSet } from 'idb-keyval'
 
 const TABLES: Table[] = ['cars', 'readings', 'items', 'services', 'documents']
 const urls = new Map<string, string>()
+// Uploaded files never change, so each is read from the cloud once and then kept on the device
+// (IndexedDB): later views and thumbnails cost no reads and open at once.
+const cacheKey = (ref: string) => `file-cache:${ref}`
 // A Firestore document holds at most 1 MiB and base64 adds a third, so a file is stored in pieces of
 // 700 KB: files/<id> holds its type and piece count, files/<id>/parts/<n> hold the pieces.
 const PART = 700 * 1024
@@ -49,11 +53,18 @@ export function firebaseStore(userId: string): Store {
       for (let n = 0; n < parts; n++)
         await setDoc(doc(fs, 'users', userId, 'files', id, 'parts', String(n)), { data: await blobToBase64(file.slice(n * PART, (n + 1) * PART)) })
       await setDoc(row('files', id), { name, type: file.type, size: file.size, parts, created: Date.now() })
+      await cacheSet(cacheKey(`fs:${id}`), file).catch(() => {}) // the first view is free too
       return `fs:${id}`
     },
     async fileUrl(ref) {
       if (!ref.startsWith('fs:')) return ref
       if (urls.has(ref)) return urls.get(ref)!
+      const cached = (await cacheGet(cacheKey(ref)).catch(() => undefined)) as Blob | undefined
+      if (cached) {
+        const url = URL.createObjectURL(cached)
+        urls.set(ref, url)
+        return url
+      }
       const id = ref.slice(3)
       const snap = await getDoc(row('files', id))
       if (!snap.exists()) return ''
@@ -68,7 +79,9 @@ export function firebaseStore(userId: string): Store {
             }),
           )
       const bytes = pieces.map(b64 => Uint8Array.from(atob(b64), c => c.charCodeAt(0)))
-      const url = URL.createObjectURL(new Blob(bytes, { type: meta.type }))
+      const blob = new Blob(bytes, { type: meta.type })
+      await cacheSet(cacheKey(ref), blob).catch(() => {}) // storage full or blocked: just no cache
+      const url = URL.createObjectURL(blob)
       urls.set(ref, url)
       return url
     },
@@ -78,6 +91,7 @@ export function firebaseStore(userId: string): Store {
       const parts = await getDocs(collection(fs, 'users', userId, 'files', id, 'parts'))
       await Promise.all(parts.docs.map(p => deleteDoc(p.ref)))
       await deleteDoc(row('files', id))
+      await cacheDel(cacheKey(ref)).catch(() => {})
       urls.delete(ref)
     },
     async wipeFiles() {
@@ -86,6 +100,7 @@ export function firebaseStore(userId: string): Store {
         const parts = await getDocs(collection(fs, 'users', userId, 'files', f.id, 'parts'))
         await Promise.all(parts.docs.map(p => deleteDoc(p.ref)))
         await deleteDoc(f.ref)
+        await cacheDel(cacheKey(`fs:${f.id}`)).catch(() => {})
       }
       urls.clear()
     },

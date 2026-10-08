@@ -1,4 +1,5 @@
 import { initializeApp } from 'firebase/app'
+import { delMany, keys } from 'idb-keyval'
 import { GoogleAuthProvider, getAuth, signInWithPopup, signInWithRedirect, signOut as fbSignOut } from 'firebase/auth'
 import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager } from 'firebase/firestore'
 
@@ -36,4 +37,9 @@ export async function signInWithGoogle() {
   }
 }
 
-export const signOut = () => (auth ? fbSignOut(auth) : Promise.resolve())
+/** Sign out, and clear this account's files cached on the device. */
+export async function signOut() {
+  const stale = (await keys().catch(() => [])).filter(k => String(k).startsWith('file-cache:'))
+  await delMany(stale).catch(() => {})
+  if (auth) await fbSignOut(auth)
+}
