@@ -8,20 +8,31 @@ interface Ask {
   confirm?: string // the confirming button's label
   cancel?: string
   danger?: boolean // a red confirming button (delete, discard)
+  input?: { value: string; placeholder?: string } // a text field: the answer is its text
 }
 
-let show: ((a: Ask & { done(ok: boolean): void }) => void) | null = null
+type Open = Ask & { done(ok: boolean, text: string): void }
+let show: ((a: Open) => void) | null = null
 
 /** Ask a yes/no question in a centered dialog; resolves true when confirmed. */
 export function ask(a: Ask): Promise<boolean> {
-  return new Promise(done => (show ? show({ ...a, done }) : done(window.confirm(a.title))))
+  return new Promise(done => (show ? show({ ...a, done: ok => done(ok) }) : done(window.confirm(a.title))))
+}
+
+/** Ask for a line of text in a centered dialog; resolves to the text, or null when cancelled. */
+export function askText(a: Ask & { input: { value: string; placeholder?: string } }): Promise<string | null> {
+  return new Promise(done => (show ? show({ ...a, done: (ok, text) => done(ok ? text : null) }) : done(window.prompt(a.title, a.input.value))))
 }
 
 /** Mounted once next to the app; renders the dialog `ask` opens. */
 export function DialogHost() {
-  const [cur, setCur] = useState<(Ask & { done(ok: boolean): void }) | null>(null)
+  const [cur, setCur] = useState<Open | null>(null)
+  const [text, setText] = useState('')
   useEffect(() => {
-    show = setCur
+    show = a => {
+      setText(a.input?.value ?? '')
+      setCur(a)
+    }
     return () => {
       show = null
     }
@@ -39,7 +50,7 @@ export function DialogHost() {
   useBackLayer(Boolean(cur), () => answer(false))
   if (!cur) return null
   function answer(ok: boolean) {
-    cur!.done(ok)
+    cur!.done(ok, text.trim())
     setCur(null)
   }
   return createPortal(
@@ -47,11 +58,14 @@ export function DialogHost() {
       <div className="dialog" role="alertdialog" aria-modal="true" aria-label={cur.title} onClick={e => e.stopPropagation()}>
         <b>{cur.title}</b>
         {cur.text && <p>{cur.text}</p>}
+        {cur.input && (
+          <input className="in dialog-in" autoFocus value={text} placeholder={cur.input.placeholder} onChange={e => setText(e.target.value)} />
+        )}
         <div className="dialog-btns">
           <button className="dialog-cancel" onClick={() => answer(false)}>
             {cur.cancel ?? 'ביטול'}
           </button>
-          <button className={`dialog-ok ${cur.danger ? 'danger' : ''}`} onClick={() => answer(true)} autoFocus>
+          <button className={`dialog-ok ${cur.danger ? 'danger' : ''}`} onClick={() => answer(true)} autoFocus={!cur.input}>
             {cur.confirm ?? 'אישור'}
           </button>
         </div>

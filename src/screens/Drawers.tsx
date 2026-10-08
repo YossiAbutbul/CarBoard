@@ -1,4 +1,5 @@
 import { ConfirmButton } from '../components/ConfirmButton'
+import { askText } from '../components/Dialog'
 import { Drawer } from '../components/ui'
 import { Plate } from '../components/Chrome'
 import { CarToy } from '../components/CarAvatar'
@@ -90,8 +91,16 @@ export function SettingsDrawer({
     <Drawer title="הגדרות" side="end" onClose={onClose}>
       <section className="drawer-sec">
         <div className="drawer-label">השם שלך</div>
-        <input className="in" defaultValue={name} placeholder="למשל: יוסי" onBlur={e => onName(e.target.value.trim())} onKeyDown={e => e.key === 'Enter' && (e.target as HTMLInputElement).blur()} />
-        <div className="hint" style={{ marginTop: 6 }}>מופיע בברכה במסך הבית.</div>
+        <button
+          className="name-row"
+          onClick={async () => {
+            const next = await askText({ title: 'השם שלך', text: 'מופיע בברכה במסך הבית.', input: { value: name, placeholder: 'למשל: יוסי' }, confirm: 'שמירה' })
+            if (next !== null) onName(next)
+          }}
+        >
+          <span>{name || 'בלי שם'}</span>
+          <Icon name="edit" />
+        </button>
       </section>
       {car && (
         <section className="drawer-sec">

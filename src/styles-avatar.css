@@ -562,3 +562,7 @@ svg.i { stroke-width: 1.8; }
 .nav button svg.i { width: 21px; height: 21px; }
 /* no rubber-band bounce past the page edges (it fakes a scroll) */
 html, body { overscroll-behavior-y: none; }
+/* name in settings: a row that opens a dialog */
+.name-row { display: flex; align-items: center; justify-content: space-between; width: 100%; padding: 12px 14px; border-radius: 14px; background: var(--card); font-size: 15px; font-weight: 600; color: var(--ink); text-align: right; }
+.name-row svg.i { width: 18px; height: 18px; color: var(--muted); }
+.dialog-in { margin-top: 14px; text-align: center; font-size: 16px; }
