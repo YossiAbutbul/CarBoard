@@ -127,7 +127,8 @@ export function ItemSheet({ item, onClose, onDone }: { item?: Item; onClose(): v
     onClose()
   }
 
-  // Default reminders this car no longer has (deleted by mistake): one tap brings each back.
+  // Ready-made reminders this car does not have yet (or deleted): one tap adds each.
+  const [adding, setAdding] = useState<Item['kind'] | null>(null)
   const have = new Set(data.items.filter(i => i.car_id === car.id).map(i => i.kind))
   const missing = item ? [] : defaultItems(car.id, km.value, null).filter(d => !have.has(d.kind))
 
@@ -136,17 +137,23 @@ export function ItemSheet({ item, onClose, onDone }: { item?: Item; onClose(): v
       <div className="card">
         {missing.length > 0 && (
           <div className="restore">
-            <div className="lbl" style={{ marginTop: 0 }}>תזכורות קבועות שנמחקו</div>
+            <div className="lbl" style={{ marginTop: 0 }}>תזכורות מוכנות</div>
             <div className="chips">
               {missing.map(d => (
                 <button
                   key={d.kind}
+                  disabled={adding !== null}
                   onClick={async () => {
-                    await actions.saveItem(d)
-                    onClose()
+                    setAdding(d.kind)
+                    try {
+                      await actions.saveItem(d)
+                      onClose()
+                    } finally {
+                      setAdding(null)
+                    }
                   }}
                 >
-                  <Icon name="plus" /> {d.label}
+                  {adding === d.kind ? <span className="spin inline" /> : <Icon name="plus" />} {d.label}
                 </button>
               ))}
             </div>
