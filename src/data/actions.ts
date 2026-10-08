@@ -44,7 +44,9 @@ export function makeActions(store: Store, getData: () => Data, refresh: () => Pr
     /** Deletes every car and everything that belongs to it. */
     async resetAll() {
       const d = getData()
-      for (const t of ['readings', 'items', 'services', 'documents', 'cars'] as const) for (const r of d[t]) await store.remove(t, r.id)
+      // only my own rows: a family member's cars stay theirs
+      for (const t of ['readings', 'items', 'services', 'documents', 'cars'] as const)
+        for (const r of d[t]) if (store.owns?.(t, r.id) !== false) await store.remove(t, r.id)
       await refresh()
     },
     async addReading(carId: string, km: number, source: ReadingSource) {

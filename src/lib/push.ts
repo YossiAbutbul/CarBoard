@@ -107,7 +107,7 @@ export async function loadPrefs(): Promise<NotifyPrefs> {
 }
 export async function savePrefs(p: NotifyPrefs) {
   const uid = auth?.currentUser?.uid
-  if (uid && db) await setDoc(doc(db, 'users', uid, 'meta', 'prefs'), { days: [...p.days].sort((a, b) => b - a), late: p.late })
+  if (uid && db) await setDoc(doc(db, 'users', uid, 'meta', 'prefs'), { days: [...p.days].sort((a, b) => b - a), late: p.late, family: Boolean(p.family) })
 }
 
 /** Asks the server to send a test notice to this account's phones. */

@@ -22,6 +22,17 @@ const updateSW = registerSW({
   },
 })
 
+// A family invite link (?join=CODE): keep the code (through sign-in, if needed) and tidy the address.
+const join = new URLSearchParams(location.search).get('join')
+if (join) {
+  try {
+    localStorage.setItem('car-records:join', join)
+  } catch {
+    // storage blocked: the code can still be typed in settings
+  }
+  history.replaceState(null, '', location.pathname)
+}
+
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <App />

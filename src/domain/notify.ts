@@ -16,6 +16,7 @@ export type Sent = Record<string, Step[]> // target key → steps sent
 export interface NotifyPrefs {
   days: number[] // days before: some of 30, 14, 7, 1, 0 (0 = on the day)
   late: boolean // once when overdue
+  family?: boolean // also the other family members' cars
 }
 export const NOTIFY_DAYS = [30, 14, 7, 1, 0]
 export const DEFAULT_PREFS: NotifyPrefs = { days: [7, 1, 0], late: true }

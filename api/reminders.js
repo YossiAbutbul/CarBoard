@@ -145,25 +145,33 @@ async function sendTo(db, uid, payload) {
 }
 var todayInIsrael = () => new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Jerusalem" }).format(/* @__PURE__ */ new Date());
 async function remindUser(db, uid, today) {
-  const [cars, items, readings, mark, prefDoc] = await Promise.all([
-    db.collection(`users/${uid}/cars`).get(),
-    db.collection(`users/${uid}/items`).get(),
-    db.collection(`users/${uid}/readings`).get(),
+  const [mark, prefDoc, famDoc] = await Promise.all([
     db.doc(`users/${uid}/meta/notified`).get(),
-    db.doc(`users/${uid}/meta/prefs`).get()
+    db.doc(`users/${uid}/meta/prefs`).get(),
+    db.doc(`users/${uid}/meta/family`).get()
   ]);
-  const p = prefDoc.data();
-  const prefs = Array.isArray(p?.days) ? { days: p.days.filter((d) => NOTIFY_DAYS.includes(d)), late: p.late !== false } : DEFAULT_PREFS;
   const sent = mark.data()?.sent ?? {};
-  const all = {
-    items: items.docs.map((d) => d.data()),
-    readings: readings.docs.map((d) => d.data())
-  };
+  const p = prefDoc.data();
+  const prefs = Array.isArray(p?.days) ? { days: p.days.filter((d) => NOTIFY_DAYS.includes(d)), late: p.late !== false, family: p.family === true } : DEFAULT_PREFS;
+  const roots = [uid];
+  const fid = famDoc.data()?.fid;
+  if (prefs.family && fid) {
+    const fam = (await db.doc(`families/${fid}`).get()).data();
+    if (fam?.members?.includes(uid)) roots.push(...fam.members.filter((m) => m !== uid));
+  }
   let count = 0;
-  for (const c of cars.docs) {
-    for (const n of notesFor(c.data(), all.items, all.readings, sent, today, prefs)) {
-      if (await sendTo(db, uid, { title: n.title, body: n.body, tag: n.tag, url: "/" }) > 0) count++;
-      sent[n.key] = [...sent[n.key] ?? [], n.step];
+  for (const root of roots) {
+    const [cars, items, readings] = await Promise.all([
+      db.collection(`users/${root}/cars`).get(),
+      db.collection(`users/${root}/items`).get(),
+      db.collection(`users/${root}/readings`).get()
+    ]);
+    const all = { items: items.docs.map((d) => d.data()), readings: readings.docs.map((d) => d.data()) };
+    for (const c of cars.docs) {
+      for (const n of notesFor(c.data(), all.items, all.readings, sent, today, prefs)) {
+        if (await sendTo(db, uid, { title: n.title, body: n.body, tag: n.tag, url: "/" }) > 0) count++;
+        sent[n.key] = [...sent[n.key] ?? [], n.step];
+      }
     }
   }
   await db.doc(`users/${uid}/meta/notified`).set({ sent, at: Date.now() });

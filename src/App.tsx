@@ -23,6 +23,7 @@ import { DocumentSheet } from './screens/DocumentSheet'
 import { CarSheet } from './screens/CarSheet'
 import { Intro, Ready, Tour, isOnboarded, markOnboarded } from './screens/Onboarding'
 import { setExitHint, startBackHandling, useBackLayer } from './lib/back'
+import { ask } from './components/Dialog'
 
 export type SheetState =
   | { t: 'odo' }
@@ -138,6 +139,32 @@ function Main({ email, accountName, guest = false }: { email: string | null; acc
     return () => setExitHint(null)
   }, [])
   useBackLayer(Boolean(car) && tab !== 'home', () => setTab('home'))
+
+  // A family invite (from a ?join= link): once signed in and loaded, ask to join.
+  const { store, family, reload } = useApp()
+  useEffect(() => {
+    if (loading || !store.family) return
+    let code: string | null = null
+    try {
+      code = localStorage.getItem('car-records:join')
+      localStorage.removeItem('car-records:join')
+    } catch {
+      return
+    }
+    if (!code) return
+    const api = store.family
+    const myName = userName || email?.split('@')[0] || 'בן משפחה'
+    ;(async () => {
+      const inv = await api.peek(code)
+      if (!inv) return void ask({ title: 'ההזמנה לא תקפה', text: 'אולי פג תוקפה. בקשו קישור חדש.', confirm: 'הבנתי', cancel: 'סגירה' })
+      if (family?.id === inv.family) return // already in it
+      if (family && !(await ask({ title: 'אתם כבר במשפחה אחרת', text: `לעזוב אותה ולהצטרף למשפחה של ${inv.name}?`, confirm: 'מעבר', danger: true }))) return
+      if (!family && !(await ask({ title: `להצטרף למשפחה של ${inv.name}?`, text: 'תראו את כל רכבי המשפחה ותוכלו לעדכן אותם.', confirm: 'הצטרפות' }))) return
+      if (family) await api.leave()
+      await api.join(code, myName)
+      await reload()
+    })().catch(e => ask({ title: 'ההצטרפות נכשלה', text: e instanceof Error ? e.message : String(e), confirm: 'הבנתי', cancel: 'סגירה' }))
+  }, [loading, store, family, reload, userName, email])
 
   // Swipe in from a screen edge to open a drawer: from the right for the cars, from the left for settings.
   const canSwipe = Boolean(car) && !sheet && !drawer && guide === 'done'

@@ -1,12 +1,16 @@
 rules_version = '2';
 
-// CarBoard. Each user reaches only their own folder, users/<uid>/…, and only the app's own data:
+// CarBoard. Each user has a folder, users/<uid>/…, holding only the app's own data:
 //   <table>/<id>               cars, readings, items, services, documents
 //   files/<id>                 an uploaded file's record: name, type, size, piece count
 //   files/<id>/parts/<n>       the file itself, in pieces of 700 KB (base64)
 //   meta/quota                 bytes and files stored; every file added or removed must update it
+//   meta/family                which family this user belongs to
+//   meta/prefs                 when to send push reminders
 //   push/<id>                  a phone with push reminders on (meta/notified is the server's own)
-// A user can store up to 250 MB of files, 15 MB each. Anything else is refused.
+// Families: families/<fid> lists its members; invites/<code> lets someone join for 7 days.
+// Members of the same family can reach each other's cars and everything about them; only a car's
+// owner can delete the car itself. A user can store up to 250 MB of files, 15 MB each.
 
 service cloud.firestore {
   match /databases/{database}/documents {
@@ -14,14 +18,27 @@ service cloud.firestore {
     function signedIn(uid) {
       return request.auth != null && request.auth.uid == uid;
     }
+    // the signed-in user and `uid` are in the same family (the family's own list decides)
+    function family(uid) {
+      let mine = /databases/$(database)/documents/users/$(request.auth.uid)/meta/family;
+      return request.auth != null
+        && exists(mine)
+        && exists(/databases/$(database)/documents/families/$(get(mine).data.fid))
+        && get(/databases/$(database)/documents/families/$(get(mine).data.fid)).data.members.hasAll([request.auth.uid, uid]);
+    }
+    function canAccess(uid) {
+      return signedIn(uid) || family(uid);
+    }
 
     match /users/{uid} {
 
-      // ── app data ──
+      // ── app data: the owner and their family ──
       match /{table}/{id} {
-        allow read: if signedIn(uid) && table in ['cars', 'readings', 'items', 'services', 'documents'];
-        allow delete: if signedIn(uid) && table in ['cars', 'readings', 'items', 'services', 'documents'];
-        allow create, update: if signedIn(uid)
+        allow read: if canAccess(uid) && table in ['cars', 'readings', 'items', 'services', 'documents'];
+        // a car only by its owner; the rest by the family too
+        allow delete: if table in ['readings', 'items', 'services', 'documents'] && canAccess(uid)
+          || table == 'cars' && signedIn(uid);
+        allow create, update: if canAccess(uid)
           && table in ['cars', 'readings', 'items', 'services', 'documents']
           && request.resource.data.id == id
           && request.resource.data.keys().size() <= 24
@@ -32,12 +49,12 @@ service cloud.firestore {
           && (!('files' in request.resource.data) || request.resource.data.files.size() <= 30);
       }
 
-      // ── storage count ──
+      // ── storage count (a family member deleting a file of this folder updates it too) ──
       match /meta/quota {
-        allow read: if signedIn(uid);
+        allow read: if canAccess(uid);
         allow delete: if false;
         // Every change is one file added or removed, named in lastFile, and moves the count by its size.
-        allow create, update: if signedIn(uid)
+        allow create, update: if canAccess(uid)
           && request.resource.data.keys().hasOnly(['bytes', 'files', 'lastFile'])
           && request.resource.data.bytes <= 250 * 1024 * 1024
           && request.resource.data.bytes >= 0
@@ -52,8 +69,8 @@ service cloud.firestore {
       function quotaMove(uid, fileId) {
         let f = /databases/$(database)/documents/users/$(uid)/files/$(fileId);
         return (
-          // added
-          (!exists(f) && existsAfter(f)
+          // added (only the owner uploads into their own folder)
+          (signedIn(uid) && !exists(f) && existsAfter(f)
             && request.resource.data.bytes == oldBytes() + getAfter(f).data.size
             && request.resource.data.files == oldFiles() + 1)
           ||
@@ -64,15 +81,25 @@ service cloud.firestore {
         );
       }
 
-      // ── when to send push reminders: days before (30, 14, 7, 1, 0) and once overdue ──
+      // ── which family: only one the user is really a member of ──
+      match /meta/family {
+        allow read: if signedIn(uid);
+        allow delete: if signedIn(uid);
+        allow create, update: if signedIn(uid)
+          && request.resource.data.keys().hasOnly(['fid'])
+          && getAfter(/databases/$(database)/documents/families/$(request.resource.data.fid)).data.members.hasAny([uid]);
+      }
+
+      // ── when to send push reminders: days before (30, 14, 7, 1, 0), once overdue, family cars too ──
       match /meta/prefs {
         allow read, delete: if signedIn(uid);
         allow create, update: if signedIn(uid)
-          && request.resource.data.keys().hasOnly(['days', 'late'])
+          && request.resource.data.keys().hasOnly(['days', 'late', 'family'])
           && request.resource.data.days is list
           && request.resource.data.days.size() <= 5
           && request.resource.data.days.hasOnly([30, 14, 7, 1, 0])
-          && request.resource.data.late is bool;
+          && request.resource.data.late is bool
+          && (!('family' in request.resource.data) || request.resource.data.family is bool);
       }
 
       // ── push: one record per phone with notifications on (the daily job reads them) ──
@@ -87,9 +114,9 @@ service cloud.firestore {
           && request.resource.data.ua.size() <= 200;
       }
 
-      // ── files ──
+      // ── files: uploaded by the owner, seen and removed by the family too ──
       match /files/{fileId} {
-        allow read: if signedIn(uid);
+        allow read: if canAccess(uid);
         allow update: if false;
         // created together with the storage count, which names this file
         allow create: if signedIn(uid)
@@ -106,12 +133,12 @@ service cloud.firestore {
           && request.resource.data.name is string && request.resource.data.name.size() <= 40
           && getAfter(/databases/$(database)/documents/users/$(uid)/meta/quota).data.lastFile == fileId;
         // files from before the count were never counted; counted ones are taken off it as they go
-        allow delete: if signedIn(uid)
+        allow delete: if canAccess(uid)
           && (!('counted' in resource.data)
             || getAfter(/databases/$(database)/documents/users/$(uid)/meta/quota).data.lastFile == fileId);
 
         match /parts/{n} {
-          allow read, delete: if signedIn(uid);
+          allow read, delete: if canAccess(uid);
           allow update: if false;
           // only for a counted file, only as many pieces as it declared, each at most 700 KB (base64)
           allow create: if signedIn(uid)
@@ -123,6 +150,78 @@ service cloud.firestore {
             && request.resource.data.data.size() <= 960000;
         }
       }
+    }
+
+    // ── families ──
+    match /families/{fid} {
+      allow read: if request.auth != null && resource.data.members.hasAny([request.auth.uid]);
+      // a new family: its creator alone, with their own id
+      allow create: if request.auth != null && fid == request.auth.uid
+        && request.resource.data.keys().hasOnly(['members', 'names', 'owner', 'created'])
+        && request.resource.data.owner == request.auth.uid
+        && request.resource.data.members == [request.auth.uid]
+        && request.resource.data.names.keys().hasOnly([request.auth.uid]);
+      allow update: if request.auth != null
+        && request.resource.data.owner == resource.data.owner
+        && request.resource.data.members.size() <= 12
+        && request.resource.data.keys().hasOnly(['members', 'names', 'owner', 'created', 'joinCode'])
+        && (joining(fid) || leaving() || renaming() || ownerRemoves() || ownerRestarts());
+      allow delete: if request.auth != null && resource.data.owner == request.auth.uid;
+    }
+    function namesTouchOnly(keys) {
+      return request.resource.data.names.diff(resource.data.names).affectedKeys().hasOnly(keys);
+    }
+    // someone new, with a valid invite to this family, adds themselves
+    function joining(fid) {
+      let invite = /databases/$(database)/documents/invites/$(request.resource.data.joinCode);
+      return !resource.data.members.hasAny([request.auth.uid])
+        && request.resource.data.members.toSet() == resource.data.members.toSet().union([request.auth.uid].toSet())
+        && request.resource.data.members.size() == resource.data.members.size() + 1
+        && namesTouchOnly([request.auth.uid])
+        && exists(invite)
+        && get(invite).data.family == fid
+        && get(invite).data.expires > request.time.toMillis();
+    }
+    // a member takes themselves off
+    function leaving() {
+      return resource.data.members.hasAny([request.auth.uid])
+        && request.resource.data.members.toSet() == resource.data.members.toSet().difference([request.auth.uid].toSet())
+        && namesTouchOnly([request.auth.uid]);
+    }
+    // a member changes their own display name
+    function renaming() {
+      return resource.data.members.hasAny([request.auth.uid])
+        && request.resource.data.members == resource.data.members
+        && namesTouchOnly([request.auth.uid]);
+    }
+    // the creator, after leaving, starts the family again with only themselves
+    function ownerRestarts() {
+      return resource.data.owner == request.auth.uid
+        && request.resource.data.members == [request.auth.uid]
+        && request.resource.data.names.keys().hasOnly([request.auth.uid]);
+    }
+    // the family's creator takes someone else off
+    function ownerRemoves() {
+      return resource.data.owner == request.auth.uid
+        && request.resource.data.members.toSet().difference(resource.data.members.toSet()).size() == 0
+        && resource.data.members.hasAny([request.auth.uid])
+        && request.resource.data.members.hasAny([request.auth.uid]);
+    }
+
+    // ── invites: a random code, valid 7 days, made by a member of the family ──
+    match /invites/{code} {
+      allow get: if request.auth != null;
+      allow list: if false;
+      allow create: if request.auth != null
+        && code.size() >= 10
+        && request.resource.data.keys().hasOnly(['family', 'by', 'name', 'expires'])
+        && request.resource.data.by == request.auth.uid
+        && request.resource.data.name is string && request.resource.data.name.size() <= 60
+        && get(/databases/$(database)/documents/families/$(request.resource.data.family)).data.members.hasAny([request.auth.uid])
+        && request.resource.data.expires is int
+        && request.resource.data.expires > request.time.toMillis()
+        && request.resource.data.expires <= request.time.toMillis() + 7 * 24 * 60 * 60 * 1000;
+      allow delete: if request.auth != null && resource.data.by == request.auth.uid;
     }
   }
 }

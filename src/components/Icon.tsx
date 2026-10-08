@@ -33,6 +33,8 @@ import {
   Trash2,
   Wrench,
   X,
+  Users,
+  Link2,
   RefreshCw,
   ZoomIn,
   ZoomOut,
@@ -81,6 +83,8 @@ const ICONS = {
   back: ArrowRight,
   zoomIn: ZoomIn,
   refresh: RefreshCw,
+  family: Users,
+  link: Link2,
   zoomOut: ZoomOut,
 } satisfies Record<string, LucideIcon>
 

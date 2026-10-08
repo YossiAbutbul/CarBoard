@@ -72,28 +72,37 @@ export const todayInIsrael = () => new Intl.DateTimeFormat('en-CA', { timeZone: 
 
 /** One user's reminders for today: sends what is due and records it, so nothing repeats. */
 export async function remindUser(db: Firestore, uid: string, today: string) {
-  const [cars, items, readings, mark, prefDoc] = await Promise.all([
-    db.collection(`users/${uid}/cars`).get(),
-    db.collection(`users/${uid}/items`).get(),
-    db.collection(`users/${uid}/readings`).get(),
+  const [mark, prefDoc, famDoc] = await Promise.all([
     db.doc(`users/${uid}/meta/notified`).get(),
     db.doc(`users/${uid}/meta/prefs`).get(),
+    db.doc(`users/${uid}/meta/family`).get(),
   ])
+  const sent: Sent = (mark.data()?.sent as Sent) ?? {}
   // the user's choice of when; anything odd falls back to the default
   const p = prefDoc.data() as Partial<NotifyPrefs> | undefined
   const prefs: NotifyPrefs = Array.isArray(p?.days)
-    ? { days: p.days.filter(d => NOTIFY_DAYS.includes(d)), late: p.late !== false }
+    ? { days: p.days.filter(d => NOTIFY_DAYS.includes(d)), late: p.late !== false, family: p.family === true }
     : DEFAULT_PREFS
-  const sent: Sent = (mark.data()?.sent as Sent) ?? {}
-  const all = {
-    items: items.docs.map(d => d.data() as Item),
-    readings: readings.docs.map(d => d.data() as Reading),
+  // whose cars: mine, and the family's when the user asked for them (and is still a member)
+  const roots = [uid]
+  const fid = famDoc.data()?.fid as string | undefined
+  if (prefs.family && fid) {
+    const fam = (await db.doc(`families/${fid}`).get()).data() as { members?: string[] } | undefined
+    if (fam?.members?.includes(uid)) roots.push(...fam.members.filter(m => m !== uid))
   }
   let count = 0
-  for (const c of cars.docs) {
-    for (const n of notesFor(c.data() as Car, all.items, all.readings, sent, today, prefs)) {
-      if ((await sendTo(db, uid, { title: n.title, body: n.body, tag: n.tag, url: '/' })) > 0) count++
-      sent[n.key] = [...(sent[n.key] ?? []), n.step]
+  for (const root of roots) {
+    const [cars, items, readings] = await Promise.all([
+      db.collection(`users/${root}/cars`).get(),
+      db.collection(`users/${root}/items`).get(),
+      db.collection(`users/${root}/readings`).get(),
+    ])
+    const all = { items: items.docs.map(d => d.data() as Item), readings: readings.docs.map(d => d.data() as Reading) }
+    for (const c of cars.docs) {
+      for (const n of notesFor(c.data() as Car, all.items, all.readings, sent, today, prefs)) {
+        if ((await sendTo(db, uid, { title: n.title, body: n.body, tag: n.tag, url: '/' })) > 0) count++
+        sent[n.key] = [...(sent[n.key] ?? []), n.step]
+      }
     }
   }
   await db.doc(`users/${uid}/meta/notified`).set({ sent, at: Date.now() })

@@ -17,6 +17,7 @@ export interface Car {
   image_url: string | null
   body?: BodyType | null // avatar body type; null = guess from the model
   paint?: string | null // avatar colour (hex); null = from the registry colour
+  owner?: string // in a family: the uid of whoever added the car (shown, not stored)
 }
 
 export interface Reading {

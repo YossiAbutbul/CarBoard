@@ -1,6 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import type { Car, Data, Item } from '../types'
-import { emptyData, type Store } from './store'
+import { emptyData, type Family, type Store } from './store'
 import { makeActions, type Actions } from './actions'
 import { estimateKm, type KmEstimate } from '../domain/odometer'
 import { buildReminders, needsAttention, type Reminder } from '../domain/reminders'
@@ -17,6 +17,8 @@ interface Ctx {
   car: Car | null
   km: KmEstimate
   reminders: Reminder[]
+  family: Family | null // cloud only: the family this user shares cars with
+  reload(): Promise<void>
 }
 
 const C = createContext<Ctx | null>(null)
@@ -51,6 +53,7 @@ export function AppDataProvider({ store, children }: { store: Store; children: R
   const [data, setData] = useState<Data>(emptyData)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [family, setFamily] = useState<Family | null>(null)
   const [carId, setCarIdState] = useState<string | null>(() => {
     try {
       return localStorage.getItem(CAR_KEY)
@@ -68,6 +71,7 @@ export function AppDataProvider({ store, children }: { store: Store; children: R
       if (added) d = await store.loadAll()
       dataRef.current = d
       setData(d)
+      setFamily(store.family?.current() ?? null)
       setError(null)
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e))
@@ -103,7 +107,7 @@ export function AppDataProvider({ store, children }: { store: Store; children: R
   }, [reminders])
 
   return (
-    <C.Provider value={{ store, data, loading, error, setCarId, actions, car, km, reminders }}>{children}</C.Provider>
+    <C.Provider value={{ store, data, loading, error, setCarId, actions, car, km, reminders, family, reload: refresh }}>{children}</C.Provider>
   )
 }
 

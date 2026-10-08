@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { ConfirmButton } from '../components/ConfirmButton'
-import { askText } from '../components/Dialog'
+import { ask, askText } from '../components/Dialog'
 import { checkForUpdate } from '../lib/update'
 import { disablePush, enablePush, loadPrefs, pushState, resavePush, savePrefs, testPush, type PushState } from '../lib/push'
 import { DEFAULT_PREFS, type NotifyPrefs } from '../domain/notify'
@@ -19,9 +19,10 @@ import type { OpenSheet } from '../App'
 
 /** Car switcher: opens from the right, where its button is. */
 export function CarsDrawer({ open, onClose }: { open: OpenSheet; onClose(): void }) {
-  const { data, car, setCarId, actions } = useApp()
+  const { data, car, setCarId, actions, family, store } = useApp()
+  const ownerName = (uid?: string) => (uid && uid !== store.userId ? family?.members.find(m => m.uid === uid)?.name || 'בן משפחה' : null)
   return (
-    <Drawer title="הרכבים שלי" side="start" onClose={onClose}>
+    <Drawer title={family ? 'רכבי המשפחה' : 'הרכבים שלי'} side="start" onClose={onClose}>
       <div className="car-list">
         {data.cars.map(c => (
           <div key={c.id} className={`car-row ${c.id === car?.id ? 'on' : ''}`}>
@@ -33,7 +34,15 @@ export function CarsDrawer({ open, onClose }: { open: OpenSheet; onClose(): void
               }}
               aria-current={c.id === car?.id}
             >
-              <span className="car-row-pic">
+              {/* the photo opens the car's edit sheet (the pencil does too) */}
+              <span
+                className="car-row-pic"
+                onClick={e => {
+                  e.stopPropagation()
+                  onClose()
+                  open({ t: 'car', car: c })
+                }}
+              >
                 <CarToy car={c} />
               </span>
               <span className="car-row-info">
@@ -41,7 +50,7 @@ export function CarsDrawer({ open, onClose }: { open: OpenSheet; onClose(): void
                   {c.name}
                   {c.id === car?.id && <Icon name="check" className="car-row-check" />}
                 </span>
-                <span className="s">{[c.year, c.color].filter(Boolean).join(' · ')}</span>
+                <span className="s">{[ownerName(c.owner) && `של ${ownerName(c.owner)}`, c.year, c.color].filter(Boolean).join(' · ')}</span>
                 {c.plate && <Plate number={c.plate} size="sm" />}
               </span>
             </button>
@@ -56,7 +65,10 @@ export function CarsDrawer({ open, onClose }: { open: OpenSheet; onClose(): void
               >
                 <Icon name="edit" />
               </button>
-              <ConfirmButton icon label={`מחיקת ${c.name}`} question={`למחוק את ${c.name}?`} detail="הרכב וכל מה ששייך לו יימחקו: ק״מ, טיפולים, תזכורות ומסמכים." onConfirm={() => actions.deleteCar(c.id)} />
+              {/* only the person who added a car can delete it */}
+              {!ownerName(c.owner) && (
+                <ConfirmButton icon label={`מחיקת ${c.name}`} question={`למחוק את ${c.name}?`} detail="הרכב וכל מה ששייך לו יימחקו: ק״מ, טיפולים, תזכורות ומסמכים." onConfirm={() => actions.deleteCar(c.id)} />
+              )}
             </span>
           </div>
         ))}
@@ -100,7 +112,10 @@ export function SettingsDrawer({
           className="name-row"
           onClick={async () => {
             const next = await askText({ title: 'השם שלך', text: 'מופיע בברכה במסך הבית.', input: { value: name, placeholder: 'למשל: יוסי' }, confirm: 'שמירה' })
-            if (next !== null) onName(next)
+            if (next !== null) {
+              onName(next)
+              store.family?.rename(next).catch(() => {}) // the family sees the new name too
+            }
           }}
         >
           <span>{name || 'בלי שם'}</span>
@@ -114,6 +129,7 @@ export function SettingsDrawer({
           </button>
         </section>
       )}
+      {store.mode === 'cloud' && <FamilySection myName={name || email?.split('@')[0] || ''} />}
       {car && <PushSection cloud={store.mode === 'cloud'} />}
       {car && (
         <section className="drawer-sec">
@@ -210,6 +226,7 @@ export function SettingsDrawer({
 
 /** Push reminders on this phone: on/off, and a test notice. */
 function PushSection({ cloud }: { cloud: boolean }) {
+  const { family } = useApp()
   const [state, setState] = useState<PushState | null>(null)
   const [busy, setBusy] = useState(false)
   const [msg, setMsg] = useState<string | null>(null)
@@ -304,6 +321,13 @@ function PushSection({ cloud }: { cloud: boolean }) {
                 )
               })}
             </div>
+            {family && family.members.length > 1 && (
+              <div className="chips when-chips" style={{ marginTop: 8 }}>
+                <button className={prefs.family ? 'on' : ''} aria-pressed={Boolean(prefs.family)} onClick={() => toggle({ ...prefs, family: !prefs.family })}>
+                  <Icon name="family" /> גם רכבי המשפחה
+                </button>
+              </div>
+            )}
           </>
         )}
         {cloud && state === 'on' && (
@@ -347,5 +371,125 @@ function VersionLine() {
       {/* a toast over everything, so the settings content does not move */}
       {note[state] && createPortal(<div className="toast" role="status">{note[state]}</div>, document.body)}
     </div>
+  )
+}
+
+/** Share cars with family: make a family, invite by link or code, see who is in it, leave. */
+function FamilySection({ myName }: { myName: string }) {
+  const { store, family, reload } = useApp()
+  const api = store.family
+  const [busy, setBusy] = useState(false)
+  const [toast, setToast] = useState<string | null>(null)
+  const show = (t: string) => {
+    setToast(t)
+    setTimeout(() => setToast(null), 2600)
+  }
+  if (!api) return null
+  const run = async (fn: () => Promise<void>) => {
+    setBusy(true)
+    try {
+      await fn()
+    } catch (e) {
+      show(e instanceof Error ? e.message : String(e))
+    } finally {
+      setBusy(false)
+    }
+  }
+  const sendInvite = () =>
+    run(async () => {
+      const code = await api.invite(myName || 'בן משפחה')
+      const url = `${location.origin}/?join=${code}`
+      const text = `${myName || 'הוזמנת'} מזמין/ה אותך לראות את רכבי המשפחה ב־CarBoard. קוד: ${code}`
+      try {
+        if (navigator.share) await navigator.share({ title: 'CarBoard', text, url })
+        else {
+          await navigator.clipboard.writeText(`${text}
+${url}`)
+          show('הקישור הועתק. אפשר להדביק בווטסאפ.')
+        }
+      } catch {
+        // closed the share sheet
+      }
+    })
+  const joinByCode = () =>
+    run(async () => {
+      const code = await askText({ title: 'הצטרפות למשפחה', text: 'הקוד מההזמנה (10 תווים).', input: { value: '', placeholder: 'ABCDE23456' }, confirm: 'המשך' })
+      if (!code) return
+      const inv = await api.peek(code)
+      if (!inv) return show('ההזמנה לא נמצאה או שפג תוקפה')
+      if (!(await ask({ title: `להצטרף למשפחה של ${inv.name}?`, text: 'תראו את כל רכבי המשפחה ותוכלו לעדכן אותם.', confirm: 'הצטרפות' }))) return
+      await api.join(code, myName || 'בן משפחה')
+      await reload()
+      show('הצטרפת למשפחה')
+    })
+
+  return (
+    <section className="drawer-sec">
+      <div className="drawer-label">משפחה</div>
+      <div className="card">
+        {!family ? (
+          <>
+            <div className="item" style={{ padding: 0 }}>
+              <span className="ic">
+                <Icon name="family" />
+              </span>
+              <div>
+                <div className="t">שיתוף עם המשפחה</div>
+                <div className="s">אתם ובני המשפחה תראו את הרכבים של כולם, ותוכלו לעדכן אותם.</div>
+              </div>
+            </div>
+            <button
+              className="btn pri"
+              style={{ marginTop: 12 }}
+              disabled={busy}
+              onClick={() =>
+                run(async () => {
+                  await api.create(myName || 'אני')
+                  await reload()
+                  await sendInvite()
+                })
+              }
+            >
+              {busy ? <span className="spin" /> : 'יצירת משפחה והזמנה'}
+            </button>
+            <button className="test-link" disabled={busy} onClick={joinByCode}>
+              יש לי קוד הזמנה
+            </button>
+          </>
+        ) : (
+          <>
+            <div className="members">
+              {family.members.map(m => (
+                <span key={m.uid} className="member">
+                  <b>{(m.name || '?').slice(0, 1)}</b>
+                  {m.uid === family.me ? `${m.name || 'אני'} (אני)` : m.name || 'בן משפחה'}
+                </span>
+              ))}
+            </div>
+            <button className="btn" style={{ marginTop: 12, background: '#fff' }} disabled={busy} onClick={sendInvite}>
+              {busy ? <span className="spin" /> : (
+                <>
+                  <Icon name="link" /> הזמנת בן משפחה
+                </>
+              )}
+            </button>
+            <div className="hint" style={{ marginTop: 6 }}>הקישור תקף לשבוע.</div>
+            <ConfirmButton
+              className="test-link"
+              question="לצאת מהמשפחה?"
+              detail="לא תראו יותר את הרכבים של בני המשפחה, והם לא יראו את שלכם. הנתונים של כל אחד נשארים אצלו."
+              confirmLabel="יציאה"
+              onConfirm={() => run(async () => {
+                await api.leave()
+                await reload()
+              })}
+            >
+              יציאה מהמשפחה
+            </ConfirmButton>
+          </>
+        )}
+      </div>
+      {toast && createPortal(<div className="toast" role="status">{toast}</div>, document.body)}
+    </section>
   )
 }
