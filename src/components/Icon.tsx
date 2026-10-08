@@ -40,6 +40,7 @@ import {
   ZoomOut,
   Fuel,
   ScanLine,
+  Warehouse,
   Shrink,
   type LucideIcon,
 } from 'lucide-react'
@@ -75,7 +76,7 @@ const ICONS = {
   cloud: Cloud,
   device: Smartphone,
   check: Check,
-  swap: CarFront,
+  swap: Warehouse, // the cars list: a garage, so it is not mistaken for the car on screen
   search: Search,
   car: Car,
   reminder: BellPlus,

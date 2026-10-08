@@ -51,7 +51,7 @@ export function FuelScreen({ open, openCars, openSettings }: { open: OpenSheet; 
             <Icon name="fuel" />
           </div>
           <h2>עוד לא נרשם תדלוק</h2>
-          <p>רושמים ליטרים, מחיר וק״מ, וכל השדות לא חובה. מקבלים הוצאות לפי חודש וכמה ק״מ לליטר הרכב עושה.</p>
+          <p>רושמים ליטרים, מחיר וק״מ, וכל השדות לא חובה. מקבלים הוצאות לפי חודש ומעקב אחרי המחיר לליטר.</p>
           <button className="btn pri" onClick={() => open({ t: 'fuel' })}>
             <Icon name="plus" /> תדלוק ראשון
           </button>
@@ -104,11 +104,12 @@ export function FuelScreen({ open, openCars, openSettings }: { open: OpenSheet; 
   )
 }
 
-/** Spending per month (bars) or km per liter over the recent full tanks (a line). */
+/** Spending per month (bars), or the price per liter over the recent fill-ups (a line). */
 function FuelChart({ fills }: { fills: Fuel[] }) {
-  const [view, setView] = useState<'spend' | 'economy'>('spend')
+  const [view, setView] = useState<'spend' | 'price'>('spend')
   const spend = monthlySpend(fills, 6)
-  const eco = economy(fills).slice(-8)
+  // price per liter of each fill-up that has liters and a total, oldest first (the last 8)
+  const eco = [...fills].sort(byDate).filter(f => perLiter(f) != null).slice(-8).map(f => ({ id: f.id, date: f.date, v: perLiter(f)! }))
   const W = 320
   const H = 120
   return (
@@ -118,8 +119,8 @@ function FuelChart({ fills }: { fills: Fuel[] }) {
           <button role="tab" aria-selected={view === 'spend'} className={view === 'spend' ? 'on' : ''} onClick={() => setView('spend')}>
             הוצאות
           </button>
-          <button role="tab" aria-selected={view === 'economy'} className={view === 'economy' ? 'on' : ''} onClick={() => setView('economy')}>
-            ק״מ לליטר
+          <button role="tab" aria-selected={view === 'price'} className={view === 'price' ? 'on' : ''} onClick={() => setView('price')}>
+            מחיר לליטר
           </button>
         </div>
       </div>
@@ -149,17 +150,17 @@ function FuelChart({ fills }: { fills: Fuel[] }) {
           <line x1="0" x2={W} y1={H} y2={H} className="axis" />
         </svg>
       ) : eco.length < 2 ? (
-        <div className="chart-empty">צריך לפחות 3 מילויים מלאים עם ק״מ וליטרים כדי לראות מגמה.</div>
+        <div className="chart-empty">צריך לפחות 2 תדלוקים עם ליטרים וסכום כדי לראות מגמה.</div>
       ) : (
-        <svg viewBox={`0 0 ${W} ${H + 22}`} className="chart" role="img" aria-label="ק״מ לליטר לאורך זמן">
+        <svg viewBox={`0 0 ${W} ${H + 22}`} className="chart" role="img" aria-label="מחיר לליטר לאורך זמן">
           {(() => {
-            const vals = eco.map(e => e.kmPerLiter)
-            const lo = Math.min(...vals) * 0.9
-            const hi = Math.max(...vals) * 1.05
+            const vals = eco.map(e => e.v)
+            const lo = Math.min(...vals) * 0.97
+            const hi = Math.max(...vals) * 1.02
             const step = (W - 40) / (eco.length - 1)
             // oldest on the right, newest on the left (Hebrew reading order)
             const pt = (v: number, i: number) => [W - 20 - i * step, H - 10 - ((v - lo) / (hi - lo || 1)) * (H - 30)] as const
-            const pts = eco.map((e, i) => pt(e.kmPerLiter, i))
+            const pts = eco.map((e, i) => pt(e.v, i))
             const path = pts.map(([x, y], i) => `${i ? 'L' : 'M'}${x.toFixed(1)},${y.toFixed(1)}`).join(' ')
             const area = `${path} L${pts[pts.length - 1][0].toFixed(1)},${H} L${pts[0][0].toFixed(1)},${H} Z`
             return (
@@ -170,7 +171,7 @@ function FuelChart({ fills }: { fills: Fuel[] }) {
                   <g key={e.id}>
                     <circle cx={pts[i][0]} cy={pts[i][1]} r="4" className={i === eco.length - 1 ? 'dot now' : 'dot'} />
                     <text x={pts[i][0]} y={pts[i][1] - 9} className="val">
-                      {e.kmPerLiter.toFixed(1)}
+                      {e.v.toFixed(2)}
                     </text>
                     <text x={pts[i][0]} y={H + 16} className="lab">
                       {fmtShortDate(e.date)}
