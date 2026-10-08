@@ -34,11 +34,25 @@ const subId = async (endpoint: string) => {
   return Array.from(new Uint8Array(hash).slice(0, 12), b => b.toString(16).padStart(2, '0')).join('')
 }
 
-/** With notifications already on: save this phone again, in case an earlier save failed. */
+const SAVED_KEY = 'car-records:push-saved' // which account and phone address were saved, and when
+const WEEK = 7 * 24 * 60 * 60 * 1000
+
+/**
+ * With notifications already on: save this phone again, in case an earlier save failed. Only when
+ * something changed (another account, a new push address) or once a week, so it costs no write.
+ */
 export async function resavePush() {
   const reg = await navigator.serviceWorker.ready
   const sub = await reg.pushManager.getSubscription()
-  if (sub) await saveSub(sub)
+  const uid = auth?.currentUser?.uid
+  if (!sub || !uid) return
+  try {
+    const last = JSON.parse(localStorage.getItem(SAVED_KEY) ?? 'null') as { uid: string; endpoint: string; at: number } | null
+    if (last && last.uid === uid && last.endpoint === sub.endpoint && Date.now() - last.at < WEEK) return
+  } catch {
+    // storage blocked: just save
+  }
+  await saveSub(sub)
 }
 
 export async function enablePush(): Promise<PushState> {
@@ -61,6 +75,11 @@ async function saveSub(sub: PushSubscription) {
     created: Date.now(),
     ua: navigator.userAgent.slice(0, 160),
   })
+  try {
+    localStorage.setItem(SAVED_KEY, JSON.stringify({ uid, endpoint: j.endpoint, at: Date.now() }))
+  } catch {
+    // storage blocked: it saves again next time
+  }
 }
 
 export async function disablePush(): Promise<PushState> {
@@ -70,6 +89,11 @@ export async function disablePush(): Promise<PushState> {
   if (sub) {
     if (uid && db) await deleteDoc(doc(db, 'users', uid, 'push', await subId(sub.endpoint))).catch(() => {})
     await sub.unsubscribe()
+  }
+  try {
+    localStorage.removeItem(SAVED_KEY)
+  } catch {
+    // storage blocked
   }
   return 'off'
 }
