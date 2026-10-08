@@ -345,6 +345,11 @@
 .pdf-thumb b { position: absolute; bottom: 3px; left: 3px; padding: 1px 4px; border-radius: 4px; background: var(--overdue); color: #fff; font-size: 8.5px; font-weight: 700; letter-spacing: 0.04em; }
 .file-thumb { display: block; width: 52px; height: 38px; padding: 0; border-radius: 6px; overflow: hidden; box-shadow: inset 0 0 0 1px var(--line); cursor: pointer; }
 .tl-acts .file-thumb { width: 34px; height: 34px; border-radius: 8px; }
+/* a document card's top: the PDF's first page across the full width, from its top */
+.file-thumb.fill { width: 100%; height: 100%; border-radius: 0; box-shadow: none; cursor: inherit; }
+.file-thumb.fill .pdf-thumb { place-items: start stretch; border-radius: 0; }
+.file-thumb.fill .pdf-thumb canvas { width: 100% !important; }
+.file-thumb.fill .pdf-thumb b { bottom: 6px; left: 6px; font-size: 9.5px; padding: 2px 5px; }
 .viewer-stage .pdf-pages { width: 100%; height: 100%; overflow: auto; display: grid; justify-items: center; align-content: start; gap: 10px; padding: 4px 0 20px; scrollbar-width: none; }
 .viewer-stage .pdf-pages canvas { background: #fff; border-radius: 6px; box-shadow: 0 6px 24px rgba(0, 0, 0, 0.4); max-width: 100%; animation: rise 0.25s var(--ease); }
 .pdf-failed { color: rgba(255, 255, 255, 0.75); font-size: 14px; text-align: center; padding: 20px; }

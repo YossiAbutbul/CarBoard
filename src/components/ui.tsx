@@ -26,13 +26,21 @@ export function useFileUrl(ref: string | null | undefined) {
   return url
 }
 
-/** A small preview of an uploaded photo or PDF. */
-export function FileThumb({ fileRef, onOpen }: { fileRef: string; onOpen?: () => void }) {
+/** A small preview of an uploaded photo or PDF; with `fill`, it covers its whole box (a document card's top). */
+export function FileThumb({ fileRef, onOpen, fill = false }: { fileRef: string; onOpen?: () => void; fill?: boolean }) {
   const f = useFile(fileRef)
+  // only a thumbnail with its own action keeps the tap; otherwise the card around it gets it
   const open = (e: React.MouseEvent) => {
+    if (!onOpen) return
     e.stopPropagation()
-    onOpen?.()
+    onOpen()
   }
+  if (f?.pdf && fill)
+    return (
+      <span className="file-thumb fill">
+        <PdfThumb url={f.url} width={360} />
+      </span>
+    )
   if (!f)
     return (
       <span className="ic" style={{ width: 48, height: 36 }}>

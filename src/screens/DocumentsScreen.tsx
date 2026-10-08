@@ -109,7 +109,7 @@ function DocCard({ d, onOpen }: { d: CarDocument; onOpen(): void }) {
     <button className="doc-card" data-s={e.s} onClick={onOpen}>
       {d.files[0] && (
         <div className="doc-media">
-          <FileThumb fileRef={d.files[0]} />
+          <FileThumb fileRef={d.files[0]} fill />
           {d.files.length > 1 && <span className="doc-count">+{d.files.length - 1}</span>}
         </div>
       )}
