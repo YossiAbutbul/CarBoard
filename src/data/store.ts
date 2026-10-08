@@ -9,6 +9,8 @@ export interface Store {
   /** Saves a file and returns a ref for fileUrl(). */
   upload(name: string, blob: Blob): Promise<string>
   fileUrl(ref: string): Promise<string>
+  /** Deletes one uploaded file. */
+  removeFile?(ref: string): Promise<void>
   /** Deletes every uploaded file (used by the reset in settings). */
   wipeFiles?(): Promise<void>
 }

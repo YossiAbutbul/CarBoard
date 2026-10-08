@@ -43,6 +43,13 @@ export const localStore: Store = {
     urls.set(ref, url)
     return url
   },
+  async removeFile(ref) {
+    if (!ref.startsWith('idb:')) return
+    await del(ref)
+    const url = urls.get(ref)
+    if (url) URL.revokeObjectURL(url)
+    urls.delete(ref)
+  },
   async wipeFiles() {
     await delMany((await keys()).filter(k => String(k).startsWith('idb:')))
     urls.clear()

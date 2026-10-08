@@ -194,4 +194,14 @@ describe('fixes from the walk-through', () => {
     await actions.resetAll()
     expect(data()).toEqual(emptyData())
   })
+
+  it('deleting a file takes it off its document and its service', async () => {
+    const { actions, data } = setup()
+    const id = await actions.addCar(car, 50000, null)
+    await actions.saveDocument({ id: 'd1', car_id: id, kind: 'insurance', title: 'ביטוח', provider: null, number: null, expiry: null, files: ['mem:a', 'mem:b'] })
+    await actions.saveService({ car_id: id, type: 'oil', title: 'שמן', date: todayIso(), km: 50500, price: null, garage: null, notes: null, receipt: 'mem:b' })
+    await actions.deleteFile('mem:b')
+    expect(data().documents[0].files).toEqual(['mem:a'])
+    expect(data().services[0].receipt).toBeNull()
+  })
 })

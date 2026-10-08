@@ -72,6 +72,14 @@ export function firebaseStore(userId: string): Store {
       urls.set(ref, url)
       return url
     },
+    async removeFile(ref) {
+      if (!ref.startsWith('fs:')) return
+      const id = ref.slice(3)
+      const parts = await getDocs(collection(fs, 'users', userId, 'files', id, 'parts'))
+      await Promise.all(parts.docs.map(p => deleteDoc(p.ref)))
+      await deleteDoc(row('files', id))
+      urls.delete(ref)
+    },
     async wipeFiles() {
       const all = await getDocs(table('files'))
       for (const f of all.docs) {

@@ -153,11 +153,13 @@ export function FileViewer({
   start = 0,
   onClose,
   onDelete,
+  permanent = false,
 }: {
   files: AppFile[]
   start?: number
   onClose(): void
-  onDelete?: (ref: string) => boolean // removes the file; return false for files this place cannot remove
+  onDelete?: (ref: string) => boolean | Promise<boolean> // removes the file; false for files this place cannot remove
+  permanent?: boolean // deletes it for good (the files tab) rather than taking it off an unsaved form
 }) {
   const [i, setI] = useState(start)
   const file = files[Math.min(i, files.length - 1)]
@@ -234,8 +236,9 @@ export function FileViewer({
             className="viewer-del"
             aria-label="הסרת הקובץ"
             onClick={async () => {
-              if (!(await ask({ title: 'להסיר את הקובץ?', text: file.title, confirm: 'הסרה', danger: true }))) return
-              if (onDelete(file.ref) === false) return
+              const q = permanent ? { title: 'למחוק את הקובץ?', text: `${file.title} · הקובץ יימחק לצמיתות.`, confirm: 'מחיקה' } : { title: 'להסיר את הקובץ?', text: file.title, confirm: 'הסרה' }
+              if (!(await ask({ ...q, danger: true }))) return
+              if ((await onDelete(file.ref)) === false) return
               if (files.length <= 1) onClose()
               else setI(x => Math.max(0, Math.min(x, files.length - 2)))
             }}
@@ -302,6 +305,7 @@ export function FileViewer({
 
 /** A grid of all the car's files with a filter; tapping one opens the viewer. */
 export function FilesGallery({ files }: { files: AppFile[] }) {
+  const { actions } = useApp()
   const [filter, setFilter] = useState<'all' | 'doc' | 'receipt'>('all')
   const [open, setOpen] = useState<number | null>(null)
   const shown = files.filter(f => filter === 'all' || f.source === filter)
@@ -332,7 +336,18 @@ export function FilesGallery({ files }: { files: AppFile[] }) {
           ))}
         </div>
       )}
-      {open !== null && <FileViewer files={shown} start={open} onClose={() => setOpen(null)} />}
+      {open !== null && (
+        <FileViewer
+          files={shown}
+          start={open}
+          onClose={() => setOpen(null)}
+          permanent
+          onDelete={async ref => {
+            await actions.deleteFile(ref)
+            return true
+          }}
+        />
+      )}
     </>
   )
 }

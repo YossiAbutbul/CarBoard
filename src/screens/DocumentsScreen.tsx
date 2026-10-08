@@ -20,7 +20,7 @@ function expiryState(expiry: string | null): { s: string; text: string; days: nu
 }
 
 export function DocumentsScreen({ open, openCars, openSettings }: { open: OpenSheet; openCars(): void; openSettings(): void }) {
-  const { data, car } = useApp()
+  const { data, car, actions } = useApp()
   const [viewAll, setViewAll] = useState(false)
   if (!car) return null
   const files = carFiles(data, car.id)
@@ -88,7 +88,17 @@ export function DocumentsScreen({ open, openCars, openSettings }: { open: OpenSh
           <FilesGallery files={files} />
         </>
       )}
-      {viewAll && <FileViewer files={files} onClose={() => setViewAll(false)} />}
+      {viewAll && (
+        <FileViewer
+          files={files}
+          onClose={() => setViewAll(false)}
+          permanent
+          onDelete={async ref => {
+            await actions.deleteFile(ref)
+            return true
+          }}
+        />
+      )}
     </div>
   )
 }

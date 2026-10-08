@@ -132,6 +132,15 @@ export function makeActions(store: Store, getData: () => Data, refresh: () => Pr
       await store.remove('documents', id)
       await refresh()
     },
+    /** Deletes an uploaded file: takes it off its document or service, then removes the file itself. */
+    async deleteFile(ref: string) {
+      const d = getData()
+      for (const doc of d.documents.filter(x => x.files.includes(ref)))
+        await store.update('documents', doc.id, { files: doc.files.filter(f => f !== ref) })
+      for (const s of d.services.filter(x => x.receipt === ref)) await store.update('services', s.id, { receipt: null })
+      await store.removeFile?.(ref).catch(() => {}) // already gone is fine
+      await refresh()
+    },
     upload: (name: string, blob: Blob) => store.upload(name, blob),
     fileUrl: (ref: string) => store.fileUrl(ref),
   }
