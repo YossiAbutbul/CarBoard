@@ -22,7 +22,7 @@ export function buildIcs(car: Car, reminders: Reminder[]) {
       'END:VEVENT',
     ].join('\r\n')
   })
-  return ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//car-records//he', 'CALSCALE:GREGORIAN', ...events, 'END:VCALENDAR'].join('\r\n')
+  return ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//CarBoard//he', 'CALSCALE:GREGORIAN', ...events, 'END:VCALENDAR'].join('\r\n')
 }
 
 export function downloadIcs(car: Car, reminders: Reminder[]) {

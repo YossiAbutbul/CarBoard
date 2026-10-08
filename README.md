@@ -37,7 +37,7 @@ Data layout: `users/<uid>/<table>/<id>`, and files in `users/<uid>/files/<id>` (
 
 1. Import the GitHub repo at [vercel.com/new](https://vercel.com/new). [`vercel.json`](vercel.json) sets the Vite build.
 2. **Settings → Environment Variables:** add the six `VITE_FIREBASE_*` values.
-3. In Firebase, **Authentication → Settings → Authorized domains:** add your Vercel domain (e.g. `car-records.vercel.app`).
+3. In Firebase, **Authentication → Settings → Authorized domains:** add your Vercel domain (e.g. `carboard-teal.vercel.app`).
 
 ## Stack
 
