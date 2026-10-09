@@ -34,10 +34,17 @@ export const targetKey = (it: Item) => `${it.id}:${it.due_km ?? ''}:${it.due_dat
 // how far ahead a step is: later steps have smaller numbers ('late' is the last)
 const ahead = (s: Step) => (s === 'late' ? -1 : Number(s.slice(1)))
 
-/** The step for `days` left: the nearest chosen point at or after it, e.g. 5 days left → 'd7'. */
-function stepFor(days: number, prefs: NotifyPrefs): Step | null {
+// a chosen point is still sent this many days after it, in case a daily run was missed
+const GRACE = 2
+
+/**
+ * The step for `days` left: a chosen point on its day, or up to GRACE days after it (7 chosen: sent
+ * with 7, 6 or 5 days left). Further past it, the point is skipped and the next chosen one waits for
+ * its own day: a reminder made 22 days ahead with "a month before" chosen does not say "in 22 days".
+ */
+export function stepFor(days: number, prefs: NotifyPrefs): Step | null {
   if (days < 0) return prefs.late ? 'late' : null
-  const t = [...prefs.days].sort((a, b) => a - b).find(d => days <= d)
+  const t = [...prefs.days].sort((a, b) => a - b).find(d => days <= d && days >= d - GRACE)
   return t == null ? null : `d${t}`
 }
 

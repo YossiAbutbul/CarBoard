@@ -4,7 +4,7 @@ import { Icon } from '../components/Icon'
 import { Glance, GlanceCell, PageHero, TopBar, useCountUp } from '../components/Chrome'
 import { useApp } from '../data/AppData'
 import { useBackLayer } from '../lib/back'
-import { byDate, economyOf, monthlyPerLiter, monthlySpend, perLiter } from '../domain/fuel'
+import { byDate, economyOf, fuelPeriod, inRange, perLiter, totals, type FuelRange, type Period } from '../domain/fuel'
 import { fmtDate, fmtDays, fmtMoney, fmtNum, fmtShortDate } from '../lib/i18n'
 import { diffDays, todayIso } from '../lib/dates'
 import type { Fuel } from '../types'
@@ -18,9 +18,12 @@ export function FuelScreen({ open, openCars, openSettings }: { open: OpenSheet; 
   const [receipt, setReceipt] = useState<Fuel | null>(null)
   const fills = data.fuel.filter(f => f.car_id === car?.id)
   const list = [...fills].sort(byDate).reverse() // newest first
-  const month = new Date().toISOString().slice(0, 7)
-  const monthTotal = fills.filter(f => f.date.startsWith(month)).reduce((n, f) => n + (f.price ?? 0), 0)
-  const monthShown = useCountUp(monthTotal)
+  // the period the chart shows; the header's first box adds up the same period
+  const [range, setRange] = useState<FuelRange>('m6')
+  const [offset, setOffset] = useState(0)
+  const period = fuelPeriod(range, offset, fills)
+  const sum = totals(fills.filter(f => inRange(f, period.from, period.to)))
+  const sumShown = useCountUp(sum.spent)
   if (!car) return null
   const last = list[0] ?? null // the newest fill-up
   const lastPrice = list.map(perLiter).find(p => p != null) ?? null
@@ -35,7 +38,7 @@ export function FuelScreen({ open, openCars, openSettings }: { open: OpenSheet; 
           <h1>יומן דלק</h1>
         </div>
         <Glance>
-          <GlanceCell k="החודש" v={fmtMoney(monthShown)} d={`${fills.filter(f => f.date.startsWith(month)).length} תדלוקים`} />
+          <GlanceCell k={range === 'm1' && offset === 0 ? 'החודש' : range === 'm6' ? `${MONTHS[period.first.m]}–${MONTHS[period.last.m]}` : periodLabel(range, period)} v={fmtMoney(sumShown)} d={`${sum.count} תדלוקים`} />
           <GlanceCell
             k="תדלוק אחרון"
             v={last ? (diffDays(todayIso(), last.date) <= 0 ? 'היום' : `לפני ${fmtDays(diffDays(todayIso(), last.date))}`) : 'אין'}
@@ -58,7 +61,7 @@ export function FuelScreen({ open, openCars, openSettings }: { open: OpenSheet; 
         </div>
       ) : (
         <>
-          <FuelChart fills={fills} />
+          <FuelChart fills={fills} range={range} setRange={r => { setRange(r); setOffset(0) }} offset={offset} setOffset={setOffset} period={period} />
           <div className="sec">
             <h2>התדלוקים</h2>
             <button className="add-btn" onClick={() => open({ t: 'fuel' })}>
@@ -110,37 +113,57 @@ export function FuelScreen({ open, openCars, openSettings }: { open: OpenSheet; 
   )
 }
 
-type Range = 'm1' | 'm6' | 'y1'
 interface Point {
   key: string
   label: string
   value: number
 }
 
+const RANGES: [FuelRange, string][] = [
+  ['m1', 'חודש'],
+  ['m6', 'חצי שנה'],
+  ['y1', 'שנה'],
+  ['all', 'שנים'],
+]
+
+/** "ספט׳ 2026", "מאי–אוק׳ 2026", "2025", "כל השנים". */
+export function periodLabel(range: FuelRange, p: Period) {
+  if (range === 'all') return 'כל השנים'
+  if (range === 'y1') return String(p.first.y)
+  if (range === 'm1') return `${MONTHS[p.first.m]} ${p.first.y}`
+  return p.first.y === p.last.y ? `${MONTHS[p.first.m]}–${MONTHS[p.last.m]} ${p.last.y}` : `${MONTHS[p.first.m]} ${p.first.y}–${MONTHS[p.last.m]} ${p.last.y}`
+}
+
 /**
- * Spending (bars) or the price per liter (a line), over a month, half a year or a year. A month
- * shows each fill-up; longer ranges add them up by month, so a lot of data stays readable.
+ * Spending (bars) or the price per liter (a line) over the chosen period: a month (each fill-up),
+ * half a year or a year (by month), or every year. The arrows step to the period before or after.
  */
-function FuelChart({ fills }: { fills: Fuel[] }) {
+function FuelChart({ fills, range, setRange, offset, setOffset, period }: { fills: Fuel[]; range: FuelRange; setRange(r: FuelRange): void; offset: number; setOffset(o: number): void; period: Period }) {
   const [view, setView] = useState<'spend' | 'price'>('spend')
-  const [range, setRange] = useState<Range>('m6')
-  const monthLabel = (m: string) => MONTHS[Number(m.slice(5)) - 1]
-  const lastMonth = [...fills].filter(f => diffDays(todayIso(), f.date) <= 30).sort(byDate)
+  const earliest = fills.reduce((m, f) => (f.date < m ? f.date : m), todayIso())
+  const canBack = range !== 'all' && period.from > earliest
+  const canForward = range !== 'all' && offset < 0
+  const inPeriod = [...fills].filter(f => inRange(f, period.from, period.to)).sort(byDate)
+  const bucketLabel = (key: string) => (key.length === 4 ? key : MONTHS[Number(key.slice(5, 7)) - 1])
   const points: Point[] =
-    view === 'spend'
-      ? range === 'm1'
-        ? lastMonth.filter(f => f.price != null).map(f => ({ key: f.id, label: fmtShortDate(f.date), value: f.price! }))
-        : monthlySpend(fills, range === 'm6' ? 6 : 12).map(s => ({ key: s.month, label: monthLabel(s.month), value: s.total }))
-      : range === 'm1'
-        ? lastMonth.filter(f => perLiter(f) != null).map(f => ({ key: f.id, label: fmtShortDate(f.date), value: perLiter(f)! }))
-        : monthlyPerLiter(fills, range === 'm6' ? 6 : 12)
-            .filter(m => m.avg != null)
-            .map(m => ({ key: m.month, label: monthLabel(m.month), value: m.avg! }))
+    range === 'm1'
+      ? view === 'spend'
+        ? inPeriod.filter(f => f.price != null).map(f => ({ key: f.id, label: fmtShortDate(f.date), value: f.price! }))
+        : inPeriod.filter(f => perLiter(f) != null).map(f => ({ key: f.id, label: fmtShortDate(f.date), value: perLiter(f)! }))
+      : period.buckets
+          .map(b => {
+            const t = totals(fills.filter(f => inRange(f, b.from, b.to)))
+            return { key: b.key, label: bucketLabel(b.key), value: view === 'spend' ? t.spent : t.perLiter }
+          })
+          .filter((p): p is Point => p.value != null)
   const W = 320
   const H = 120
   const many = points.length > 8
+  const top = Math.max(...points.map(p => p.value))
+  // the highest bar (or point) is the blue one: where the most money went
+  const peak = points.findIndex(p => p.value === top)
   // with many points, only the latest and the highest carry their number
-  const showValue = (i: number) => !many || i === points.length - 1 || points[i].value === Math.max(...points.map(p => p.value))
+  const showValue = (i: number) => !many || i === points.length - 1 || i === peak
   const fmtValue = (v: number) => (view === 'spend' ? fmtNum(v) : v.toFixed(2))
   const empty = view === 'spend' ? !points.some(p => p.value > 0) : points.length < 2
 
@@ -155,13 +178,7 @@ function FuelChart({ fills }: { fills: Fuel[] }) {
         </button>
       </div>
       <div className="chart-range" role="radiogroup" aria-label="טווח">
-        {(
-          [
-            ['m1', 'חודש'],
-            ['m6', 'חצי שנה'],
-            ['y1', 'שנה'],
-          ] as [Range, string][]
-        ).map(([r, label]) => (
+        {RANGES.map(([r, label]) => (
           <button key={r} role="radio" aria-checked={range === r} className={range === r ? 'on' : ''} onClick={() => setRange(r)}>
             {label}
           </button>
@@ -173,7 +190,7 @@ function FuelChart({ fills }: { fills: Fuel[] }) {
         <svg viewBox={`0 0 ${W} ${H + 22}`} className={`chart ${many ? 'many' : ''}`} role="img" aria-label={view === 'spend' ? 'הוצאות דלק' : 'מחיר לליטר'}>
           {view === 'spend'
             ? (() => {
-                const max = Math.max(1, ...points.map(p => p.value))
+                const max = Math.max(1, top)
                 const bw = W / Math.max(points.length, 4)
                 const x0 = W - bw * points.length // a few bars stay at the right (start), not stretched across
                 return points.map((p, i) => {
@@ -182,7 +199,7 @@ function FuelChart({ fills }: { fills: Fuel[] }) {
                   const x = x0 + (points.length - 1 - i) * bw + bw * 0.2
                   return (
                     <g key={p.key}>
-                      <rect x={x} y={H - h} width={bw * 0.6} height={Math.max(h, p.value ? 2 : 0)} rx={many ? 3 : 6} className={i === points.length - 1 ? 'bar now' : 'bar'} />
+                      <rect x={x} y={H - h} width={bw * 0.6} height={Math.max(h, p.value ? 2 : 0)} rx={many ? 3 : 6} className={i === peak ? 'bar now' : 'bar'} />
                       {p.value > 0 && showValue(i) && (
                         <text x={x + bw * 0.3} y={H - h - 5} className="val">
                           {fmtValue(p.value)}
@@ -209,7 +226,7 @@ function FuelChart({ fills }: { fills: Fuel[] }) {
                     <path d={path} className="line" />
                     {points.map((p, i) => (
                       <g key={p.key}>
-                        <circle cx={pts[i][0]} cy={pts[i][1]} r={many ? 3 : 4} className={i === points.length - 1 ? 'dot now' : 'dot'} />
+                        <circle cx={pts[i][0]} cy={pts[i][1]} r={many ? 3 : 4} className={i === peak ? 'dot now' : 'dot'} />
                         {showValue(i) && (
                           <text x={pts[i][0]} y={pts[i][1] - 9} className="val">
                             {fmtValue(p.value)}
@@ -225,6 +242,18 @@ function FuelChart({ fills }: { fills: Fuel[] }) {
               })()}
           <line x1="0" x2={W} y1={H} y2={H} className="axis" />
         </svg>
+      )}
+      {range !== 'all' && (
+        <div className="chart-nav">
+          {/* RTL: › (right) goes back in time, ‹ (left) forward */}
+          <button onClick={() => setOffset(offset - 1)} disabled={!canBack} aria-label="התקופה הקודמת">
+            <Icon name="back" />
+          </button>
+          <b>{periodLabel(range, period)}</b>
+          <button onClick={() => setOffset(offset + 1)} disabled={!canForward} aria-label="התקופה הבאה">
+            <Icon name="forward" />
+          </button>
+        </div>
       )}
     </section>
   )

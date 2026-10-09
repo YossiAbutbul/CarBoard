@@ -5,7 +5,6 @@ import App from './App'
 import { UpdateBanner } from './components/UpdateBanner'
 import { DialogHost } from './components/Dialog'
 import { InstallPrompt } from './components/InstallPrompt'
-import { ActivityBar } from './components/ActivityBar'
 import { ErrorBoundary } from './components/ErrorBoundary'
 import { NotFound } from './components/ErrorPage'
 import './styles.css'
@@ -46,6 +45,5 @@ createRoot(document.getElementById('root')!).render(
     <UpdateBanner />
     <DialogHost />
     <InstallPrompt />
-    <ActivityBar />
   </StrictMode>,
 )

@@ -13,7 +13,7 @@ import { compressImage } from '../lib/image'
 import type { OpenSheet } from '../App'
 
 export function ServicesScreen({ open, openCars, openSettings }: { open: OpenSheet; openCars(): void; openSettings(): void }) {
-  const { data, car, actions } = useApp()
+  const { data, car, actions, reminders } = useApp()
   const [view, setView] = useState<string | null>(null)
   const [busy, setBusy] = useState<string | null>(null)
   const list = data.services
@@ -27,7 +27,8 @@ export function ServicesScreen({ open, openCars, openSettings }: { open: OpenShe
 
   const years = [...new Set(list.map(s => s.date.slice(0, 4)))]
   const total = (y: string) => list.filter(s => s.date.startsWith(y)).reduce((n, s) => n + (s.price ?? 0), 0)
-  const last = list[0]
+  // reminders come most urgent first
+  const next = reminders.find(r => r.item.kind !== 'test' && r.item.kind !== 'insurance' && r.status !== 'unset') ?? null
 
   async function addReceipt(id: string, f: File | undefined) {
     if (!f) return
@@ -50,11 +51,20 @@ export function ServicesScreen({ open, openCars, openSettings }: { open: OpenShe
         </div>
         <Glance>
           <GlanceCell k={`הוצאות ${thisYear}`} v={fmtMoney(totalShown)} d={`${list.filter(s => s.date.startsWith(thisYear)).length} טיפולים`} />
-          <GlanceCell k="סה״כ טיפולים" v={fmtNum(list.length)} d={years.length ? `מאז ${years[years.length - 1]}` : 'עוד אין'} />
+          {/* the count leads to the full history below */}
           <GlanceCell
-            k="טיפול אחרון"
-            v={last ? (diffDays(todayIso(), last.date) <= 0 ? 'היום' : `לפני ${fmtDays(diffDays(todayIso(), last.date))}`) : 'אין'}
-            d={last ? fmtKm(last.km) : 'לא נרשם'}
+            k="סה״כ טיפולים"
+            v={fmtNum(list.length)}
+            d={years.length ? `מאז ${years[years.length - 1]}` : 'עוד אין'}
+            onClick={list.length ? () => document.getElementById('services-history')?.scrollIntoView({ behavior: 'smooth', block: 'start' }) : undefined}
+          />
+          {/* the nearest service that is due (not the test or the insurance); opens that reminder */}
+          <GlanceCell
+            k="הטיפול הקרוב"
+            v={next ? next.headline : 'אין'}
+            d={next ? next.item.label : 'אין תזכורת'}
+            s={next?.status}
+            onClick={next ? () => open({ t: 'item', item: next.item }) : undefined}
           />
         </Glance>
       </PageHero>
@@ -75,7 +85,7 @@ export function ServicesScreen({ open, openCars, openSettings }: { open: OpenShe
       {list.some(s => s.price) && <SpendByType list={list} years={years} />}
 
       {list.length > 0 && (
-        <div className="sec">
+        <div className="sec" id="services-history">
           <h2>היסטוריה</h2>
           <button className="add-btn" onClick={() => open({ t: 'service' })}>
             <Icon name="plus" /> טיפול
