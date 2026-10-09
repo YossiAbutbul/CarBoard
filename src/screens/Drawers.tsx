@@ -18,6 +18,8 @@ import { GoogleMark } from '../components/GoogleMark'
 import { downloadIcs } from '../lib/ics'
 import { fmtNum } from '../lib/i18n'
 import type { OpenSheet } from '../App'
+import type { Family } from '../data/store'
+import { useBackLayer } from '../lib/back'
 
 /** Car switcher: opens from the right, where its button is. */
 export function CarsDrawer({ open, onClose }: { open: OpenSheet; onClose(): void }) {
@@ -86,6 +88,7 @@ export function SettingsDrawer({
   name,
   onName,
   onTour,
+  onSummary,
   onClose,
 }: {
   email: string | null
@@ -93,6 +96,7 @@ export function SettingsDrawer({
   name: string
   onName(n: string): void
   onTour(): void
+  onSummary(): void // the monthly summary
   onClose(): void
 }) {
   const { car, km, reminders, store, actions, data } = useApp()
@@ -116,7 +120,10 @@ export function SettingsDrawer({
       </section>
       {car && (
         <section className="drawer-sec">
-          <button className="btn" style={{ background: 'var(--card)' }} onClick={onTour}>
+          <button className="btn" style={{ background: 'var(--card)' }} onClick={onSummary}>
+            <Icon name="calendar" /> סיכום חודשי
+          </button>
+          <button className="btn" style={{ background: 'var(--card)', marginTop: 8 }} onClick={onTour}>
             <Icon name="search" /> סיור באפליקציה
           </button>
         </section>
@@ -479,15 +486,7 @@ ${url}`)
                 <Icon name="edit" />
               </button>
             </div>
-            <div className="members">
-              {family.members.map(m => (
-                <span key={m.uid} className={`member ${m.uid === family.me ? 'me' : ''}`}>
-                  <b>{(m.name || '?').slice(0, 1)}</b>
-                  <span>{m.uid === family.me ? m.name || 'אני' : m.name || 'בן משפחה'}</span>
-                  {m.uid === family.me && <small>את/ה</small>}
-                </span>
-              ))}
-            </div>
+            <MembersSummary family={family} />
             <button className="btn" style={{ marginTop: 12, background: '#fff' }} disabled={busy} onClick={sendInvite}>
               {busy ? <span className="spin" /> : (
                 <>
@@ -513,5 +512,64 @@ ${url}`)
       </div>
       {toast && createPortal(<div className="toast" role="status">{toast}</div>, document.body)}
     </section>
+  )
+}
+
+/**
+ * The family in one line: "את/ה, דן ועוד 3", with the first letters stacked. Tapping it opens the
+ * whole list.
+ */
+function MembersSummary({ family }: { family: Family }) {
+  const [open, setOpen] = useState(false)
+  const me = family.members.find(m => m.uid === family.me)
+  const others = family.members.filter(m => m.uid !== family.me)
+  const name = (m: Family['members'][number]) => m.name || 'בן משפחה'
+  const shown = others.slice(0, 1).map(name)
+  const more = others.length - shown.length
+  const text = ['את/ה', ...shown].join(', ') + (more > 0 ? ` ועוד ${more}` : '')
+  const people = [...(me ? [me] : []), ...others]
+  return (
+    <>
+      <button className="members-sum" onClick={() => setOpen(true)} aria-label={`בני המשפחה: ${text}`}>
+        <span className="faces" aria-hidden="true">
+          {people.slice(0, 3).map(m => (
+            <b key={m.uid} className={m.uid === family.me ? 'me' : ''}>
+              {(m.name || '?').slice(0, 1)}
+            </b>
+          ))}
+        </span>
+        <span className="who">{text}</span>
+        <Icon name="back" />
+      </button>
+      {open && <MembersList family={family} people={people} onClose={() => setOpen(false)} />}
+    </>
+  )
+}
+
+function MembersList({ family, people, onClose }: { family: Family; people: Family['members']; onClose(): void }) {
+  useBackLayer(true, onClose)
+  return createPortal(
+    <div className="dialog-overlay" onClick={onClose}>
+      <div className="dialog members-dialog" role="dialog" aria-modal="true" aria-label="בני המשפחה" onClick={e => e.stopPropagation()}>
+        <b>{family.title ? `משפחת ${family.title.replace(/^(משפחת|מש['׳])\s*/, '')}` : 'בני המשפחה'}</b>
+        <p>{people.length} בני משפחה רואים ומעדכנים את הרכבים של כולם.</p>
+        <ul className="members-list">
+          {people.map(m => (
+            <li key={m.uid}>
+              <b className={m.uid === family.me ? 'me' : ''}>{(m.name || '?').slice(0, 1)}</b>
+              <span>{m.name || 'בן משפחה'}</span>
+              {m.uid === family.me && <small>את/ה</small>}
+              {m.uid === family.owner && <small className="owner">יצר/ה את המשפחה</small>}
+            </li>
+          ))}
+        </ul>
+        <div className="dialog-btns one">
+          <button className="dialog-ok" onClick={onClose}>
+            סגירה
+          </button>
+        </div>
+      </div>
+    </div>,
+    document.body,
   )
 }

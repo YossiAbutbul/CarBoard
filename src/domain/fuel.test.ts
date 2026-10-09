@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { Fuel } from '../types'
-import { averageEconomy, economy, findDuplicateFuel, monthlyPerLiter, monthlySpend, perLiter } from './fuel'
+import { averageEconomy, economy, findDuplicateFuel, fuelPeriod, monthlyPerLiter, monthlySpend, perLiter, totals } from './fuel'
 
 const f = (id: string, date: string, km: number | null, liters: number | null, full = true, price: number | null = null): Fuel => ({
   id,
@@ -43,6 +43,19 @@ describe('fuel', () => {
     expect(findDuplicateFuel([a], { ...a, id: 'b', time: null })).toBe(a) // same numbers, typed by hand
     expect(findDuplicateFuel([a], { ...a, id: 'b', time: null, price: 200 })).toBeNull()
     expect(findDuplicateFuel([a], { ...a, id: 'b', date: '2026-09-17' })).toBeNull()
+  })
+
+  it('cuts periods: a month, half a year, a year and every year, and steps back', () => {
+    const today = new Date(2026, 9, 9) // 9 Oct 2026
+    expect(fuelPeriod('m1', 0, [], today)).toMatchObject({ from: '2026-10-01', to: '2026-11-01' })
+    expect(fuelPeriod('m1', -10, [], today)).toMatchObject({ from: '2025-12-01', to: '2026-01-01' })
+    const h = fuelPeriod('m6', 0, [], today)
+    expect([h.from, h.to, h.buckets.length, h.buckets[0].key]).toEqual(['2026-05-01', '2026-11-01', 6, '2026-05'])
+    expect(fuelPeriod('m6', -1, [], today)).toMatchObject({ from: '2025-11-01', to: '2026-05-01' })
+    expect(fuelPeriod('y1', -1, [], today)).toMatchObject({ from: '2025-01-01', to: '2026-01-01' })
+    const all = fuelPeriod('all', 0, [f('a', '2024-03-02', null, 10)], today)
+    expect(all.buckets.map(b => b.key)).toEqual(['2024', '2025', '2026'])
+    expect(totals([f('a', '2026-01-01', null, 10, true, 70), f('b', '2026-01-02', null, null, true, 50)])).toEqual({ spent: 120, count: 2, perLiter: 7 })
   })
 
   it('averages the price per liter by month, weighted by liters', () => {

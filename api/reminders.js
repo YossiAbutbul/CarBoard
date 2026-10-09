@@ -93,9 +93,10 @@ var NOTIFY_DAYS = [30, 14, 7, 1, 0];
 var DEFAULT_PREFS = { days: [7, 1, 0], late: true };
 var targetKey = (it) => `${it.id}:${it.due_km ?? ""}:${it.due_date ?? ""}`;
 var ahead = (s) => s === "late" ? -1 : Number(s.slice(1));
+var GRACE = 2;
 function stepFor(days, prefs) {
   if (days < 0) return prefs.late ? "late" : null;
-  const t = [...prefs.days].sort((a, b) => a - b).find((d) => days <= d);
+  const t = [...prefs.days].sort((a, b) => a - b).find((d) => days <= d && days >= d - GRACE);
   return t == null ? null : `d${t}`;
 }
 function notesFor(car, items, readings, sent, today = todayIso(), prefs = DEFAULT_PREFS) {

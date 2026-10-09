@@ -67,6 +67,64 @@ export function averageEconomy(fills: Fuel[]) {
 /** The economy of the stretch this full tank closes, if it has one. */
 export const economyOf = (fills: Fuel[], id: string) => economy(fills).find(e => e.id === id) ?? null
 
+/*
+ * The period the fuel page shows: a month, half a year, a year, or every year, and how far back
+ * (offset 0 is the current one, -1 the one before). Each period is cut into buckets for the chart:
+ * a month into its fill-ups, half a year and a year into months, "all" into years.
+ */
+export type FuelRange = 'm1' | 'm6' | 'y1' | 'all'
+export interface Bucket {
+  key: string // YYYY-MM-DD (one fill-up), YYYY-MM or YYYY
+  from: string // first day, inclusive
+  to: string // day after the last, exclusive
+}
+export interface Period {
+  from: string
+  to: string
+  buckets: Bucket[] // for 'm1', filled in by the caller from the fill-ups
+  first: { y: number; m: number } // the period's first month (m: 0-11)
+  last: { y: number; m: number }
+}
+
+const ymd = (y: number, m: number, d = 1) => {
+  const t = new Date(y, m, d)
+  return `${t.getFullYear()}-${String(t.getMonth() + 1).padStart(2, '0')}-${String(t.getDate()).padStart(2, '0')}`
+}
+const ym = (y: number, m: number) => ymd(y, m).slice(0, 7)
+
+export function fuelPeriod(range: FuelRange, offset: number, fills: Fuel[], today = new Date()): Period {
+  const Y = today.getFullYear()
+  const M = today.getMonth()
+  const months = (y: number, m0: number, n: number): Bucket[] =>
+    Array.from({ length: n }, (_, i) => ({ key: ym(y, m0 + i), from: ymd(y, m0 + i), to: ymd(y, m0 + i + 1) }))
+  if (range === 'm1') {
+    const s = new Date(Y, M + offset, 1)
+    return { from: ymd(s.getFullYear(), s.getMonth()), to: ymd(s.getFullYear(), s.getMonth() + 1), buckets: [], first: { y: s.getFullYear(), m: s.getMonth() }, last: { y: s.getFullYear(), m: s.getMonth() } }
+  }
+  if (range === 'm6') {
+    const e = new Date(Y, M + offset * 6, 1)
+    const s = new Date(e.getFullYear(), e.getMonth() - 5, 1)
+    return { from: ymd(s.getFullYear(), s.getMonth()), to: ymd(e.getFullYear(), e.getMonth() + 1), buckets: months(s.getFullYear(), s.getMonth(), 6), first: { y: s.getFullYear(), m: s.getMonth() }, last: { y: e.getFullYear(), m: e.getMonth() } }
+  }
+  if (range === 'y1') {
+    const y = Y + offset
+    return { from: ymd(y, 0), to: ymd(y + 1, 0), buckets: months(y, 0, 12), first: { y, m: 0 }, last: { y, m: 11 } }
+  }
+  const firstYear = Math.min(Y, ...fills.map(f => Number(f.date.slice(0, 4))))
+  const buckets = Array.from({ length: Y - firstYear + 1 }, (_, i) => ({ key: String(firstYear + i), from: ymd(firstYear + i, 0), to: ymd(firstYear + i + 1, 0) }))
+  return { from: ymd(firstYear, 0), to: ymd(Y + 1, 0), buckets, first: { y: firstYear, m: 0 }, last: { y: Y, m: 11 } }
+}
+
+export const inRange = (f: Fuel, from: string, to: string) => f.date >= from && f.date < to
+
+/** ₪ spent, and the price per liter (total ÷ liters), over some fill-ups. */
+export function totals(fills: Fuel[]) {
+  const spent = fills.reduce((n, f) => n + (f.price ?? 0), 0)
+  const priced = fills.filter(f => f.price != null && f.liters)
+  const liters = priced.reduce((n, f) => n + f.liters!, 0)
+  return { spent, count: fills.length, perLiter: liters ? priced.reduce((n, f) => n + f.price!, 0) / liters : null }
+}
+
 /** The average price per liter in each of the last `months` months (total ₪ ÷ total liters), oldest first; null for a month with no data. */
 export function monthlyPerLiter(fills: Fuel[], months = 12, today = new Date()) {
   return monthlySpend(fills, months, today).map(({ month }) => {

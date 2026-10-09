@@ -18,6 +18,7 @@ import { HomeScreen } from './screens/HomeScreen'
 import { ServicesScreen } from './screens/ServicesScreen'
 import { DocumentsScreen } from './screens/DocumentsScreen'
 import { FuelScreen } from './screens/FuelScreen'
+import { MonthSummarySheet, markSummarySeen, summaryDue } from './components/MonthSummary'
 import { FuelSheet } from './screens/FuelSheet'
 import { CarsDrawer, SettingsDrawer } from './screens/Drawers'
 import { getLocalName, storeLocalName } from './lib/profile'
@@ -138,6 +139,19 @@ function Main({ email, accountName, guest = false }: { email: string | null; acc
   }
 
   // The phone's back button: from another tab it goes home; at home, press twice to leave.
+  // The monthly summary: opens by itself once at the start of a month (for the month that ended),
+  // and from settings any time.
+  const [summary, setSummary] = useState<string | null>(null)
+  const { data: appData } = useApp()
+  useEffect(() => {
+    if (loading || !splashDone || guide !== 'done' || !car) return
+    const due = summaryDue(appData)
+    if (!due) return
+    markSummarySeen(due)
+    const t = setTimeout(() => setSummary(due), 600) // after the home screen has settled
+    return () => clearTimeout(t)
+  }, [loading, splashDone, guide]) // eslint-disable-line react-hooks/exhaustive-deps
+
   const [exitHint, setExitHintShown] = useState(false)
   useEffect(() => {
     startBackHandling()
@@ -303,7 +317,8 @@ function Main({ email, accountName, guest = false }: { email: string | null; acc
       {sheet?.t === 'fuel' && <FuelSheet record={sheet.record} onClose={close} />}
       {sheet?.t === 'car' && <CarSheet car={sheet.car} onClose={close} />}
       {drawer === 'cars' && <CarsDrawer open={setSheet} onClose={() => setDrawer(null)} />}
-      {drawer === 'settings' && <SettingsDrawer email={email} guest={guest} name={localName} onName={saveName} onTour={startTour} onClose={() => setDrawer(null)} />}
+      {drawer === 'settings' && <SettingsDrawer email={email} guest={guest} name={localName} onName={saveName} onTour={startTour} onSummary={() => { setDrawer(null); setSummary('open') }} onClose={() => setDrawer(null)} />}
+      {summary && <MonthSummarySheet onClose={() => setSummary(null)} />}
       {exitHint && <div className="exit-hint">לחצו שוב על חזור כדי לצאת</div>}
       {guide === 'tour' && car && tab === 'home' && !sheet && <Tour name={userName ?? ''} onDone={endTour} />}
     </div>

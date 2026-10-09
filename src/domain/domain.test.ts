@@ -3,7 +3,7 @@ import type { Data, Item, Reading, Table } from '../types'
 import { estimateKm, kmPerDay, readingError } from './odometer'
 import { dueInfo } from './due'
 import { buildReminders } from './reminders'
-import { notesFor, targetKey } from './notify'
+import { notesFor, stepFor, targetKey } from './notify'
 import { makeActions } from '../data/actions'
 import { emptyData, type Store } from '../data/store'
 import { addDays, todayIso } from '../lib/dates'
@@ -265,10 +265,18 @@ describe('push notifications', () => {
     expect(notesFor(car1, [r], rd, {}, today)[0].step).toBe('late')
     expect(notesFor(car1, [r], rd, { [targetKey(r)]: ['late'] }, today)).toEqual([])
   })
+  it('sends a chosen day on the day, or up to two days late, never weeks late', () => {
+    const p = { days: [30, 7, 1, 0], late: true }
+    expect([31, 30, 29, 28, 27, 22, 8, 7, 5, 4, 2, 1, 0].map(d => stepFor(d, p))).toEqual([null, 'd30', 'd30', 'd30', null, null, null, 'd7', 'd7', null, null, 'd1', 'd0'])
+  })
+
   it('follows the chosen days', () => {
     const r = mk({ id: 'i1', due_date: addDays(today, 25) })
     expect(notesFor(car1, [r], rd, {}, today, { days: [7, 0], late: false })).toEqual([])
-    expect(notesFor(car1, [r], rd, {}, today, { days: [30, 7], late: false })[0].step).toBe('d30')
+    // 25 days left is not "a month before" any more: that day has passed (no catching up days later)
+    expect(notesFor(car1, [r], rd, {}, today, { days: [30, 7], late: false })).toEqual([])
+    const near = mk({ id: 'i3', due_date: addDays(today, 29) })
+    expect(notesFor(car1, [near], rd, {}, today, { days: [30, 7], late: false })[0].step).toBe('d30') // a day late is fine
     const late = mk({ id: 'i2', due_date: addDays(today, -2) })
     expect(notesFor(car1, [late], rd, {}, today, { days: [7], late: false })).toEqual([])
   })
