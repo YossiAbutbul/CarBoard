@@ -946,3 +946,9 @@ html, body { overscroll-behavior-y: none; }
 .pdf-failed .err-copy { color: rgba(255, 255, 255, 0.55); }
 /* first-run steps: the road sits low, above the button, clear of the text and the name field */
 .onb .scene .road-mark { top: auto; bottom: 150px; }
+/* cars list: press and hold a car, then drag, to set your own order */
+.car-order-hint { margin: -4px 2px 10px; font-size: 12.5px; color: var(--muted); }
+.car-row.dragging { position: relative; z-index: 2; background: #fff; box-shadow: inset 0 0 0 1.5px var(--blue); transition: none; animation: none; }
+/* while held: no text selection or phone callout, the row lifts a little */
+.car-row-main { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
+.car-row.dragging { transform-origin: center; scale: 1.02; }

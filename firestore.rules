@@ -7,6 +7,7 @@ rules_version = '2';
 //   meta/quota                 bytes and files stored; every file added or removed must update it
 //   meta/family                which family this user belongs to
 //   meta/prefs                 when to send push reminders
+//   meta/order                 this person's order of the cars (the first opens at start)
 //   push/<id>                  a phone with push reminders on (meta/notified is the server's own)
 // Families: families/<fid> lists its members; invites/<code> lets someone join for 7 days.
 // Members of the same family can reach each other's cars and everything about them; only a car's
@@ -97,6 +98,15 @@ service cloud.firestore {
           && request.resource.data.keys().hasOnly(['name'])
           && request.resource.data.name is string
           && request.resource.data.name.size() <= 40;
+      }
+
+      // ── this person's own order of the cars; family members each keep their own ──
+      match /meta/order {
+        allow read, delete: if signedIn(uid);
+        allow create, update: if signedIn(uid)
+          && request.resource.data.keys().hasOnly(['cars'])
+          && request.resource.data.cars is list
+          && request.resource.data.cars.size() <= 50;
       }
 
       // ── when to send push reminders: days before (30, 14, 7, 1, 0), once overdue, family cars too ──
