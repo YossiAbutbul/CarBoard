@@ -64,7 +64,7 @@ export function DocumentsScreen({ open, openCars, openSettings }: { open: OpenSh
           <h2>תא הכפפות, דיגיטלי</h2>
           <p>רישיון רכב, ביטוח חובה ומקיף, רישיון נהיגה. עם תאריך תפוגה ותזכורת.</p>
           <button className="btn pri" onClick={() => open({ t: 'doc' })}>
-            <Icon name="plus" /> מסמך ראשון
+            מסמך ראשון <Icon name="plus" />
           </button>
         </div>
       )}
@@ -73,7 +73,7 @@ export function DocumentsScreen({ open, openCars, openSettings }: { open: OpenSh
         <div className="sec">
           <h2>המסמכים</h2>
           <button className="add-btn" onClick={() => open({ t: 'doc' })}>
-            <Icon name="plus" /> מסמך
+            מסמך <Icon name="plus" />
           </button>
         </div>
       )}

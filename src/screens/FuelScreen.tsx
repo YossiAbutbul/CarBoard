@@ -56,7 +56,7 @@ export function FuelScreen({ open, openCars, openSettings }: { open: OpenSheet; 
           <h2>עוד לא נרשם תדלוק</h2>
           <p>רושמים ליטרים, מחיר וק״מ, וכל השדות לא חובה. מקבלים הוצאות לפי חודש ומעקב אחרי המחיר לליטר.</p>
           <button className="btn pri" onClick={() => open({ t: 'fuel' })}>
-            <Icon name="plus" /> תדלוק ראשון
+            תדלוק ראשון <Icon name="plus" />
           </button>
         </div>
       ) : (
@@ -65,7 +65,7 @@ export function FuelScreen({ open, openCars, openSettings }: { open: OpenSheet; 
           <div className="sec">
             <h2>התדלוקים</h2>
             <button className="add-btn" onClick={() => open({ t: 'fuel' })}>
-              <Icon name="plus" /> תדלוק
+              תדלוק <Icon name="plus" />
             </button>
           </div>
           {months.map(m => (

@@ -6,7 +6,7 @@ import { Brand } from '../components/Brand'
 import { useApp } from '../data/AppData'
 import { STATUS_TEXT } from '../domain/labels'
 import type { Reminder } from '../domain/reminders'
-import { fmtNum, greeting, longDate } from '../lib/i18n'
+import { fmtDate, fmtNum, greeting, longDate } from '../lib/i18n'
 import type { OpenSheet } from '../App'
 
 const FIRST = ['test', 'insurance', 'service']
@@ -43,7 +43,7 @@ export function HomeScreen({
           <span>אחד.</span>
         </div>
         <button className="btn pri" onClick={() => open({ t: 'car' })}>
-          <Icon name="plus" /> הוספת רכב לפי מספר רישוי
+          הוספת רכב לפי מספר רישוי <Icon name="plus" />
         </button>
       </div>
     )
@@ -154,7 +154,7 @@ export function HomeScreen({
       <div className="sec">
         <h2>מצב הרכב</h2>
         <button className="add-btn" onClick={() => open({ t: 'item' })}>
-          <Icon name="plus" /> תזכורת חדשה
+          תזכורת חדשה <Icon name="plus" />
         </button>
       </div>
       <div className="tiles" style={{ marginTop: 0 }} data-tour="tiles">
@@ -192,8 +192,30 @@ function Tile({ r, open }: { r: Reminder; open: OpenSheet }) {
         <Icon name={kindIcon(r.item.kind)} />
       </div>
       {insurer && <span className="s">{insurer}</span>}
-      <span className="state">{STATUS_TEXT[r.status]}</span>
-      <div className="v" style={{ fontSize: 20 }}>{r.headline}</div>
+      {r.status === 'unset' ? (
+        // not set yet: the same three lines as the others, the bar empty and an invitation under it
+        <>
+          <div className="v" style={{ fontSize: 20 }}>{r.headline}</div>
+          <div className="tbar unset-bar" aria-hidden="true" />
+          <div className="tfoot">
+            <span className="set-cta">
+              הגדרת מועד <Icon name="plus" />
+            </span>
+          </div>
+        </>
+      ) : (
+        <>
+          {/* the time bar: empties as the date (or the km) comes closer */}
+          <div className="v" style={{ fontSize: 20 }}>{r.headline}</div>
+          <div className="tbar" aria-hidden="true">
+            <i style={{ width: `${r.status === 'overdue' ? 100 : Math.max(4, (1 - r.progress) * 100)}%` }} />
+          </div>
+          <div className="tfoot">
+            <span className="state">{STATUS_TEXT[r.status]}</span>
+            {r.dueOn && <span className="when">{fmtDate(r.dueOn)}</span>}
+          </div>
+        </>
+      )}
     </button>
   )
 }

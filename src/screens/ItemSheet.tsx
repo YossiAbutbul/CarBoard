@@ -156,7 +156,7 @@ export function ItemSheet({ item, onClose, onDone }: { item?: Item; onClose(): v
                     }
                   }}
                 >
-                  {adding === d.kind ? <span className="spin inline" /> : <Icon name="plus" />} {d.label}
+                  {d.label} {adding === d.kind ? <span className="spin inline" /> : <Icon name="plus" />}
                 </button>
               ))}
             </div>
@@ -289,7 +289,7 @@ export function ItemSheet({ item, onClose, onDone }: { item?: Item; onClose(): v
                 </div>
               ))}
               <button className="file-btn" style={{ marginTop: 10, background: '#fff' }} onClick={() => onDone(item!)}>
-                <Icon name="plus" /> טיפול חדש עם קבלה
+                טיפול חדש עם קבלה <Icon name="plus" />
               </button>
             </div>
           </>

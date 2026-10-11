@@ -77,7 +77,7 @@ export function ServicesScreen({ open, openCars, openSettings }: { open: OpenShe
           <h2>היומן ריק</h2>
           <p>כל טיפול שתוסיף מעדכן את הק״מ ומזיז את מועד הטיפול הבא.</p>
           <button className="btn pri" onClick={() => open({ t: 'service' })}>
-            <Icon name="plus" /> טיפול ראשון
+            טיפול ראשון <Icon name="plus" />
           </button>
         </div>
       )}
@@ -88,7 +88,7 @@ export function ServicesScreen({ open, openCars, openSettings }: { open: OpenShe
         <div className="sec" id="services-history">
           <h2>היסטוריה</h2>
           <button className="add-btn" onClick={() => open({ t: 'service' })}>
-            <Icon name="plus" /> טיפול
+            טיפול <Icon name="plus" />
           </button>
         </div>
       )}
