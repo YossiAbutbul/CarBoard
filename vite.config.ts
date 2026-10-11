@@ -29,7 +29,7 @@ export default defineConfig({
       },
       // The background-removal model (onnxruntime) loads on demand, so keep it out of the precache.
       workbox: {
-        globPatterns: ['**/*.{js,css,html,svg,png,ico,woff2}'],
+        globPatterns: ['**/*.{js,mjs,css,html,svg,png,ico,woff2}'], // mjs: the PDF worker, so it matches the app's version
         globIgnores: ['**/ort*', '**/*.wasm'],
         importScripts: ['push-sw.js'], // push reminders: show the notice, open the app on tap
       },

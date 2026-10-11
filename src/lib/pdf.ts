@@ -5,12 +5,20 @@ import type { PDFDocumentProxy, RenderTask } from 'pdfjs-dist'
  * Phones cannot show a PDF inside the page, so we draw it ourselves.
  */
 
+// The legacy build: the same pdf.js, made to run on older phone browsers too (the modern build
+// needs very recent ones, and failed on some phones).
 let lib: Promise<typeof import('pdfjs-dist')> | null = null
 function pdfjs() {
-  lib ??= Promise.all([import('pdfjs-dist'), import('pdfjs-dist/build/pdf.worker.min.mjs?url')]).then(([m, worker]) => {
-    m.GlobalWorkerOptions.workerSrc = worker.default
-    return m
-  })
+  lib ??= Promise.all([import('pdfjs-dist/legacy/build/pdf.mjs'), import('pdfjs-dist/legacy/build/pdf.worker.min.mjs?url')]).then(
+    ([m, worker]) => {
+      m.GlobalWorkerOptions.workerSrc = worker.default
+      return m as unknown as typeof import('pdfjs-dist')
+    },
+    e => {
+      lib = null // a failed load (offline, or an update swapped the files) is tried again next time
+      throw e
+    },
+  )
   return lib
 }
 
@@ -30,6 +38,7 @@ export async function openPdf(url: string) {
         }).promise,
     )
     docs.set(url, open)
+    open.catch(() => docs.delete(url)) // never keep a failure: the next try opens it afresh
   }
   return docs.get(url)!
 }
