@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { userMessage } from '../lib/errors'
 import { createPortal } from 'react-dom'
 import { ConfirmButton } from '../components/ConfirmButton'
@@ -21,18 +21,110 @@ import type { OpenSheet } from '../App'
 import type { Family } from '../data/store'
 import { useBackLayer } from '../lib/back'
 
+/**
+ * Press and hold a car, then drag it to a new place (no handle). A quick tap still opens the car,
+ * and a finger that moves before the hold ends is scrolling the list instead. The list reorders
+ * live as the car passes the middle of the next row; the order is saved when the finger lifts.
+ */
+function useCarDrag(ids: string[], save: (ids: string[]) => void) {
+  const [live, setLive] = useState<string[] | null>(null) // the order while dragging
+  const [dragging, setDragging] = useState<string | null>(null)
+  const [dy, setDy] = useState(0)
+  const list = useRef<HTMLDivElement>(null)
+  const held = useRef(false) // the last press became a drag: its click must not open the car
+
+  function press(e: React.PointerEvent, id: string) {
+    if (ids.length < 2 || (e.pointerType === 'mouse' && e.button !== 0)) return
+    const row = (e.currentTarget as HTMLElement).closest<HTMLElement>('.car-row')
+    if (!row) return
+    held.current = false
+    const x0 = e.clientX
+    const y0 = e.clientY
+    let s: { y: number; order: string[]; step: number; from: string[] } | null = null
+    const blockScroll = (ev: TouchEvent) => ev.preventDefault()
+    const timer = setTimeout(() => {
+      const next = row.nextElementSibling as HTMLElement | null
+      const prev = row.previousElementSibling as HTMLElement | null
+      // one row's height plus the gap between rows
+      const step = next ? next.offsetTop - row.offsetTop : prev ? row.offsetTop - prev.offsetTop : row.offsetHeight
+      s = { y: y0, order: [...ids], step, from: [...ids] }
+      held.current = true
+      navigator.vibrate?.(15)
+      window.addEventListener('touchmove', blockScroll, { passive: false })
+      setLive([...ids])
+      setDragging(id)
+      setDy(0)
+    }, 350)
+    const move = (ev: PointerEvent) => {
+      if (!s) {
+        // moved before the hold ended: this is a scroll, not a drag
+        if (Math.hypot(ev.clientX - x0, ev.clientY - y0) > 8) end()
+        return
+      }
+      let d = ev.clientY - s.y
+      const i = s.order.indexOf(id)
+      if (d > s.step / 2 && i < s.order.length - 1) {
+        ;[s.order[i], s.order[i + 1]] = [s.order[i + 1], s.order[i]]
+        s.y += s.step
+        d -= s.step
+        setLive([...s.order])
+      } else if (d < -s.step / 2 && i > 0) {
+        ;[s.order[i], s.order[i - 1]] = [s.order[i - 1], s.order[i]]
+        s.y -= s.step
+        d += s.step
+        setLive([...s.order])
+      }
+      setDy(d)
+    }
+    const end = () => {
+      clearTimeout(timer)
+      window.removeEventListener('pointermove', move)
+      window.removeEventListener('pointerup', end)
+      window.removeEventListener('pointercancel', end)
+      window.removeEventListener('touchmove', blockScroll)
+      if (!s) return
+      const done = s
+      s = null
+      setDragging(null)
+      setDy(0)
+      setLive(null)
+      if (done.order.join() !== done.from.join()) save(done.order)
+    }
+    window.addEventListener('pointermove', move)
+    window.addEventListener('pointerup', end)
+    window.addEventListener('pointercancel', end)
+  }
+  // a click that ends a drag is not a tap on the car
+  const wasDrag = () => {
+    const h = held.current
+    held.current = false
+    return h
+  }
+  return { ids: live ?? ids, dragging, dy, press, wasDrag, list }
+}
+
 /** Car switcher: opens from the right, where its button is. */
 export function CarsDrawer({ open, onClose }: { open: OpenSheet; onClose(): void }) {
-  const { data, car, setCarId, actions, family, store } = useApp()
+  const { data, car, setCarId, setCarOrder, actions, family, store } = useApp()
   const ownerName = (uid?: string) => (uid && uid !== store.userId ? family?.members.find(m => m.uid === uid)?.name || 'בן משפחה' : null)
+  // reordering never switches the open car: it stays the one picked, even if it is no longer first
+  const drag = useCarDrag(data.cars.map(c => c.id), ids => {
+    if (car) setCarId(car.id)
+    setCarOrder(ids)
+  })
+  const cars = drag.ids.map(id => data.cars.find(c => c.id === id)!).filter(Boolean)
   return (
     <Drawer title={family ? (family.title ? `הרכבים של מש' ${family.title.replace(/^(משפחת|מש['׳])\s*/, '')}` : 'רכבי המשפחה') : 'הרכבים שלי'} side="start" onClose={onClose}>
-      <div className="car-list">
-        {data.cars.map(c => (
-          <div key={c.id} className={`car-row ${c.id === car?.id ? 'on' : ''}`}>
+      {cars.length > 1 && <p className="car-order-hint">לחיצה ארוכה על רכב כדי להזיז אותו</p>}
+      <div className="car-list" ref={drag.list}>
+        {cars.map(c => (
+          <div key={c.id} data-id={c.id} className={`car-row ${c.id === car?.id ? 'on' : ''} ${drag.dragging === c.id ? 'dragging' : ''}`} style={drag.dragging === c.id ? { transform: `translateY(${drag.dy}px)` } : undefined}>
             <button
               className="car-row-main"
+              onPointerDown={e => drag.press(e, c.id)}
+              onContextMenu={e => cars.length > 1 && e.preventDefault()} // the long press drags; no menu
               onClick={() => {
+                if (drag.wasDrag()) return
                 setCarId(c.id)
                 onClose()
               }}

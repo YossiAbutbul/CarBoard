@@ -96,7 +96,8 @@ export function LoadingDial() {
 
 // lite: the page header's one dial · bare: the blue only (error pages bring their own gauge) ·
 // drive: the car keeps driving by instead of parking · stage: the login's top half, one dial and the road
-export function Scene({ lite = false, bare = false, drive = false, stage = false }: { lite?: boolean; bare?: boolean; drive?: boolean; stage?: boolean }) {
+// one: a single dial (the first-run steps, where a second one would sit behind the text)
+export function Scene({ lite = false, bare = false, drive = false, stage = false, one = false }: { lite?: boolean; bare?: boolean; drive?: boolean; stage?: boolean; one?: boolean }) {
   // full-screen scenes: the page behind them is the same blue, so bouncing past the edge never shows white
   useEffect(() => {
     if (lite || stage) return
@@ -115,7 +116,7 @@ export function Scene({ lite = false, bare = false, drive = false, stage = false
       ) : (
         <>
           <Dial className="d-speed" needle={-62} />
-          <Dial className="d-revs" needle={-118} />
+          {!one && <Dial className="d-revs" needle={-118} />}
           <Road />
         </>
       )}

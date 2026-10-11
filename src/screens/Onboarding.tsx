@@ -36,7 +36,7 @@ export function Intro({ name, onName, onAddCar }: { name: string; onName(n: stri
 
   return (
     <div className="onb">
-      <Scene />
+      <Scene one />
       <div className="onb-dots" aria-hidden="true">
         {[0, 1, 2, 3].map(i => (
           <i key={i} className={i === step ? 'on' : i < step ? 'done' : ''} />
@@ -99,7 +99,7 @@ export function Ready({ name, car, onStart, onSkip }: { name: string; car: Car; 
   const first = name.trim().split(' ')[0]
   return (
     <div className="onb">
-      <Scene />
+      <Scene one />
       <div className="onb-dots" aria-hidden="true">
         {[0, 1, 2, 3].map(i => (
           <i key={i} className={i === 3 ? 'on' : 'done'} />

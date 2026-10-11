@@ -10,6 +10,7 @@ import { buildReminders, needsAttention, type Reminder } from '../domain/reminde
 import { setBadge } from '../lib/badge'
 import { defaultItems } from '../domain/defaults'
 import { tracked } from '../lib/activity'
+import { getLocalOrder, loadCloudOrder, saveCloudOrder, sortCars, storeLocalOrder } from '../lib/carOrder'
 
 interface Ctx {
   store: Store
@@ -17,6 +18,7 @@ interface Ctx {
   loading: boolean
   error: string | null
   setCarId(id: string): void
+  setCarOrder(ids: string[]): void // this person's order of the cars; the first opens at start
   actions: Actions
   car: Car | null
   km: KmEstimate
@@ -87,13 +89,15 @@ export function AppDataProvider({ store: raw, children }: { store: Store; childr
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [family, setFamily] = useState<Family | null>(null)
+  // The car picked during this visit (kept over a reload); a new start opens the first car in the order.
   const [carId, setCarIdState] = useState<string | null>(() => {
     try {
-      return localStorage.getItem(CAR_KEY)
+      return sessionStorage.getItem(CAR_KEY)
     } catch {
       return null
     }
   })
+  const [order, setOrder] = useState<string[]>(getLocalOrder)
   const lastFull = useRef(0)
 
   /** Read everything again: at start, after joining or leaving a family, and on return after a while. */
@@ -107,6 +111,14 @@ export function AppDataProvider({ store: raw, children }: { store: Store; childr
       dataRef.current = d
       setData(d)
       setFamily(store.family?.current() ?? null)
+      // the order saved to the account wins over this device's copy
+      if (store.mode === 'cloud' && store.userId) {
+        const saved = await loadCloudOrder(store.userId)
+        if (saved) {
+          setOrder(saved)
+          storeLocalOrder(saved)
+        }
+      }
       setError(null)
     } catch (e) {
       setError(userMessage(e))
@@ -137,15 +149,25 @@ export function AppDataProvider({ store: raw, children }: { store: Store; childr
   const setCarId = useCallback((id: string) => {
     setCarIdState(id)
     try {
-      localStorage.setItem(CAR_KEY, id)
+      sessionStorage.setItem(CAR_KEY, id)
     } catch {
-      // storage blocked: the choice lasts for this visit only
+      // storage blocked: the choice lasts until the page reloads
     }
   }, [])
 
+  const setCarOrder = useCallback(
+    (ids: string[]) => {
+      setOrder(ids)
+      storeLocalOrder(ids)
+      if (store.mode === 'cloud' && store.userId) saveCloudOrder(store.userId, ids).catch(e => console.error('saving the car order failed', e))
+    },
+    [store],
+  )
+  const sorted = useMemo(() => ({ ...data, cars: sortCars(data.cars, order) }), [data, order])
+
   const actions = useMemo(() => makeActions(store, () => dataRef.current, refresh), [store, refresh])
 
-  const car = data.cars.find(c => c.id === carId) ?? data.cars[0] ?? null
+  const car = sorted.cars.find(c => c.id === carId) ?? sorted.cars[0] ?? null
   const km = useMemo(() => estimateKm(data.readings.filter(r => r.car_id === car?.id)), [data.readings, car?.id])
   const reminders = useMemo(
     () => buildReminders(data.items.filter(i => i.car_id === car?.id), km),
@@ -157,7 +179,7 @@ export function AppDataProvider({ store: raw, children }: { store: Store; childr
   }, [reminders])
 
   return (
-    <C.Provider value={{ store, data, loading, error, setCarId, actions, car, km, reminders, family, reload }}>{children}</C.Provider>
+    <C.Provider value={{ store, data: sorted, loading, error, setCarId, setCarOrder, actions, car, km, reminders, family, reload }}>{children}</C.Provider>
   )
 }
 
