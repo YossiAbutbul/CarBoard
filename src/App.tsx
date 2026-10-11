@@ -21,7 +21,7 @@ import { FuelScreen } from './screens/FuelScreen'
 import { MonthSummarySheet, markSummarySeen, summaryDue } from './components/MonthSummary'
 import { FuelSheet } from './screens/FuelSheet'
 import { CarsDrawer, SettingsDrawer } from './screens/Drawers'
-import { getLocalName, storeLocalName } from './lib/profile'
+import { getLocalName, loadCloudName, saveCloudName, storeLocalName } from './lib/profile'
 import { OdometerSheet } from './screens/OdometerSheet'
 import { ServiceSheet } from './screens/ServiceSheet'
 import { ItemSheet } from './screens/ItemSheet'
@@ -29,7 +29,7 @@ import { DocumentSheet } from './screens/DocumentSheet'
 import { CarSheet } from './screens/CarSheet'
 import { Intro, Ready, Tour, isOnboarded, markOnboarded } from './screens/Onboarding'
 import { setExitHint, startBackHandling, useBackLayer } from './lib/back'
-import { ask } from './components/Dialog'
+import { ask, askText } from './components/Dialog'
 
 export type SheetState =
   | { t: 'odo' }
@@ -95,13 +95,44 @@ export default function App() {
 }
 
 function Main({ email, accountName, guest = false }: { email: string | null; accountName: string | null; guest?: boolean }) {
+  // The name the user typed (never the Google account's): on the device, and in the account when signed in.
+  void accountName
   const [localName, setLocalName] = useState(getLocalName)
-  const userName = localName.trim() || accountName?.split(' ')[0] || null
+  const userName = localName.trim() || null
+  const { car, loading, error, store: nameStore } = useApp()
+  const uid = nameStore.mode === 'cloud' ? nameStore.userId : undefined
   const saveName = (n: string) => {
     setLocalName(n)
     storeLocalName(n.trim())
+    if (uid && n.trim()) saveCloudName(uid, n).catch(() => {})
   }
-  const { car, loading, error } = useApp()
+  // Signed in: the account's name wins (another device may have changed it). An account without
+  // one takes the name this device already has, or asks for it once.
+  const askedName = useRef(false)
+  useEffect(() => {
+    if (!uid) return
+    let live = true
+    loadCloudName(uid).then(async cloud => {
+      if (!live || cloud === undefined) return
+      if (cloud) {
+        if (cloud !== getLocalName().trim()) {
+          setLocalName(cloud)
+          storeLocalName(cloud)
+        }
+        return
+      }
+      const here = getLocalName().trim()
+      if (here) return void saveCloudName(uid, here).catch(() => {})
+      // nothing anywhere: the first-run guide asks; someone past it is asked here, once
+      if (!isOnboarded() || askedName.current) return
+      askedName.current = true
+      const n = await askText({ title: 'איך לקרוא לך?', text: 'השם מופיע בברכה ולבני המשפחה.', input: { value: '', placeholder: 'השם שלך' }, confirm: 'שמירה', cancel: 'אחר כך' })
+      if (live && n?.trim()) saveName(n)
+    })
+    return () => {
+      live = false
+    }
+  }, [uid]) // eslint-disable-line react-hooks/exhaustive-deps
   const [tab, setTab] = useState<Tab>('home')
   const [sheet, setSheet] = useState<SheetState | null>(null)
   const [drawer, setDrawer] = useState<null | 'cars' | 'settings'>(null)

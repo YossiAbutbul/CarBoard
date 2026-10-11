@@ -233,6 +233,7 @@ export function FileViewer({
   const file = files[Math.min(i, files.length - 1)]
   const f = useFile(file?.ref ?? null)
   const go = (d: number) => setI(x => (x + d + files.length) % files.length)
+  const swipe = useRef<{ x: number; y: number } | null>(null)
   useBackLayer(true, onClose)
   const [zoom, setZoom] = useState(1)
   const [fitWidth, setFitWidth] = useState(0) // the photo's width at 100%
@@ -318,7 +319,26 @@ export function FileViewer({
           </button>
         )}
       </div>
-      <div className="viewer-stage" onClick={e => e.target === e.currentTarget && onClose()}>
+      <div
+        className="viewer-stage"
+        onClick={e => e.target === e.currentTarget && onClose()}
+        // one finger, sideways, not zoomed in: the next or previous file. In right-to-left order the
+        // next one is on the left, so it comes in when the finger moves right.
+        onTouchStart={e => {
+          swipe.current = e.touches.length === 1 && zoom === 1 && files.length > 1 ? { x: e.touches[0].clientX, y: e.touches[0].clientY } : null
+        }}
+        onTouchMove={e => {
+          if (e.touches.length > 1) swipe.current = null // a pinch, not a swipe
+        }}
+        onTouchEnd={e => {
+          const s = swipe.current
+          swipe.current = null
+          if (!s) return
+          const dx = e.changedTouches[0].clientX - s.x
+          const dy = e.changedTouches[0].clientY - s.y
+          if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy) * 1.5) go(dx > 0 ? 1 : -1)
+        }}
+      >
         {!f ? (
           <span className="spin" />
         ) : f.pdf ? (
@@ -353,11 +373,12 @@ export function FileViewer({
         )}
         {files.length > 1 && (
           <>
+            {/* drawn arrows: the ‹ › characters flip by themselves in Hebrew text */}
             <button className="viewer-nav prev" onClick={() => go(-1)} aria-label="הקודם">
-              ›
+              <Icon name="back" />
             </button>
             <button className="viewer-nav next" onClick={() => go(1)} aria-label="הבא">
-              ‹
+              <Icon name="forward" />
             </button>
           </>
         )}

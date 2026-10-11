@@ -160,10 +160,18 @@ function FuelChart({ fills, range, setRange, offset, setOffset, period }: { fill
   const H = 120
   const many = points.length > 8
   const top = Math.max(...points.map(p => p.value))
-  // the highest bar (or point) is the blue one: where the most money went
+  // the blue bar (or point) is "now": this month (this year in the all-years view); a period in the
+  // past has none. The highest one still carries its number.
+  const today = todayIso()
   const peak = points.findIndex(p => p.value === top)
+  const nowIdx =
+    range === 'm1'
+      ? period.from <= today && today < period.to
+        ? points.length - 1 // the month on screen is this one: its latest fill-up
+        : -1
+      : points.findIndex(p => p.key === (range === 'all' ? today.slice(0, 4) : today.slice(0, 7)))
   // with many points, only the latest and the highest carry their number
-  const showValue = (i: number) => !many || i === points.length - 1 || i === peak
+  const showValue = (i: number) => !many || i === nowIdx || i === peak
   const fmtValue = (v: number) => (view === 'spend' ? fmtNum(v) : v.toFixed(2))
   const empty = view === 'spend' ? !points.some(p => p.value > 0) : points.length < 2
 
@@ -199,7 +207,7 @@ function FuelChart({ fills, range, setRange, offset, setOffset, period }: { fill
                   const x = x0 + (points.length - 1 - i) * bw + bw * 0.2
                   return (
                     <g key={p.key}>
-                      <rect x={x} y={H - h} width={bw * 0.6} height={Math.max(h, p.value ? 2 : 0)} rx={many ? 3 : 6} className={i === peak ? 'bar now' : 'bar'} />
+                      <rect x={x} y={H - h} width={bw * 0.6} height={Math.max(h, p.value ? 2 : 0)} rx={many ? 3 : 6} className={i === nowIdx ? 'bar now' : 'bar'} />
                       {p.value > 0 && showValue(i) && (
                         <text x={x + bw * 0.3} y={H - h - 5} className="val">
                           {fmtValue(p.value)}
@@ -226,7 +234,7 @@ function FuelChart({ fills, range, setRange, offset, setOffset, period }: { fill
                     <path d={path} className="line" />
                     {points.map((p, i) => (
                       <g key={p.key}>
-                        <circle cx={pts[i][0]} cy={pts[i][1]} r={many ? 3 : 4} className={i === peak ? 'dot now' : 'dot'} />
+                        <circle cx={pts[i][0]} cy={pts[i][1]} r={many ? 3 : 4} className={i === nowIdx ? 'dot now' : 'dot'} />
                         {showValue(i) && (
                           <text x={pts[i][0]} y={pts[i][1] - 9} className="val">
                             {fmtValue(p.value)}
