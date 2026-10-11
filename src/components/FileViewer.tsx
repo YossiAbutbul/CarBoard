@@ -6,6 +6,7 @@ import { fmtDate } from '../lib/i18n'
 import { Icon } from './Icon'
 import { drawPage, isCancelled, openPdf } from '../lib/pdf'
 import { useBackLayer } from '../lib/back'
+import { copyText, errorDetails } from '../lib/errors'
 import { ask } from './Dialog'
 
 export interface AppFile {
@@ -174,17 +175,20 @@ function PdfPages({ url, zoom, setZoom }: { url: string; zoom: number; setZoom(z
     })
   }, [zoom, box])
   const [pages, setPages] = useState(0)
-  const [failed, setFailed] = useState(false)
+  const [failed, setFailed] = useState<unknown>(null)
+  const [attempt, setAttempt] = useState(0)
+  const [copied, setCopied] = useState(false)
   useEffect(() => {
     let live = true
     setPages(0)
+    setFailed(null)
     openPdf(url)
       .then(d => live && setPages(d.numPages))
-      .catch(() => live && setFailed(true))
+      .catch(e => live && setFailed(e ?? new Error('pdf failed')))
     return () => {
       live = false
     }
-  }, [url])
+  }, [url, attempt])
   // redraw at the new size, so a zoomed page is sharp, not stretched; wait for a pause between taps
   useEffect(() => {
     const el = box.current
@@ -195,7 +199,26 @@ function PdfPages({ url, zoom, setZoom }: { url: string; zoom: number; setZoom(z
     }, 120)
     return () => clearTimeout(t)
   }, [url, pages, zoom])
-  if (failed) return <div className="pdf-failed">אי אפשר להציג את הקובץ. אפשר להוריד אותו מלמעלה.</div>
+  if (failed)
+    return (
+      <div className="pdf-failed">
+        אי אפשר להציג את הקובץ. אפשר להוריד אותו מלמעלה.
+        <button className="pdf-retry" onClick={() => setAttempt(a => a + 1)}>
+          לנסות שוב
+        </button>
+        <button
+          className="err-copy"
+          onClick={async () => {
+            if (await copyText(errorDetails(failed))) {
+              setCopied(true)
+              setTimeout(() => setCopied(false), 2500)
+            }
+          }}
+        >
+          {copied ? '✓ הפרטים הועתקו' : 'העתקת פרטים לתמיכה'}
+        </button>
+      </div>
+    )
   return (
     <div className={`pdf-pages ${zoom > 1 ? 'pannable' : ''}`} ref={box}>
       {!pages && <span className="spin" />}

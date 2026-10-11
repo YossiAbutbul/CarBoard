@@ -940,3 +940,9 @@ html, body { overscroll-behavior-y: none; }
 .tile .tbar.unset-bar { background: #dfe5ee; }
 .tile .set-cta { display: inline-flex; align-items: center; gap: 4px; font-size: 11.5px; font-weight: 600; color: #1c69d4; }
 .tile .set-cta svg.i { width: 13px; height: 13px; }
+/* a PDF that would not open: try again, or copy the details */
+.pdf-failed { display: grid; justify-items: center; gap: 12px; }
+.pdf-retry { margin-top: 4px; height: 44px; padding: 0 22px; border: 0; border-radius: 14px; background: #fff; color: #0f1720; font: inherit; font-weight: 600; cursor: pointer; }
+.pdf-failed .err-copy { color: rgba(255, 255, 255, 0.55); }
+/* first-run steps: the road sits low, above the button, clear of the text and the name field */
+.onb .scene .road-mark { top: auto; bottom: 150px; }
