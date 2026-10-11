@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Scene } from './Scene'
+import { IconDial, Scene } from './Scene'
 import { Brand } from './Brand'
 import { copyText, errorDetails } from '../lib/errors'
 
@@ -15,7 +15,7 @@ export function ErrorPage({
   action,
   error,
 }: {
-  code?: string // shown big behind the title, e.g. 404; without it, the gauge with its needle down
+  code?: string // e.g. 404, shown under the gauge (its needle dropped to zero)
   title: string
   text: string
   action: { label: string; onClick(): void }
@@ -25,12 +25,13 @@ export function ErrorPage({
   return (
     <div className="shell">
       <div className="welcome scenic login err-page">
-        <Scene />
+        <Scene bare />
         <header className="login-top">
           <Brand />
         </header>
         <div className="err-art" aria-hidden="true">
-          {code ? <span className="err-code">{code}</span> : <StalledGauge />}
+          <StalledGauge />
+          {code && <span className="err-code">{code}</span>}
         </div>
         <div className="login-hero">
           <h1 className="status">{title}</h1>
@@ -57,19 +58,9 @@ export function ErrorPage({
   )
 }
 
-// the app's gauge, needle dropped to zero: something stalled
+// the app's gauge, needle dropped to zero: something stalled. Same proportions as every other dial
 function StalledGauge() {
-  return (
-    <svg className="err-gauge" viewBox="0 0 512 512">
-      <path d="M 144.6 360.0 A 136 136 0 1 1 367.4 360.0" fill="none" stroke="currentColor" strokeWidth="38" strokeLinecap="round" opacity="0.28" />
-      <path d="M 144.6 360.0 A 136 136 0 0 1 120.5 266" fill="none" stroke="#f87171" strokeWidth="38" strokeLinecap="round" />
-      <g className="err-needle">
-        <line x1="256" y1="282" x2="183" y2="330" stroke="currentColor" strokeWidth="26" strokeLinecap="round" />
-      </g>
-      <circle cx="256" cy="282" r="30" fill="currentColor" />
-      <circle cx="256" cy="282" r="10" fill="#08111f" />
-    </svg>
-  )
+  return <IconDial className="err-gauge" needle={-192} redTo={178} />
 }
 
 /** A line over the page when something failed but the app can go on (data from the device is shown). */

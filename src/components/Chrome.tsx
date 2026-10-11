@@ -1,4 +1,4 @@
-import { Scene } from './Scene'
+import { LoadingDial, Scene } from './Scene'
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { useApp } from '../data/AppData'
 import { Icon } from './Icon'
@@ -48,7 +48,7 @@ export function TopBar({ openCars, openSettings }: { openCars(): void; openSetti
 }
 
 /** The dark header used by every page. */
-export function PageHero({ children, dial }: { children: ReactNode; dial?: boolean }) {
+export function PageHero({ children }: { children: ReactNode; dial?: boolean }) {
   const ref = useRef<HTMLElement>(null)
   // The card collapses as you scroll and stays pinned as a short header: the bar (CSS-sticky, so the
   // browser keeps it still), then the date and the greeting, shrunk under it. The status pill and the
@@ -138,39 +138,10 @@ export function PageHero({ children, dial }: { children: ReactNode; dial?: boole
   }, [])
   return (
     <section className="hero" ref={ref}>
+      {/* the header's dial is part of the scene (drawn like the icon), on every page */}
       <Scene lite />
-      {dial && <Dial />}
       {children}
     </section>
-  )
-}
-
-/** A faint speedometer dial; the needle sweeps into place on load. */
-export function Dial({ className = 'dial' }: { className?: string }) {
-  const ticks = Array.from({ length: 41 }, (_, i) => -210 + i * 6)
-  return (
-    <svg className={className} viewBox="0 0 300 300" aria-hidden="true">
-      <circle cx="150" cy="150" r="128" />
-      <circle cx="150" cy="150" r="96" className="thin" />
-      {ticks.map((a, i) => {
-        const r1 = i % 5 === 0 ? 108 : 116
-        const rad = (a * Math.PI) / 180
-        return (
-          <line
-            key={a}
-            x1={150 + Math.cos(rad) * r1}
-            y1={150 + Math.sin(rad) * r1}
-            x2={150 + Math.cos(rad) * 124}
-            y2={150 + Math.sin(rad) * 124}
-            className={i % 5 === 0 ? 'major' : ''}
-          />
-        )
-      })}
-      <g className="needle-g">
-        <path d="M150 150 L232 92" className="needle" />
-      </g>
-      <circle cx="150" cy="150" r="5" className="hub" />
-    </svg>
   )
 }
 
@@ -235,7 +206,7 @@ export function Splash() {
   // a negative delay picks the animations up where the first splash left them
   return (
     <div className="splash" style={{ '--since': `${-Math.round(sinceStart())}ms` } as React.CSSProperties}>
-      <Dial className="splash-dial" />
+      <LoadingDial />
       <div className="splash-name" dir="ltr">
         CarBoard
         <small>הרכב שלי</small>

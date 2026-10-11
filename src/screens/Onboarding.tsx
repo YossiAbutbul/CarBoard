@@ -83,7 +83,7 @@ export function Intro({ name, onName, onAddCar }: { name: string; onName(n: stri
           <h1>{first ? `נעים מאוד, ${first}.` : 'נעים מאוד.'}</h1>
           <p>עכשיו הרכב. מספיק מספר הרישוי: את היצרן, הדגם, הצבע ותוקף הטסט נביא ממשרד התחבורה.</p>
           <button className="btn onb-cta" onClick={onAddCar}>
-            <Icon name="plus" /> הוספת הרכב
+            הוספת הרכב <Icon name="plus" />
           </button>
           <button className="onb-back" onClick={() => setStep(1)}>
             חזרה

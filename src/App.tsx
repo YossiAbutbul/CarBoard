@@ -361,48 +361,48 @@ function Login({ onGuest }: { onGuest(): void }) {
   const [err, setErr] = useState<string | null>(null)
   return (
     <div className="shell">
-      <div className="welcome scenic login">
-        <Scene />
-        <header className="login-top">
-          <Brand />
-        </header>
-        <div className="login-hero">
-          <h1 className="status">
+      <div className="login2">
+        {/* on top, the icon's world: its dial, and the car driving by on the road below it */}
+        <div className="login2-stage">
+          <Scene stage />
+          <header className="login-top">
+            <Brand />
+          </header>
+        </div>
+        {/* below, a white sheet with the sign-in */}
+        <div className="login2-sheet">
+          <h1>
             <span>כל הרכב.</span>
             <span className="accent">במקום אחד.</span>
           </h1>
-          <p className="login-sub">טסט, ביטוח, טיפולים וק״מ, עם תזכורת בזמן.</p>
-          <ul className="login-feats">
+          <p className="login2-sub">טסט, ביטוח, טיפולים וק״מ, עם תזכורת בזמן.</p>
+          <ul className="login2-feats">
             {(
               [
                 ['reminder', 'תזכורות בזמן'],
                 ['gauge', 'טיפולים לפי ק״מ'],
                 ['docs', 'כל המסמכים'],
               ] as [IconName, string][]
-            ).map(([icon, text], n) => (
-              <li key={icon} style={{ animationDelay: `${0.35 + n * 0.08}s` }}>
-                <span>
-                  <Icon name={icon} />
-                </span>
+            ).map(([icon, text]) => (
+              <li key={icon}>
+                <Icon name={icon} />
                 {text}
               </li>
             ))}
           </ul>
+          <div className="login2-actions">
+            <button className="login2-google" onClick={() => signInWithGoogle().catch(e => setErr(userMessage(e)))}>
+              <span className="mark">
+                <GoogleMark />
+              </span>
+              התחברות עם Google
+            </button>
+            <button className="login2-guest" onClick={onGuest}>
+              כניסה כאורח
+            </button>
+          </div>
+          {err && <div className="banner">{err}</div>}
         </div>
-        <div className="login-actions">
-          <button
-            className="btn"
-            style={{ background: '#fff' }}
-            onClick={() => signInWithGoogle().catch(e => setErr(userMessage(e)))}
-          >
-            <GoogleMark />
-            התחברות עם Google
-          </button>
-          <button className="btn guest-btn" onClick={onGuest}>
-            כניסה כאורח
-          </button>
-        </div>
-        {err && <div className="banner">{err}</div>}
       </div>
     </div>
   )

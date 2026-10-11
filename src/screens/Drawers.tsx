@@ -75,7 +75,7 @@ export function CarsDrawer({ open, onClose }: { open: OpenSheet; onClose(): void
           open({ t: 'car' })
         }}
       >
-        <Icon name="plus" /> הוספת רכב
+        הוספת רכב <Icon name="plus" />
       </button>
     </Drawer>
   )
