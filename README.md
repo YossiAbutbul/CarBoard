@@ -9,9 +9,7 @@ A Hebrew (RTL) PWA that keeps everything about your cars in one place: km, servi
 
 ## Demo
 
-[![CarBoard demo: sign in, the car from its plate, the monthly summary, a fuel receipt read on the phone, a year of charts, family, notifications and the calendar](docs/demo-poster.jpg)](docs/demo.mp4)
-
-One take on a phone (1:52): sign in, sign up with just the plate number, the tour, the monthly summary, a km update, a service, a fuel receipt read on the phone, a year of fuel and service charts, sharing with the family, phone notifications and the calendar export. The cars, people and history in it are made up.
+[![CarBoard demo: sign in, the car from its plate, the monthly summary, a fuel receipt read on the phone, a year of charts, family, notifications and the calendar](docs/demo.webp)](docs/demo.mp4)
 
 The plan this was built from: [docs/PLAN.html](docs/PLAN.html).
 
