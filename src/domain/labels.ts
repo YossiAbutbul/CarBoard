@@ -30,5 +30,6 @@ export const STATUS_TEXT = {
   soon: 'בקרוב',
   due: 'לטפל עכשיו',
   overdue: 'עבר המועד',
+  booked: 'בטיפול',
   unset: 'לא הוגדר',
 } as const

@@ -34,6 +34,7 @@ function dueInfo(it, km, today = todayIso()) {
   if (days < 0 || kmLeft != null && kmLeft < 0) status = "overdue";
   else if (days <= 7 || kmLeft != null && kmLeft <= 200) status = "due";
   else if (days <= 30 || kmLeft != null && kmLeft <= 1e3) status = "soon";
+  if ((status === "due" || status === "overdue") && it.booked && it.booked.date >= today) status = "booked";
   let progress = 0;
   if (by === "km" && it.every_km && kmLeft != null) progress = 1 - kmLeft / it.every_km;
   else if (it.every_months && daysByDate != null) progress = 1 - daysByDate / (it.every_months * 30.4);

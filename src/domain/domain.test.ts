@@ -72,6 +72,14 @@ describe('due status', () => {
   it('is overdue past the km target', () => expect(dueInfo(item({ due_km: 99000 }), km, today).status).toBe('overdue'))
   it('is soon within 30 days by date', () => expect(dueInfo(item({ due_date: addDays(today, 20) }), km, today).status).toBe('soon'))
   it('is overdue past the date', () => expect(dueInfo(item({ due_date: addDays(today, -1) }), km, today).status).toBe('overdue'))
+  it('is booked (בטיפול) with an appointment, until its day passes', () => {
+    const late = { due_km: 99000 }
+    expect(dueInfo(item({ ...late, booked: { date: addDays(today, 3), time: '09:00' } }), km, today).status).toBe('booked')
+    expect(dueInfo(item({ ...late, booked: { date: today, time: '09:00' } }), km, today).status).toBe('booked')
+    expect(dueInfo(item({ ...late, booked: { date: addDays(today, -1), time: '09:00' } }), km, today).status).toBe('overdue')
+    // an appointment does not hide that a thing is fine (once serviced, it is ok)
+    expect(dueInfo(item({ due_km: 110000, booked: { date: today, time: '09:00' } }), km, today).status).toBe('ok')
+  })
   it('takes whichever limit comes first', () => {
     // km: 5,000 left at 50/day = 100 days; date: 10 days → date wins
     const d = dueInfo(item({ due_km: 105000, due_date: addDays(today, 10) }), km, today)

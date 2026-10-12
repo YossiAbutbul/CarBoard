@@ -291,6 +291,7 @@ const STATUS_COLOR: Record<Status, string> = {
   soon: 'var(--y)',
   due: 'var(--o)',
   overdue: 'var(--r)',
+  booked: 'var(--blue)',
   unset: '#c8c7c1',
 }
 export const statusColor = (s: Status) => STATUS_COLOR[s]

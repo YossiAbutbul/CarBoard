@@ -38,6 +38,7 @@ export interface Item {
   every_months: number | null
   due_km: number | null
   due_date: string | null
+  booked?: { date: string; time: string } | null // an appointment set for it (in the calendar): "בטיפול" until that day
 }
 
 export interface ServiceRecord {

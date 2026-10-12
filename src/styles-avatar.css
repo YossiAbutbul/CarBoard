@@ -962,3 +962,6 @@ html, body { overscroll-behavior-y: none; }
 .car-alert[data-s='overdue'] { color: #d4554f; }
 .car-alert[data-s='due'] { color: #d17a22; }
 .car-row.alerted .car-row-info .t { padding-inline-end: 26px; } /* a long name stops before the warning */
+/* Android: after saving the event file, where to open it */
+.sched-note { display: flex; align-items: center; gap: 8px; margin: 0 0 10px; padding: 9px 12px; border-radius: 12px; background: #e8f0fc; color: var(--ink); font-size: 13px; line-height: 1.4; animation: rise 0.25s var(--ease) both; }
+.sched-note svg.i { width: 16px; height: 16px; flex: none; color: var(--blue); }

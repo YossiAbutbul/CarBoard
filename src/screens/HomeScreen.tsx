@@ -49,14 +49,19 @@ export function HomeScreen({
 
   const urgent = reminders.filter(r => r.status === 'due' || r.status === 'overdue')
   const soon = reminders.filter(r => r.status === 'soon')
+  const booked = reminders.filter(r => r.status === 'booked')
   const insurance = reminders.find(r => r.item.kind === 'insurance')
   const test = reminders.find(r => r.item.kind === 'test')
-  const state = urgent.length ? (urgent.some(r => r.status === 'overdue') ? 'overdue' : 'due') : soon.length ? 'soon' : 'ok'
+  const state = urgent.length ? (urgent.some(r => r.status === 'overdue') ? 'overdue' : 'due') : booked.length ? 'booked' : soon.length ? 'soon' : 'ok'
   const stateText = urgent.length
     ? urgent.length === 1
       ? `${urgent[0].item.label} · ${STATUS_TEXT[urgent[0].status]}`
       : `${urgent.length} דברים לטפל בהם`
-    : soon.length
+    : booked.length
+      ? booked.length === 1
+        ? `${booked[0].item.label} · בטיפול, ${booked[0].detail.replace('נקבע ל־', '')}`
+        : `${booked.length} דברים בטיפול`
+      : soon.length
       ? `הכל תקין · בקרוב ${soon[0].item.label}, ${soon[0].headline}`
       : 'הכל תקין'
 
@@ -253,11 +258,18 @@ function Tile({ r, open }: { r: Reminder; open: OpenSheet }) {
           {/* the time bar: empties as the date (or the km) comes closer */}
           <div className="v" style={{ fontSize: 20 }}>{r.headline}</div>
           <div className="tbar" aria-hidden="true">
-            <i style={{ width: `${r.status === 'overdue' ? 100 : Math.max(4, (1 - r.progress) * 100)}%` }} />
+            <i style={{ width: `${r.status === 'overdue' || r.status === 'booked' ? 100 : Math.max(4, (1 - r.progress) * 100)}%` }} />
           </div>
           <div className="tfoot">
             <span className="state">{STATUS_TEXT[r.status]}</span>
-            {r.dueOn && <span className="when">{fmtDate(r.dueOn)}</span>}
+            {/* in hand: the appointment's day instead of the due date */}
+            {r.status === 'booked' && r.item.booked ? (
+              <span className="when">
+                {fmtDate(r.item.booked.date)} · {r.item.booked.time}
+              </span>
+            ) : (
+              r.dueOn && <span className="when">{fmtDate(r.dueOn)}</span>
+            )}
           </div>
         </>
       )}
