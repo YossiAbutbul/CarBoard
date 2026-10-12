@@ -8,8 +8,9 @@ import { STATUS_TEXT } from '../domain/labels'
 import type { Reminder } from '../domain/reminders'
 import { addDays, todayIso } from '../lib/dates'
 import { fmtDate } from '../lib/i18n'
-import { eventUrl, googleCalendarUrl, type Appointment } from '../lib/schedule'
+import { androidCalendarUrl, eventUrl, googleCalendarUrl, type Appointment } from '../lib/schedule'
 
+const isAndroid = () => /android/i.test(navigator.userAgent)
 const isIos = () => /iphone|ipad|ipod/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)
 
 // tomorrow, or Sunday when tomorrow is Saturday (most garages are closed)
@@ -39,6 +40,8 @@ export function ScheduleSheet({ onClose }: { onClose(): void }) {
   const [openId, setOpenId] = useState<string | null>(urgent[0]?.item.id ?? null)
   if (!car) return null
   const ios = isIos()
+  // the main button: the phone's own calendar where there is a way in, else Google's page
+  const main = ios ? 'phone' : isAndroid() ? 'android' : 'google'
   const set = (id: string, patch: Partial<Plan>) => setPlans(p => ({ ...p, [id]: { ...p[id], ...patch } }))
 
   const appointment = (r: Reminder, p: Plan): Appointment => ({
@@ -50,9 +53,10 @@ export function ScheduleSheet({ onClose }: { onClose(): void }) {
     minutes: 60,
   })
   // into the calendar, then on to the next one not added yet
-  const add = (r: Reminder, where: 'phone' | 'google') => {
+  const add = (r: Reminder, where: 'phone' | 'android' | 'google') => {
     const a = appointment(r, plans[r.item.id])
     if (where === 'phone') window.location.assign(eventUrl(a, location.origin)) // iOS: its "Add Event" screen
+    else if (where === 'android') window.location.assign(androidCalendarUrl(a)) // Android: pick a calendar app
     else window.open(googleCalendarUrl(a), '_blank', 'noopener')
     set(r.item.id, { added: true })
     setOpenId(urgent.find(x => x.item.id !== r.item.id && !plans[x.item.id].added)?.item.id ?? null)
@@ -94,8 +98,8 @@ export function ScheduleSheet({ onClose }: { onClose(): void }) {
         {/* one button, always in view at the bottom: for the item that is open, or "done" */}
         <div className="sched-foot">
           {current ? (
-            <button className="btn pri" disabled={!ready(current)} onClick={() => add(current, ios ? 'phone' : 'google')}>
-              {plans[current.item.id].added ? 'הוספה שוב ליומן' : ios ? 'הוספה ליומן' : 'הוספה ליומן Google'} <Icon name="calendar" />
+            <button className="btn pri" disabled={!ready(current)} onClick={() => add(current, main)}>
+              {plans[current.item.id].added ? 'הוספה שוב ליומן' : main === 'google' ? 'הוספה ליומן Google' : 'הוספה ליומן'} <Icon name="calendar" />
             </button>
           ) : (
             <button className={`btn ${allAdded ? 'pri' : ''}`} onClick={onClose}>
@@ -146,7 +150,7 @@ export function ScheduleSheet({ onClose }: { onClose(): void }) {
             // the keyboard's action key adds it, no need to close the keyboard first
             if (e.key === 'Enter' && ready(r)) {
               ;(e.target as HTMLInputElement).blur()
-              add(r, ios ? 'phone' : 'google')
+              add(r, main)
             }
           }}
           enterKeyHint="send"
@@ -163,8 +167,8 @@ export function ScheduleSheet({ onClose }: { onClose(): void }) {
           </div>
         )}
         {/* the other calendar, for whoever uses it: a small link, the main button is below */}
-        <button className="sched-other" disabled={!ready(r)} onClick={() => add(r, ios ? 'google' : 'phone')}>
-          {ios ? 'להוסיף ליומן Google במקום' : 'להוסיף ליומן אחר (אייפון, Outlook)'}
+        <button className="sched-other" disabled={!ready(r)} onClick={() => add(r, main === 'google' ? 'phone' : 'google')}>
+          {main === 'google' ? 'להוסיף ליומן אחר (אייפון, Outlook)' : 'להוסיף ליומן Google במקום'}
         </button>
       </div>
     )

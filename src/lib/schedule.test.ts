@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { cleanAppointment, eventIcs, googleCalendarUrl } from './schedule'
+import { androidCalendarUrl, cleanAppointment, eventIcs, googleCalendarUrl } from './schedule'
 
 const a = { title: 'יונדאי i10: טיפול תקופתי, ביטוח', details: 'שורה אחת\nשורה שתיים', location: 'מוסך אבי, חולון', date: '2026-10-20', time: '09:30', minutes: 60 }
 
@@ -24,5 +24,15 @@ describe('appointment in the calendar', () => {
     expect(ics).toContain('TRIGGER:-PT1H')
     expect(ics.replace(/\r\n /g, '')).toContain('LOCATION:מוסך אבי\\, חולון')
     for (const line of ics.split('\r\n')) expect(new TextEncoder().encode(line).length).toBeLessThanOrEqual(75)
+  })
+  it('Android: the new-event intent, an hour long, with Google Calendar if no app takes it', () => {
+    const u = androidCalendarUrl(a)
+    expect(u.startsWith('intent:#Intent;action=android.intent.action.INSERT;type=vnd.android.cursor.dir/event;')).toBe(true)
+    expect(u.endsWith(';end')).toBe(true)
+    const begin = Number(u.match(/l\.beginTime=(\d+)/)![1])
+    expect(Number(u.match(/l\.endTime=(\d+)/)![1]) - begin).toBe(3_600_000)
+    expect(new Date(begin).getHours()).toBe(9)
+    expect(decodeURIComponent(u.match(/S\.eventLocation=([^;]*)/)![1])).toBe(a.location)
+    expect(decodeURIComponent(u.match(/S\.browser_fallback_url=([^;]*)/)![1])).toBe(googleCalendarUrl(a))
   })
 })
