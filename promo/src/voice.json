@@ -1,0 +1,26 @@
+{
+  "chaos": {
+    "file": "voice/chaos.mp3",
+    "seconds": 5.71
+  },
+  "logo": {
+    "file": "voice/logo.mp3",
+    "seconds": 2.07
+  },
+  "home": {
+    "file": "voice/home.mp3",
+    "seconds": 6.04
+  },
+  "fuel": {
+    "file": "voice/fuel.mp3",
+    "seconds": 3.53
+  },
+  "docs": {
+    "file": "voice/docs.mp3",
+    "seconds": 4.69
+  },
+  "outro": {
+    "file": "voice/outro.mp3",
+    "seconds": 3.4
+  }
+}

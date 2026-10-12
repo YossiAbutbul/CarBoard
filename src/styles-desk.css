@@ -1,0 +1,133 @@
+/*
+ * The PC layout (a window 1024px or wider). Like a mail app: a narrow strip with the sections on the
+ * right edge, the family's cars beside it, and the page in the rest. The phone layout is untouched.
+ */
+
+/* phone only: the small line under each home action is for the PC's larger buttons */
+.actions .a-l small { display: none; }
+.actions .a-ic, .actions .a-l { display: contents; }
+.home-duo { display: contents; }
+.upcoming { display: none; }
+
+@media (min-width: 1024px) {
+  body { background: #fff; }
+  .shell.desk { max-width: none; margin: 0; padding: 22px 404px 48px 32px; } /* 76 strip + 300 cars + 28 gap on the right */
+  .shell.desk .page { max-width: 1680px; margin: 0 auto; }
+
+  /* the strip */
+  .rail { position: fixed; top: 0; bottom: 0; right: 0; z-index: 40; width: 76px; display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 18px 0; background: #fbfcfe; border-left: 1px solid var(--line); }
+  .rail-mark { width: 42px; height: 42px; border-radius: 12px; background: #1c69d4; display: grid; place-items: center; margin-bottom: 16px; }
+  .rail-mark .rail-dial { width: 32px; height: 32px; }
+  .rail-mark .rail-dial .track { opacity: 1; }
+  .rail-mark .rail-dial .needle { animation: none; }
+  .rail button { width: 60px; padding: 9px 0 7px; border-radius: 14px; display: grid; justify-items: center; gap: 4px; font-size: 11px; font-weight: 500; color: #7b8794; transition: background 0.15s, color 0.15s; }
+  .rail button svg.i { width: 21px; height: 21px; stroke-width: 1.6; }
+  .rail button:hover { background: var(--card); color: var(--ink); }
+  .rail button.on { background: #e8f0fc; color: #1c69d4; font-weight: 600; }
+  .rail .rail-settings { margin-top: auto; }
+
+  /* the cars */
+  .cars-pane { position: fixed; top: 0; bottom: 0; right: 76px; z-index: 39; width: 300px; overflow-y: auto; padding: 22px 14px 24px; background: #fff; border-left: 1px solid var(--line); display: flex; flex-direction: column; gap: 10px; }
+  .cars-pane h2 { margin: 2px 6px 4px; font-size: 18px; font-weight: 700; letter-spacing: -0.02em; }
+  .pane-list { gap: 8px; }
+  .pane-car { display: grid; grid-template-columns: 1fr; gap: 8px; padding: 10px 10px 12px; cursor: pointer; animation: none; }
+  .pane-car .car-row-main { grid-template-columns: 64px 1fr; gap: 10px; }
+  .pane-car .car-row-pic { width: 64px; height: 46px; }
+  .pane-car .car-row-info .t { font-size: 14.5px; }
+  .pane-sum { display: flex; flex-wrap: wrap; gap: 5px; }
+  .pane-sum span { font-size: 11.5px; font-weight: 600; padding: 3px 9px; border-radius: 99px; background: #fff; color: var(--ink-2); }
+  .pane-car.on .pane-sum span { background: var(--card); }
+  .pane-sum span[data-s='soon'] { color: var(--soon); }
+  .pane-sum span[data-s='due'] { color: var(--due); }
+  .pane-sum span[data-s='overdue'] { color: var(--overdue); }
+  .pane-edit { position: absolute; left: 6px; top: 6px; width: 32px; height: 32px; border-radius: 50%; display: grid; place-items: center; color: #9aa3ae; opacity: 0; transition: opacity 0.15s, background 0.15s; }
+  .pane-edit svg.i { width: 16px; height: 16px; }
+  .pane-car:hover .pane-edit, .pane-edit:focus-visible { opacity: 1; }
+  .pane-edit:hover { background: var(--card); color: var(--ink); }
+  .pane-add { height: 46px; border-radius: 16px; display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 13.5px; font-weight: 600; color: #1c69d4; box-shadow: inset 0 0 0 1.5px var(--line); transition: background 0.15s; }
+  .pane-add:hover { background: #f3f7fd; }
+  .pane-add svg.i { width: 16px; height: 16px; }
+  .cars-pane .car-order-hint { margin: 2px 6px 0; }
+
+  /* the header card: rounded, not stuck to the top, greeting beside the numbers */
+  .shell.desk .hero { margin: 0; border-radius: 24px; padding: 26px 28px 24px; display: grid; grid-template-columns: 1fr minmax(0, 1.1fr); align-items: end; column-gap: 28px; }
+  .shell.desk .page > .reveal > .hero, .shell.desk .page > div > .hero { position: relative; top: auto !important; }
+  .shell.desk .hero > .bar { display: none; }
+  .shell.desk .hero .glance { margin-top: 0; }
+  .shell.desk .hero .greet h1 { font-size: 36px; }
+  .shell.desk .scene .d-header { width: 300px; height: 300px; top: -60px; left: 30%; }
+
+  /* home: status cards first, then the actions and the weekly check side by side */
+  .shell.desk .home { display: flex; flex-direction: column; }
+  .shell.desk .home > .home-duo { order: 5; display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 24px; align-items: start; }
+  .shell.desk .home-duo > .confirm { margin: 0; }
+  /* no weekly check this week: the four actions take the whole row */
+  .shell.desk .home-duo:not(:has(.confirm)) { grid-template-columns: 1fr; }
+  .shell.desk .home-duo:not(:has(.confirm)) .actions { grid-template-columns: repeat(4, 1fr); }
+  .shell.desk .tiles { grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 12px; }
+
+  /* the actions, larger: an icon tile, the label, and what it is for */
+  .shell.desk .actions { grid-template-columns: 1fr 1fr; gap: 10px; margin: 0; }
+  .shell.desk .actions button { display: flex; align-items: center; gap: 12px; padding: 14px; border-radius: 18px; text-align: right; font-size: 14.5px; font-weight: 600; color: var(--ink); }
+  .shell.desk .actions .a-ic { display: grid; place-items: center; flex: none; width: 42px; height: 42px; border-radius: 13px; background: #e8f0fc; color: #1c69d4; transition: background 0.15s, color 0.15s; }
+  .shell.desk .actions .a-ic svg.i { width: 21px; height: 21px; color: inherit; }
+  .shell.desk .actions .a-l { display: grid; gap: 2px; min-width: 0; }
+  .shell.desk .actions .a-l small { display: block; font-size: 12px; font-weight: 500; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .shell.desk .actions button:hover { background: var(--soft); }
+  .shell.desk .actions button:hover .a-ic { background: #1c69d4; color: #fff; }
+  .shell.desk .actions button:hover svg.i { transform: none; }
+  .shell.desk .actions button:active { background: var(--soft); color: var(--ink); }
+  .shell.desk .actions button:active svg.i { color: inherit; }
+
+  /* the fuel chart keeps a sensible height however wide the window */
+  .shell.desk .fuel-chart .chart { max-height: 320px; }
+
+  /* forms open as a window in the middle, not from the bottom */
+  .overlay { align-items: center; padding: 24px; }
+  .sheet { max-width: 540px; max-height: 88vh; border-radius: 24px; padding-bottom: 22px; animation: pop-in 0.22s var(--ease); }
+  .sheet .grab { display: none; }
+  .sheet > .drag-zone { padding-top: 14px; }
+}
+/* the side column on home appears once there is room for it beside the cards */
+@media (min-width: 1360px) {
+  .shell.desk .home { display: grid; grid-template-columns: minmax(0, 1fr) clamp(320px, 26vw, 420px); grid-template-rows: auto auto 1fr; column-gap: 24px; align-items: start; }
+  .shell.desk .home > .hero { grid-column: 1 / -1; grid-row: 1; }
+  .shell.desk .home > .sec { grid-column: 1; grid-row: 2; }
+  .shell.desk .home > .tiles { grid-column: 1; grid-row: 3; align-content: start; }
+  .shell.desk .home > .home-duo, .shell.desk .home > .home-duo:not(:has(.confirm)) { grid-column: 2; grid-row: 2 / 4; display: grid; grid-template-columns: 1fr; gap: 14px; margin-top: 24px; }
+  .shell.desk .home-duo:not(:has(.confirm)) .actions, .shell.desk .home-duo .actions { grid-template-columns: 1fr 1fr; }
+  .shell.desk .upcoming { display: grid; gap: 2px; background: var(--card); border-radius: 20px; padding: 16px 14px 10px; }
+  .upcoming h3 { margin: 0 6px 8px; font-size: 15px; font-weight: 700; }
+  .upcoming button { display: flex; align-items: center; gap: 12px; padding: 9px 6px; border-radius: 12px; text-align: right; transition: background 0.15s; }
+  .upcoming button + button { box-shadow: 0 -1px 0 var(--line); }
+  .upcoming button:hover { background: #fff; }
+  .upcoming .u-ic { width: 34px; height: 34px; flex: none; border-radius: 11px; display: grid; place-items: center; background: #fff; color: var(--ink-2); }
+  .upcoming .u-ic svg.i { width: 18px; height: 18px; }
+  .upcoming .u-l { flex: 1; min-width: 0; display: grid; gap: 1px; }
+  .upcoming .u-l b { font-size: 13.5px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .upcoming .u-l small { font-size: 11.5px; color: var(--muted); font-variant-numeric: tabular-nums; }
+  .upcoming .u-v { font-size: 13px; font-weight: 700; white-space: nowrap; color: var(--ink); }
+  .upcoming [data-s='soon'] .u-v { color: var(--soon); }
+  .upcoming [data-s='due'] .u-v { color: var(--due); }
+  .upcoming [data-s='overdue'] .u-v { color: var(--overdue); }
+}
+/* fuel: the chart and the fill-ups side by side */
+@media (min-width: 1360px) {
+  .shell.desk .fuel-page { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); column-gap: 24px; align-items: start; }
+  .shell.desk .fuel-page > .hero { grid-column: 1 / -1; }
+  .shell.desk .fuel-page > .fuel-chart { grid-column: 1; position: sticky; top: 22px; margin-top: 12px; }
+  .shell.desk .fuel-page > .fuel-side { grid-column: 2; }
+  .shell.desk .fuel-page > .fuel-side > .sec:first-child { margin-top: 12px; }
+}
+/* big screens: a little more room everywhere */
+@media (min-width: 1600px) {
+  .shell.desk { padding-left: 44px; padding-right: 436px; } /* the cars pane widens to 340 */
+  .cars-pane { width: 340px; }
+  .shell.desk .hero { padding: 32px 34px 28px; min-height: 220px; }
+  .shell.desk .hero .greet h1 { font-size: 42px; }
+  .shell.desk .hero .glance .v { font-size: 26px; }
+  .shell.desk .tile { min-height: 132px; padding: 16px 16px 14px; }
+  .shell.desk .tile .v { font-size: 23px !important; }
+}
+
+@keyframes pop-in { from { opacity: 0; transform: translateY(12px) scale(0.98); } }

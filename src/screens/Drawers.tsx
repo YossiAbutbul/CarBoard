@@ -17,6 +17,8 @@ import { setGuest } from '../data/guest'
 import { GoogleMark } from '../components/GoogleMark'
 import { downloadIcs } from '../lib/ics'
 import { fmtNum } from '../lib/i18n'
+import { estimateKm } from '../domain/odometer'
+import { buildReminders } from '../domain/reminders'
 import type { OpenSheet } from '../App'
 import type { Family } from '../data/store'
 import { useBackLayer } from '../lib/back'
@@ -170,6 +172,73 @@ export function CarsDrawer({ open, onClose }: { open: OpenSheet; onClose(): void
         הוספת רכב <Icon name="plus" />
       </button>
     </Drawer>
+  )
+}
+
+/**
+ * PC: the cars, always in view beside the page. Each card says what is coming up for that car, so the
+ * family's cars can be compared at a glance. Click to open a car; press and hold to move it.
+ */
+export function CarsPane({ open }: { open: OpenSheet }) {
+  const { data, car, setCarId, setCarOrder, family, store } = useApp()
+  const ownerName = (uid?: string) => (uid && uid !== store.userId ? family?.members.find(m => m.uid === uid)?.name || 'בן משפחה' : null)
+  const drag = useCarDrag(data.cars.map(c => c.id), ids => {
+    if (car) setCarId(car.id)
+    setCarOrder(ids)
+  })
+  const cars = drag.ids.map(id => data.cars.find(c => c.id === id)!).filter(Boolean)
+  return (
+    <aside className="cars-pane" data-tour="cars">
+      <h2>{family ? (family.title ? `הרכבים של מש' ${family.title.replace(/^(משפחת|מש['׳])\s*/, '')}` : 'רכבי המשפחה') : 'הרכבים שלי'}</h2>
+      <div className="car-list pane-list" ref={drag.list}>
+        {cars.map(c => {
+          const km = estimateKm(data.readings.filter(r => r.car_id === c.id), undefined, c.yearly_km)
+          // the two things most worth knowing: whatever needs attention first, else the nearest dates
+          const rs = buildReminders(data.items.filter(i => i.car_id === c.id), km).filter(r => r.status !== 'unset')
+          const attention = rs.filter(r => r.status !== 'ok')
+          const show = (attention.length ? attention : rs).slice(0, 2)
+          return (
+            <div key={c.id} data-id={c.id} className={`car-row pane-car ${c.id === car?.id ? 'on' : ''} ${drag.dragging === c.id ? 'dragging' : ''}`} style={drag.dragging === c.id ? { transform: `translateY(${drag.dy}px)` } : undefined}>
+              <button
+                className="car-row-main"
+                onPointerDown={e => drag.press(e, c.id)}
+                onContextMenu={e => cars.length > 1 && e.preventDefault()}
+                onClick={() => {
+                  if (drag.wasDrag()) return
+                  setCarId(c.id)
+                  window.scrollTo({ top: 0, behavior: 'smooth' })
+                }}
+                aria-current={c.id === car?.id}
+              >
+                <span className="car-row-pic" style={{ '--tint': carPaint(c) } as React.CSSProperties}>
+                  <CarToy car={c} />
+                </span>
+                <span className="car-row-info">
+                  <span className="t">{c.name}</span>
+                  <span className="s">{[ownerName(c.owner) ? `של ${ownerName(c.owner)}` : null, `${fmtNum(km.value)} ק״מ`].filter(Boolean).join(' · ')}</span>
+                </span>
+              </button>
+              {show.length > 0 && (
+                <span className="pane-sum">
+                  {show.map(r => (
+                    <span key={r.item.id} data-s={r.status}>
+                      {r.item.label.replace(/\s*\(.*\)$/, '')} · {r.headline}
+                    </span>
+                  ))}
+                </span>
+              )}
+              <button className="icon-btn pane-edit" onClick={() => open({ t: 'car', car: c })} aria-label={`עריכת ${c.name}`}>
+                <Icon name="edit" />
+              </button>
+            </div>
+          )
+        })}
+      </div>
+      <button className="pane-add" onClick={() => open({ t: 'car' })}>
+        הוספת רכב <Icon name="plus" />
+      </button>
+      {cars.length > 1 && <p className="car-order-hint">לחיצה ארוכה על רכב כדי להזיז אותו</p>}
+    </aside>
   )
 }
 

@@ -55,17 +55,21 @@ function kmPerDay(rs) {
   if (days < 3) return null;
   return Math.max(0, (last.km - first.km) / days);
 }
-function estimateKm(rs, today = todayIso()) {
+function estimateKm(rs, today = todayIso(), yearlyKm) {
   const sorted = sortReadings(rs);
   const last = sorted[sorted.length - 1] ?? null;
-  if (!last) return { value: 0, perDay: DEFAULT_KM_PER_DAY, learned: false, checkedDaysAgo: null, last: null };
+  const told = yearlyKm && yearlyKm > 0 ? yearlyKm / 365 : null;
+  const fallback = told ?? DEFAULT_KM_PER_DAY;
+  const fallbackBasis = told ? "yearly" : "average";
+  if (!last) return { value: 0, perDay: fallback, learned: false, basis: fallbackBasis, checkedDaysAgo: null, last: null };
   const learnedRate = kmPerDay(sorted);
-  const perDay = learnedRate ?? DEFAULT_KM_PER_DAY;
+  const perDay = learnedRate ?? fallback;
   const days = Math.max(0, diffDays(today, last.date));
   return {
     value: Math.round(last.km + perDay * days),
     perDay,
     learned: learnedRate !== null,
+    basis: learnedRate !== null ? "learned" : fallbackBasis,
     checkedDaysAgo: days,
     last
   };
@@ -100,7 +104,7 @@ function stepFor(days, prefs) {
   return t == null ? null : `d${t}`;
 }
 function notesFor(car, items, readings, sent, today = todayIso(), prefs = DEFAULT_PREFS) {
-  const km = estimateKm(readings.filter((r) => r.car_id === car.id), today);
+  const km = estimateKm(readings.filter((r) => r.car_id === car.id), today, car.yearly_km);
   const notes = [];
   for (const it of items.filter((i) => i.car_id === car.id)) {
     const d = dueInfo(it, km, today);

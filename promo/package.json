@@ -1,0 +1,25 @@
+{
+  "name": "carboard-promo",
+  "private": true,
+  "description": "The CarBoard ad: real screenshots of the app (shoot.mjs), animated in Remotion.",
+  "type": "module",
+  "scripts": {
+    "shoot": "node shoot.mjs",
+    "voice": "node voice.mjs",
+    "studio": "remotion studio src/index.ts",
+    "render": "remotion render src/index.ts Promo out/carboard-promo.mp4",
+    "webp": "node webp.mjs"
+  },
+  "dependencies": {
+    "@remotion/cli": "4.0.529",
+    "@remotion/google-fonts": "4.0.529",
+    "react": "19.1.0",
+    "react-dom": "19.1.0",
+    "remotion": "4.0.529"
+  },
+  "devDependencies": {
+    "@types/react": "19.1.8",
+    "playwright": "1.63.0",
+    "typescript": "5.8.3"
+  }
+}

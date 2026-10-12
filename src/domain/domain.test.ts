@@ -33,6 +33,16 @@ describe('km estimate', () => {
   it('does not learn from readings less than 3 days apart', () => {
     expect(kmPerDay([reading(1000, '2026-09-01'), reading(1100, '2026-09-02')])).toBeNull()
   })
+  it('uses the yearly km the owner gave, until readings show the real pace', () => {
+    // 18,250 km a year is 50 a day
+    const e = estimateKm([reading(10000, '2026-10-01')], '2026-10-08', 18250)
+    expect(e).toMatchObject({ value: 10350, perDay: 50, learned: false, basis: 'yearly' })
+    const rs = [reading(10000, '2026-09-01'), reading(10600, '2026-09-21')] // 30/day of their own
+    expect(estimateKm(rs, '2026-09-25', 18250)).toMatchObject({ value: 10720, learned: true, basis: 'learned' })
+  })
+  it('falls back to the national average without a yearly km', () => {
+    expect(estimateKm([reading(10000, '2026-10-01')], '2026-10-08', null)).toMatchObject({ perDay: 40, basis: 'average' })
+  })
   it('reads unsorted input correctly', () => {
     const rs = [reading(11000, '2026-09-21'), reading(10000, '2026-09-01')]
     expect(estimateKm(rs, '2026-09-21').value).toBe(11000)
@@ -53,7 +63,7 @@ describe('reading checks', () => {
 })
 
 describe('due status', () => {
-  const km = { value: 100000, perDay: 50, learned: true, checkedDaysAgo: 0, last: null }
+  const km = { value: 100000, perDay: 50, learned: true, basis: 'learned' as const, checkedDaysAgo: 0, last: null }
   const today = '2026-10-08'
   it('is unset without a km or date target', () => expect(dueInfo(item({}), km, today).status).toBe('unset'))
   it('is ok far from the target', () => expect(dueInfo(item({ due_km: 110000, every_km: 15000 }), km, today).status).toBe('ok'))
