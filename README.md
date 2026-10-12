@@ -9,6 +9,10 @@ A Hebrew (RTL) PWA that keeps everything about your cars in one place: km, servi
 - **Reminders.** Each item (service, test, insurance, tyres, brakes, battery, custom) is due at a km limit or a date, whichever comes first. You can export them to the phone calendar (.ics) with an alert 7 days before.
 - **Cloud.** Firebase on the free Spark plan: Google login and Firestore (works offline and syncs), which also holds the photos and receipts, compressed. Each user can reach only their own data. Without Firebase settings the app runs in local mode, with the data in the browser.
 
+## Demo
+
+[![CarBoard demo: sign in, the car from its plate, the monthly summary, a fuel receipt read on the phone, a year of charts, family, notifications and the calendar](docs/demo.webp)](docs/demo.mp4)
+
 The plan this was built from: [docs/PLAN.html](docs/PLAN.html).
 
 ## Run locally
