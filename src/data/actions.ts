@@ -88,6 +88,7 @@ export function makeActions(store: Store, getData: () => Data, refresh: () => Pr
         await store.update('items', item.id, {
           due_km: item.every_km ? rec.km + item.every_km : item.due_km,
           due_date: item.every_months ? addMonths(rec.date, item.every_months) : item.due_date,
+          booked: null, // done: the appointment is over
         })
       await refresh()
     },
@@ -126,6 +127,7 @@ export function makeActions(store: Store, getData: () => Data, refresh: () => Pr
           await store.update('items', item.id, {
             due_km: item.every_km ? rec.km + item.every_km : item.due_km,
             due_date: item.every_months ? addMonths(rec.date, item.every_months) : item.due_date,
+            booked: null,
           })
       }
       await refresh()
@@ -154,7 +156,7 @@ export function makeActions(store: Store, getData: () => Data, refresh: () => Pr
       else await store.insert('documents', doc)
       const kind = doc.kind === 'licence' ? 'test' : doc.kind === 'insurance' ? 'insurance' : null
       const item = kind ? getData().items.find(i => i.car_id === doc.car_id && i.kind === kind) : undefined
-      if (item && doc.expiry) await store.update('items', item.id, { due_date: doc.expiry })
+      if (item && doc.expiry) await store.update('items', item.id, { due_date: doc.expiry, booked: null })
       await dropFiles((before?.files ?? []).filter(f => !doc.files.includes(f))) // files taken off this document
       await refresh()
     },

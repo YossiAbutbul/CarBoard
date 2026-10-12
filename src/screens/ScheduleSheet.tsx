@@ -32,7 +32,8 @@ interface Plan {
  * phone's calendar (no file to download). Then the next one opens.
  */
 export function ScheduleSheet({ onClose }: { onClose(): void }) {
-  const { car, reminders, data } = useApp()
+  const { car, reminders, data, actions } = useApp()
+  const [saved, setSaved] = useState(false) // Android: the file is in the downloads, to open
   const [urgent] = useState(() => reminders.filter(r => r.status === 'due' || r.status === 'overdue'))
   const [plans, setPlans] = useState<Record<string, Plan>>(() =>
     Object.fromEntries(urgent.map(r => [r.item.id, { date: nextDay(), time: '09:00', place: '', added: false }])),
@@ -59,6 +60,9 @@ export function ScheduleSheet({ onClose }: { onClose(): void }) {
     else if (where === 'android') saveEventFile(a) // Android: a calendar file; opening it picks the calendar app
     else window.open(googleCalendarUrl(a), '_blank', 'noopener')
     set(r.item.id, { added: true })
+    setSaved(where === 'android')
+    // "בטיפול" from now until the appointment (the item keeps its date and time)
+    actions.saveItem({ ...r.item, booked: { date: a.date, time: a.time } }).catch(() => {})
     setOpenId(urgent.find(x => x.item.id !== r.item.id && !plans[x.item.id].added)?.item.id ?? null)
   }
   const allAdded = urgent.every(r => plans[r.item.id].added)
@@ -97,6 +101,14 @@ export function ScheduleSheet({ onClose }: { onClose(): void }) {
         )}
         {/* one button, always in view at the bottom: for the item that is open, or "done" */}
         <div className="sched-foot">
+          {saved && (
+            <p className="sched-note">
+              <Icon name="download" />
+              <span>
+                הקובץ ירד. לחצו <b>פתיחה</b> בהודעת ההורדה כדי לבחור יומן.
+              </span>
+            </p>
+          )}
           {current ? (
             <button className="btn pri" disabled={!ready(current)} onClick={() => add(current, main)}>
               {plans[current.item.id].added ? 'הוספה שוב ליומן' : main === 'google' ? 'הוספה ליומן Google' : 'הוספה ליומן'} <Icon name="calendar" />

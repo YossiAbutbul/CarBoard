@@ -2,7 +2,7 @@ import type { Item } from '../types'
 import type { KmEstimate } from './odometer'
 import { addDays, diffDays, todayIso } from '../lib/dates'
 
-export type Status = 'ok' | 'soon' | 'due' | 'overdue' | 'unset'
+export type Status = 'ok' | 'soon' | 'due' | 'overdue' | 'booked' | 'unset'
 
 export interface DueInfo {
   status: Status
@@ -30,6 +30,8 @@ export function dueInfo(it: Item, km: KmEstimate, today = todayIso()): DueInfo {
   if (days < 0 || (kmLeft != null && kmLeft < 0)) status = 'overdue'
   else if (days <= 7 || (kmLeft != null && kmLeft <= 200)) status = 'due'
   else if (days <= 30 || (kmLeft != null && kmLeft <= 1000)) status = 'soon'
+  // due, but an appointment is set for it: taken care of, until the day of the appointment passes
+  if ((status === 'due' || status === 'overdue') && it.booked && it.booked.date >= today) status = 'booked'
 
   let progress = 0
   if (by === 'km' && it.every_km && kmLeft != null) progress = 1 - kmLeft / it.every_km

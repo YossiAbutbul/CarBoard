@@ -9,7 +9,7 @@ export interface Reminder extends DueInfo {
   detail: string // the small line under it
 }
 
-const RANK = { overdue: 0, due: 1, soon: 2, ok: 3, unset: 4 }
+const RANK = { overdue: 0, due: 1, booked: 2, soon: 3, ok: 4, unset: 5 }
 
 export function buildReminders(items: Item[], km: KmEstimate): Reminder[] {
   return items
@@ -27,6 +27,7 @@ export function buildReminders(items: Item[], km: KmEstimate): Reminder[] {
           detail = `עד ${fmtDate(item.due_date!)}`
         }
       }
+      if (d.status === 'booked' && item.booked) detail = `נקבע ל־${fmtDate(item.booked.date)} · ${item.booked.time}`
       return { ...d, item, headline, detail }
     })
     .sort((a, b) => RANK[a.status] - RANK[b.status] || (a.days ?? 1e9) - (b.days ?? 1e9))
