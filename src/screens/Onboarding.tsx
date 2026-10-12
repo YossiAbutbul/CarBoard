@@ -10,6 +10,7 @@ import { useApp } from '../data/AppData'
 import { PlateInput, usePlateLookup } from '../components/PlateField'
 import { formatPlate, plateDigits } from '../lib/govil'
 import { userMessage } from '../lib/errors'
+import { YEARLY_CHOICES } from '../domain/odometer'
 
 const KEY = 'car-records:onboarded'
 
@@ -245,14 +246,7 @@ export function ExtraCar({ car, onDone }: { car?: Car; onDone(): void }) {
   )
 }
 
-// rough yearly distances, with the middle of each range as the number we keep
-const YEARLY: [string, number][] = [
-  ['עד 10,000', 8000],
-  ['10–15 אלף', 12500],
-  ['15–20 אלף', 17500],
-  ['20–30 אלף', 25000],
-  ['מעל 30 אלף', 35000],
-]
+const YEARLY = YEARLY_CHOICES
 
 /**
  * After the first car is saved: about how far it goes in a year. Until the owner's own km updates show

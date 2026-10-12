@@ -4,6 +4,8 @@ import { useApp } from '../data/AppData'
 import type { Status } from '../domain/due'
 import { Icon } from './Icon'
 import { ask } from './Dialog'
+import { useKeyboardInset } from '../lib/keyboard'
+import { MorphIcon } from './MorphIcon'
 import { useBackLayer } from '../lib/back'
 import { PdfThumb, useFile } from './FileViewer'
 
@@ -63,6 +65,22 @@ export function Drawer({ title, side, onClose, children }: { title: string; side
     setTimeout(onClose, 220)
   }
   useBackLayer(true, close)
+  // The close button sits exactly where the button that opened the drawer is (the top bar's menu or
+  // gear), and its icon turns into an X: the same spot opens and closes. Where there is no such button
+  // in view (the PC layout), the drawer keeps a close button in its own header.
+  const [anchor] = useState(() => {
+    const el = document.querySelector<HTMLElement>(`.bar [data-tour="${side === 'start' ? 'cars' : 'settings'}"]`)
+    const r = el?.getBoundingClientRect()
+    // only when that button is at the screen's edge the drawer comes from (a wider window centres the
+    // app, and the button would land in the middle of the drawer's header)
+    const atEdge = r && (side === 'start' ? window.innerWidth - r.right : r.left) < 48
+    return r && atEdge && r.width > 0 && r.bottom > 0 && r.top < window.innerHeight ? r : null
+  })
+  const [shown, setShown] = useState(false) // a frame after opening, so the icon animates into the X
+  useEffect(() => {
+    const t = requestAnimationFrame(() => requestAnimationFrame(() => setShown(true)))
+    return () => cancelAnimationFrame(t)
+  }, [])
   // Drag the panel back toward its edge to close it (start = right edge in RTL, end = left).
   const panel = useRef<HTMLElement>(null)
   const drag = useRef<{ x: number; y: number; t: number; dx: number; axis: 'x' | 'y' | null } | null>(null)
@@ -95,6 +113,7 @@ export function Drawer({ title, side, onClose, children }: { title: string; side
       el.style.transition = 'transform 0.22s cubic-bezier(0.2, 0.8, 0.2, 1)'
       if (Math.abs(d.dx) > el.offsetWidth * 0.3 || (fast && Math.abs(d.dx) > 30)) {
         el.style.transform = `translateX(${dir * 100}%)`
+        setLeaving(true)
         setTimeout(onClose, 200)
       } else el.style.transform = ''
     },
@@ -111,15 +130,30 @@ export function Drawer({ title, side, onClose, children }: { title: string; side
   }, [])
   return (
     <div className={`drawer-overlay ${leaving ? 'out' : ''}`} onClick={close}>
-      <aside ref={panel} className={`drawer ${side}`} role="dialog" aria-modal="true" aria-label={title} onClick={e => e.stopPropagation()} {...touch}>
+      <aside ref={panel} className={`drawer ${side} ${anchor ? 'anchored' : ''}`} role="dialog" aria-modal="true" aria-label={title} onClick={e => e.stopPropagation()} {...touch}>
         <div className="drawer-head">
           <h2>{title}</h2>
-          <button onClick={close} aria-label="סגירה">
-            <Icon name="close" />
-          </button>
+          {!anchor && (
+            <button onClick={close} aria-label="סגירה">
+              <Icon name="close" />
+            </button>
+          )}
         </div>
         <div className="drawer-body">{children}</div>
       </aside>
+      {anchor && (
+        <button
+          className={`drawer-x ${shown && !leaving ? 'on' : ''}`}
+          style={{ left: anchor.left, top: anchor.top, width: anchor.width, height: anchor.height }}
+          onClick={e => {
+            e.stopPropagation()
+            close()
+          }}
+          aria-label="סגירה"
+        >
+          <MorphIcon kind={side === 'start' ? 'menu' : 'gear'} open={shown && !leaving} />
+        </button>
+      )}
     </div>
   )
 }
@@ -220,9 +254,21 @@ export function Sheet({ title, onClose, dirty = false, children }: { title: stri
     }
   }) // eslint-disable-line react-hooks/exhaustive-deps
   const { sheet, handle } = useSwipeClose(() => void requestClose(), () => dirtyRef.current)
+  const overlay = useKeyboardInset<HTMLDivElement>() // lifts the sheet above the phone's keyboard
+  // A tap closes the sheet only if it both starts and ends outside it: when the sheet changes height
+  // under a finger (a field that opens the keyboard), the end of a tap inside can land outside.
+  const downOutside = useRef(false)
   // into <body>: a sheet can open over another sheet (and is never caught in a page's animation)
   return createPortal(
-    <div className="overlay" onClick={() => requestClose()}>
+    <div
+      className="overlay"
+      ref={overlay}
+      onPointerDown={e => (downOutside.current = e.target === e.currentTarget)}
+      onClick={e => {
+        if (e.target === e.currentTarget && downOutside.current) requestClose()
+        downOutside.current = false
+      }}
+    >
       <div className="sheet" ref={sheet} role="dialog" aria-modal="true" aria-label={title} onClick={e => e.stopPropagation()}>
         <div className="drag-zone" {...handle}>
           <div className="grab" />

@@ -1,7 +1,7 @@
 import { initializeApp } from 'firebase/app'
 import { ReCaptchaEnterpriseProvider, initializeAppCheck } from 'firebase/app-check'
 import { delMany, keys } from 'idb-keyval'
-import { GoogleAuthProvider, getAuth, signInWithPopup, signInWithRedirect, signOut as fbSignOut } from 'firebase/auth'
+import { GoogleAuthProvider, getAuth, getRedirectResult, signInWithPopup, signInWithRedirect, signOut as fbSignOut } from 'firebase/auth'
 import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager } from 'firebase/firestore'
 
 const env = import.meta.env
@@ -36,17 +36,49 @@ export const db = app
   ? initializeFirestore(app, { ignoreUndefinedProperties: true, localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() }) })
   : null
 
-export async function signInWithGoogle() {
-  if (!auth) return
+const REDIRECTING = 'car-records:signing-in'
+
+/** Signs in with Google. True once signed in (by popup); false when cancelled, or when it went by redirect. */
+export async function signInWithGoogle(): Promise<boolean> {
+  if (!auth) return false
   const provider = new GoogleAuthProvider()
   provider.setCustomParameters({ prompt: 'select_account' })
   try {
     await signInWithPopup(auth, provider)
+    return true
   } catch (e) {
     // installed apps and some phones block popups: go by redirect instead
     const code = (e as { code?: string }).code
-    if (code === 'auth/popup-blocked' || code === 'auth/operation-not-supported-in-this-environment') await signInWithRedirect(auth, provider)
-    else if (code !== 'auth/popup-closed-by-user' && code !== 'auth/cancelled-popup-request') throw e
+    if (code === 'auth/popup-blocked' || code === 'auth/operation-not-supported-in-this-environment') {
+      // back from Google, the app shows the loading screen (not the sign-in) until it knows the result
+      try {
+        sessionStorage.setItem(REDIRECTING, '1')
+      } catch {
+        // storage blocked: the sign-in shows for a moment, nothing worse
+      }
+      await signInWithRedirect(auth, provider)
+    } else if (code !== 'auth/popup-closed-by-user' && code !== 'auth/cancelled-popup-request') throw e
+    return false
+  }
+}
+
+/** Back from a redirect sign-in: true until Firebase has read its result (see finishRedirect). */
+export function returningFromRedirect() {
+  try {
+    return sessionStorage.getItem(REDIRECTING) === '1'
+  } catch {
+    return false
+  }
+}
+export async function finishRedirect() {
+  try {
+    if (auth) await getRedirectResult(auth)
+  } finally {
+    try {
+      sessionStorage.removeItem(REDIRECTING)
+    } catch {
+      // storage blocked
+    }
   }
 }
 

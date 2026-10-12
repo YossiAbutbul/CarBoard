@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useBackLayer } from '../lib/back'
+import { useKeyboardInset } from '../lib/keyboard'
 
 interface Ask {
   title: string
@@ -48,13 +49,14 @@ export function DialogHost() {
     return () => window.removeEventListener('keydown', onKey, true)
   }) // eslint-disable-line react-hooks/exhaustive-deps
   useBackLayer(Boolean(cur), () => answer(false))
+  const overlay = useKeyboardInset<HTMLDivElement>(Boolean(cur)) // keeps the dialog above the phone's keyboard
   if (!cur) return null
   function answer(ok: boolean) {
     cur!.done(ok, text.trim())
     setCur(null)
   }
   return createPortal(
-    <div className="dialog-overlay" onClick={() => answer(false)}>
+    <div className="dialog-overlay" ref={overlay} onClick={() => answer(false)}>
       <div className="dialog" role="alertdialog" aria-modal="true" aria-label={cur.title} onClick={e => e.stopPropagation()}>
         <b>{cur.title}</b>
         {cur.text && <p>{cur.text}</p>}

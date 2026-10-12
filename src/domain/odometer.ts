@@ -3,6 +3,15 @@ import { diffDays, todayIso } from '../lib/dates'
 
 export const DEFAULT_KM_PER_DAY = 40 // a normal Israeli average
 
+/** About how far a car goes in a year, as the owner picks it; the middle of each range is what is kept. */
+export const YEARLY_CHOICES: [string, number][] = [
+  ['עד 10,000', 8000],
+  ['10–15 אלף', 12500],
+  ['15–20 אלף', 17500],
+  ['20–30 אלף', 25000],
+  ['מעל 30 אלף', 35000],
+]
+
 export interface KmEstimate {
   value: number
   perDay: number

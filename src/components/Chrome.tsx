@@ -1,7 +1,7 @@
 import { LoadingDial, Scene } from './Scene'
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { useApp } from '../data/AppData'
-import { Icon } from './Icon'
+import { MorphIcon } from './MorphIcon'
 import { isWide, WIDE } from '../lib/wide'
 
 /**
@@ -33,7 +33,7 @@ export function TopBar({ openCars, openSettings }: { openCars(): void; openSetti
   return (
     <div className="bar">
       <button onClick={openCars} aria-label="הרכבים שלי" data-tour="cars">
-        <Icon name="swap" />
+        <MorphIcon kind="menu" open={false} />
       </button>
       <button className="title" onClick={openCars} aria-label="החלפת רכב">
         <span>
@@ -42,7 +42,7 @@ export function TopBar({ openCars, openSettings }: { openCars(): void; openSetti
         {car?.plate && <Plate number={car.plate} size="sm" />}
       </button>
       <button onClick={openSettings} aria-label="הגדרות" data-tour="settings">
-        <Icon name="settings" />
+        <MorphIcon kind="gear" open={false} />
       </button>
     </div>
   )
@@ -215,9 +215,11 @@ const APP_START = performance.now()
 export const sinceStart = () => performance.now() - APP_START
 
 export function Splash() {
-  // a negative delay picks the animations up where the first splash left them
+  // A negative delay picks the animations up where the first splash left them. Read once, when this
+  // splash appears: a new value on a later render would move the running animation (it used to jump).
+  const [since] = useState(() => -Math.round(sinceStart()))
   return (
-    <div className="splash" style={{ '--since': `${-Math.round(sinceStart())}ms` } as React.CSSProperties}>
+    <div className="splash" style={{ '--since': `${since}ms` } as React.CSSProperties}>
       <LoadingDial />
       <div className="splash-name" dir="ltr">
         CarBoard
