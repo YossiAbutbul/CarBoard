@@ -965,3 +965,11 @@ html, body { overscroll-behavior-y: none; }
 /* Android: after saving the event file, where to open it */
 .sched-note { display: flex; align-items: center; gap: 8px; margin: 0 0 10px; padding: 9px 12px; border-radius: 12px; background: #e8f0fc; color: var(--ink); font-size: 13px; line-height: 1.4; animation: rise 0.25s var(--ease) both; }
 .sched-note svg.i { width: 16px; height: 16px; flex: none; color: var(--blue); }
+/* the item window: its appointment ("בטיפול"), with a way to cancel it */
+.booked-row { display: flex; align-items: center; gap: 8px; margin: 4px 0 8px; padding: 8px 8px 8px 12px; border-radius: 14px; background: #e8f0fc; font-size: 13.5px; font-weight: 600; }
+.booked-row svg.i { width: 16px; height: 16px; flex: none; color: var(--blue); }
+.booked-row span { flex: 1; min-width: 0; }
+.booked-row button { flex: none; height: 30px; padding: 0 12px; border-radius: 99px; background: #fff; color: var(--overdue); font-size: 12.5px; font-weight: 600; cursor: pointer; transition: background 0.15s; }
+.booked-row button:hover { background: #fdecec; }
+/* a text field with suggestions (the insurer): no browser arrow; the chips under it are the picker */
+input[list]::-webkit-calendar-picker-indicator { display: none !important; }

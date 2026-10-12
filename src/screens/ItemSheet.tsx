@@ -55,6 +55,7 @@ export function ItemSheet({ item, onClose, onDone }: { item?: Item; onClose(): v
   const [busy, setBusy] = useState(false)
   const dirty = useDirty([label, everyKm, everyMonths, dueKm, dueDate, provider, policy, files, mode])
   const [adding, setAdding] = useState<Item['kind'] | null>(null) // a ready-made reminder being added
+  const [booked, setBooked] = useState(item?.booked ?? null) // an appointment set from the calendar window
   if (!car) return null
 
   const draft: Item = {
@@ -66,6 +67,7 @@ export function ItemSheet({ item, onClose, onDone }: { item?: Item; onClose(): v
     every_months: numOrNull(everyMonths),
     due_km: byDate || (mode === 'date' && mode !== startMode) ? null : numOrNull(dueKm),
     due_date: !byDate && mode === 'km' && mode !== startMode ? null : dueDate || null,
+    booked,
   }
   const preview = dueInfo(draft, km)
 
@@ -171,6 +173,23 @@ export function ItemSheet({ item, onClose, onDone }: { item?: Item; onClose(): v
                 <Icon name="check" /> סימון כבוצע
               </button>
             )}
+          </div>
+        )}
+        {/* "בטיפול": the appointment it was set for, and a way out of it (back to its real status) */}
+        {item && booked && preview.status === 'booked' && (
+          <div className="booked-row">
+            <Icon name="calendar" />
+            <span>
+              תור ב־{fmtDate(booked.date)} · {booked.time}
+            </span>
+            <button
+              onClick={async () => {
+                setBooked(null)
+                await actions.saveItem({ ...item, booked: null }).catch(() => setBooked(booked))
+              }}
+            >
+              ביטול התור
+            </button>
           </div>
         )}
 
