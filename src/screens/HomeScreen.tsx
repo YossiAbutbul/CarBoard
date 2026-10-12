@@ -1,8 +1,6 @@
 import { useState } from 'react'
 import { Icon, kindIcon } from '../components/Icon'
 import { Glance, GlanceCell, PageHero, TopBar, useCountUp } from '../components/Chrome'
-import { Scene } from '../components/Scene'
-import { Brand } from '../components/Brand'
 import { useApp } from '../data/AppData'
 import { STATUS_TEXT } from '../domain/labels'
 import type { Reminder } from '../domain/reminders'
@@ -31,22 +29,7 @@ export function HomeScreen({
   const [confirming, setConfirming] = useState(false)
   const kmShown = useCountUp(km.value)
 
-  if (!car)
-    return (
-      <div className="welcome scenic reveal">
-        <Scene />
-        <Brand />
-        <div className="status">
-          <span>כל</span>
-          <span>הרכב.</span>
-          <span>במקום</span>
-          <span>אחד.</span>
-        </div>
-        <button className="btn pri" onClick={() => open({ t: 'car' })}>
-          הוספת רכב לפי מספר רישוי <Icon name="plus" />
-        </button>
-      </div>
-    )
+  if (!car) return null // no car: App shows the first-run car step instead
 
   const stale = km.checkedDaysAgo != null && km.checkedDaysAgo >= 7
   let dismissed = false

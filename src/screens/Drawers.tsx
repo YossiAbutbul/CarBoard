@@ -22,6 +22,7 @@ import { buildReminders } from '../domain/reminders'
 import type { OpenSheet } from '../App'
 import type { Family } from '../data/store'
 import { useBackLayer } from '../lib/back'
+import { resetOnboarded } from './Onboarding'
 
 /**
  * Press and hold a car, then drag it to a new place (no handle). A quick tap still opens the car,
@@ -326,7 +327,11 @@ export function SettingsDrawer({
             </div>
           </div>
           {store.mode === 'cloud' && (
-            <button className="btn" style={{ marginTop: 14, background: '#fff' }} onClick={() => signOut()}>
+            <button className="btn" style={{ marginTop: 14, background: '#fff' }} onClick={() => {
+                resetOnboarded()
+                signOut()
+              }}
+            >
               התנתקות
             </button>
           )}

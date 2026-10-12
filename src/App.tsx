@@ -157,11 +157,13 @@ function Main({ email, accountName, guest = false }: { email: string | null; acc
   const [guide, setGuide] = useState<'intro' | 'name' | 'car' | 'km' | 'ready' | 'more' | 'edit' | 'tour' | 'done'>(() => (isOnboarded() ? 'done' : 'intro'))
   const addingFromIntro = useRef(false)
   useEffect(() => {
-    if (loading || guide !== 'intro' || !car) return
+    if (loading || (guide !== 'intro' && !addingFromIntro.current) || !car || ['km', 'ready', 'tour'].includes(guide)) return
     // a car added from the intro leads to the yearly-km question, then the "all set" screen; someone
     // who already has cars skips the guide
-    if (addingFromIntro.current) setGuide('km')
-    else {
+    if (addingFromIntro.current) {
+      addingFromIntro.current = false // used once: the next car added (from the cars list) skips the guide
+      setGuide('km')
+    } else {
       markOnboarded()
       setGuide('done')
     }
@@ -345,15 +347,17 @@ function Main({ email, accountName, guest = false }: { email: string | null; acc
             onAddAnother={() => setGuide('more')}
             onEdit={() => setGuide('edit')}
           />
-        ) : !car && guide === 'intro' ? (
+        ) : !car ? (
+          // no car: the first-run screens; someone who has been through them starts at the car step
           <Intro
             name={userName ?? ''}
             onName={saveName}
+            startAt={guide === 'intro' ? 0 : 2}
             onAdding={() => {
               addingFromIntro.current = true
             }}
           />
-        ) : tab === 'home' || !car ? (
+        ) : tab === 'home' ? (
           <HomeScreen open={setSheet} openCars={openCars} openSettings={openSettings} userName={userName} />
         ) : tab === 'services' ? (
           <ServicesScreen open={setSheet} openCars={openCars} openSettings={openSettings} />

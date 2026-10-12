@@ -20,6 +20,14 @@ export function isOnboarded() {
     return false
   }
 }
+/** Signing out: whoever uses the app next on this device (a guest, another account) gets the first run. */
+export function resetOnboarded() {
+  try {
+    localStorage.removeItem(KEY)
+  } catch {
+    // storage blocked
+  }
+}
 export function markOnboarded() {
   try {
     localStorage.setItem(KEY, '1')
