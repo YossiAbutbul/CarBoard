@@ -8,7 +8,7 @@ import { STATUS_TEXT } from '../domain/labels'
 import type { Reminder } from '../domain/reminders'
 import { addDays, todayIso } from '../lib/dates'
 import { fmtDate } from '../lib/i18n'
-import { androidCalendarUrl, eventUrl, googleCalendarUrl, type Appointment } from '../lib/schedule'
+import { eventUrl, googleCalendarUrl, saveEventFile, type Appointment } from '../lib/schedule'
 
 const isAndroid = () => /android/i.test(navigator.userAgent)
 const isIos = () => /iphone|ipad|ipod/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)
@@ -56,7 +56,7 @@ export function ScheduleSheet({ onClose }: { onClose(): void }) {
   const add = (r: Reminder, where: 'phone' | 'android' | 'google') => {
     const a = appointment(r, plans[r.item.id])
     if (where === 'phone') window.location.assign(eventUrl(a, location.origin)) // iOS: its "Add Event" screen
-    else if (where === 'android') window.location.assign(androidCalendarUrl(a)) // Android: pick a calendar app
+    else if (where === 'android') saveEventFile(a) // Android: a calendar file; opening it picks the calendar app
     else window.open(googleCalendarUrl(a), '_blank', 'noopener')
     set(r.item.id, { added: true })
     setOpenId(urgent.find(x => x.item.id !== r.item.id && !plans[x.item.id].added)?.item.id ?? null)
