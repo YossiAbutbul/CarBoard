@@ -1,7 +1,5 @@
 # CarBoard · הרכב שלי
 
-<p align="center"><img src="docs/carboard.webp" alt="CarBoard: reminders, fuel and documents, all in one place" width="800" /></p>
-
 A Hebrew (RTL) PWA that keeps everything about your cars in one place: km, services, test (טסט), insurance and documents, with reminders by km or by date.
 
 - **Smart km.** The app estimates today's km from your last reading and your own daily average. A weekly card asks “is it about right?”.
@@ -11,7 +9,9 @@ A Hebrew (RTL) PWA that keeps everything about your cars in one place: km, servi
 
 ## Demo
 
-[![CarBoard demo: sign in, the car from its plate, the monthly summary, a fuel receipt read on the phone, a year of charts, family, notifications and the calendar](docs/demo.webp)](docs/demo.mp4)
+[![CarBoard: reminders, fuel and documents, all in one place](docs/carboard.webp)](docs/demo.mp4)
+
+The full demo of the whole app (sign in, the car from its plate, the monthly summary, a fuel receipt read on the phone, a year of charts, family, notifications and the calendar): [docs/demo.mp4](docs/demo.mp4).
 
 The plan this was built from: [docs/PLAN.html](docs/PLAN.html).
 
