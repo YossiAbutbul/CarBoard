@@ -45,6 +45,26 @@ export function googleCalendarUrl(a: Appointment) {
   return `https://calendar.google.com/calendar/render?${q}`
 }
 
+/**
+ * Android: the system's "new event" screen, through whichever calendar app the user picks (Google,
+ * Samsung...). Chrome opens it from an intent link; if no app takes it, it goes on to Google Calendar's
+ * page instead. The times are the phone's own clock (it is opened on the phone that picked them).
+ */
+export function androidCalendarUrl(a: Appointment) {
+  const start = new Date(`${a.date}T${a.time}:00`).getTime()
+  const end = start + a.minutes * 60_000
+  const s = (k: string, v: string) => (v ? `S.${k}=${encodeURIComponent(v)};` : '')
+  return (
+    'intent:#Intent;action=android.intent.action.INSERT;type=vnd.android.cursor.dir/event;' +
+    s('title', a.title) +
+    s('description', a.details) +
+    s('eventLocation', a.location) +
+    `l.beginTime=${start};l.endTime=${end};` +
+    s('browser_fallback_url', googleCalendarUrl(a)) +
+    'end'
+  )
+}
+
 /** The app's own address for the event (served by /api/event), for the iPhone's calendar. */
 export function eventUrl(a: Appointment, origin: string) {
   const q = new URLSearchParams({ title: a.title, details: a.details, location: a.location, date: a.date, time: a.time, minutes: String(a.minutes) })
