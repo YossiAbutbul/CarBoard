@@ -2,6 +2,7 @@ import { LoadingDial, Scene } from './Scene'
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { useApp } from '../data/AppData'
 import { Icon } from './Icon'
+import { isWide, WIDE } from '../lib/wide'
 
 /**
  * An Israeli plate: black digits on yellow, and on the left a blue euroband
@@ -73,6 +74,13 @@ export function PageHero({ children }: { children: ReactNode; dial?: boolean }) 
       title.style.transform = ''
       if (date) date.style.transform = ''
       el.style.top = ''
+      // a PC window: the header stays as it is (the cars and sections are beside it, not inside)
+      if (isWide()) {
+        el.style.removeProperty('--p')
+        el.classList.remove('collapsed')
+        if (page) page.style.minHeight = ''
+        return
+      }
       const top = offset(el, null) // ignores the page's entrance animation
       const barTop = parseFloat(getComputedStyle(bar).top) || 14
       const dateAt = barTop + bar.offsetHeight + 2
@@ -101,6 +109,7 @@ export function PageHero({ children }: { children: ReactNode; dial?: boolean }) 
       page.style.minHeight = `calc(100lvh + ${Math.ceil(travel - outside)}px)` // ignored where lvh is unknown
     }
     const on = () => {
+      if (isWide()) return
       // a page that fits the screen never collapses (also not while a phone bounces past the edge)
       const canScroll = document.documentElement.scrollHeight - window.innerHeight > 1
       const p = canScroll ? Math.min(1, Math.max(0, window.scrollY / travel)) : 0
@@ -118,6 +127,8 @@ export function PageHero({ children }: { children: ReactNode; dial?: boolean }) 
     if (page) mo.observe(page, { childList: true, subtree: true })
     window.addEventListener('scroll', on, { passive: true })
     window.addEventListener('resize', measure)
+    const mq = matchMedia(WIDE)
+    mq.addEventListener('change', measure)
     // On a first load (or right after an update) the app's font arrives after this first measure, and
     // the header shrinks with it: measure again then, or the page keeps scroll room it does not need.
     let live = true
@@ -131,6 +142,7 @@ export function PageHero({ children }: { children: ReactNode; dial?: boolean }) 
       mo.disconnect()
       window.removeEventListener('scroll', on)
       window.removeEventListener('resize', measure)
+      mq.removeEventListener('change', measure)
       title.style.transform = ''
       if (date) date.style.transform = ''
       if (page) page.style.minHeight = ''

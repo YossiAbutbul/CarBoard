@@ -30,7 +30,7 @@ export function FuelScreen({ open, openCars, openSettings }: { open: OpenSheet; 
   const months = [...new Set(list.map(f => f.date.slice(0, 7)))]
 
   return (
-    <div className="reveal">
+    <div className="reveal fuel-page">
       <PageHero>
         <TopBar openCars={openCars} openSettings={openSettings} />
         <div className="greet">
@@ -62,6 +62,8 @@ export function FuelScreen({ open, openCars, openSettings }: { open: OpenSheet; 
       ) : (
         <>
           <FuelChart fills={fills} range={range} setRange={r => { setRange(r); setOffset(0) }} offset={offset} setOffset={setOffset} period={period} />
+          {/* on a wide PC window the fill-ups sit beside the chart */}
+          <div className="fuel-side">
           <div className="sec">
             <h2>התדלוקים</h2>
             <button className="add-btn" onClick={() => open({ t: 'fuel' })}>
@@ -96,6 +98,7 @@ export function FuelScreen({ open, openCars, openSettings }: { open: OpenSheet; 
               </div>
             </section>
           ))}
+          </div>
         </>
       )}
       {receipt && (

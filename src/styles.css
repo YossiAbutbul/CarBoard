@@ -11,9 +11,6 @@
 .receipt-row img { width: 52px; height: 52px; object-fit: cover; border-radius: 10px; flex: none; cursor: zoom-in; }
 .receipt-row .t { font-size: 14.5px; font-weight: 500; }
 .receipt-row .s { font-size: 12.5px; color: var(--muted); }
-.thumb-x { position: relative; }
-.thumb-x > button:not(.file-thumb) { position: absolute; top: -6px; left: -6px; width: 20px; height: 20px; border-radius: 50%; display: grid; place-items: center; background: var(--ink); color: #fff; }
-.thumb-x > button:not(.file-thumb) svg.i { width: 11px; height: 11px; stroke-width: 2.2; }
 
 :root {
   --bg: #ffffff;
@@ -179,8 +176,6 @@ textarea.in { min-height: 76px; resize: vertical; }
 .nav button.on { color: var(--ink); font-weight: 600; }
 .nav button.on span.ico { background: var(--card); }
 .nav button.on svg.i { stroke-width: 1.8; }
-.fab { position: fixed; bottom: calc(80px + env(safe-area-inset-bottom)); left: max(16px, calc(50% - 214px)); width: 54px; height: 54px; border-radius: 16px; display: grid; place-items: center; background: var(--blue); color: #fff; box-shadow: 0 10px 24px rgba(28, 105, 212, 0.35); z-index: 19; }
-.fab svg.i { width: 24px; height: 24px; stroke-width: 2; }
 
 /* ─── sheet ─── */
 .overlay { position: fixed; inset: 0; z-index: 50; display: flex; align-items: flex-end; justify-content: center; background: rgba(11, 22, 38, 0.45); animation: fade 0.2s ease-out; }
@@ -214,12 +209,9 @@ textarea.in { min-height: 76px; resize: vertical; }
 .year { display: flex; justify-content: space-between; align-items: baseline; margin: 22px 4px 8px; }
 .year span:first-child { font-size: 19px; font-weight: 600; letter-spacing: -0.02em; }
 .year span:last-child { font-size: 14px; font-weight: 500; color: var(--muted); font-variant-numeric: tabular-nums; }
-.lightbox { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.92); z-index: 60; display: grid; place-items: center; padding: 16px; }
-.lightbox img { max-height: 90dvh; border-radius: 10px; }
 .foot { text-align: center; margin-top: 30px; font-size: 12px; color: var(--unset); font-weight: 600; letter-spacing: 0.08em; }
 
 .tile .l svg.i { width: 18px; height: 18px; color: var(--muted); }
-
 
 /* phone app: no visible scrollbars, no rubber-band overscroll on the page */
 html, body, .sheet { scrollbar-width: none; -ms-overflow-style: none; }
@@ -249,36 +241,15 @@ html, body { overscroll-behavior-y: none; }
 @keyframes fadeout { to { opacity: 0; } }
 
 .car-list { display: grid; gap: 8px; }
-.car-pick { display: flex; align-items: center; gap: 4px; background: var(--card); border-radius: 16px; padding: 6px; transition: box-shadow 0.2s; }
-.car-pick.on { box-shadow: inset 0 0 0 2px var(--ink); background: #fff; }
-.car-pick-main { flex: 1; min-width: 0; display: flex; align-items: center; gap: 12px; padding: 6px; text-align: right; }
-.car-pick-img { width: 84px; height: 52px; flex: none; display: grid; place-items: center; border-radius: 12px; background: linear-gradient(180deg, var(--hero-2), var(--hero-3)); color: rgba(255, 255, 255, 0.8); overflow: hidden; }
-.car-pick-img img { max-width: 92%; max-height: 90%; object-fit: contain; filter: drop-shadow(0 4px 4px rgba(5, 12, 24, 0.35)); }
-.car-pick-text { display: grid; min-width: 0; }
-.car-pick-text .t { font-size: 15px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.car-pick-text .s { font-size: 12px; color: var(--muted); direction: rtl; }
-.car-pick-check { width: 18px; height: 18px; margin-inline-start: auto; color: var(--ink); }
-.car-pick-acts { display: flex; flex-direction: column; }
 .hero .bar .title { display: grid; justify-items: center; color: #fff; }
-.hero .bar .title .caret { font-size: 10px; opacity: 0.7; }
 .hero .bar .title { width: auto; height: auto; opacity: 1; padding: 2px 0; }
 
 /* close buttons: no background, the icon changes colour on hover */
 .drawer-head button, .sheet-head button { background: none; color: var(--muted); transition: color 0.15s; }
 .drawer-head button:hover, .sheet-head button:hover, .drawer-head button:focus-visible, .sheet-head button:focus-visible { color: var(--ink); }
 .drawer-head button svg.i, .sheet-head button svg.i { width: 20px; height: 20px; }
-.thumb-x > button:not(.file-thumb) { background: none; color: #fff; top: -4px; left: -4px; filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.7)); transition: color 0.15s; }
-.thumb-x > button:not(.file-thumb):hover, .thumb-x > button:not(.file-thumb):focus-visible { color: var(--overdue); }
-.thumb-x > button:not(.file-thumb) svg.i { width: 16px; height: 16px; stroke-width: 2.6; }
-
 
 @keyframes pulse { 50% { opacity: 0.35; } }
-.status .state-line { display: inline-flex; align-items: center; gap: 8px; margin-top: 14px; font-size: 14px; opacity: 0.95; }
-.status .state-line::before { content: ''; width: 8px; height: 8px; border-radius: 50%; background: var(--c); box-shadow: 0 0 10px var(--c); flex: none; }
-.status .state-line[data-s='ok'] { --c: #4ade80; } .status .state-line[data-s='soon'] { --c: #fbbf24; }
-.status .state-line[data-s='due'] { --c: #fb923c; } .status .state-line[data-s='overdue'] { --c: #f87171; }
-.status .state-line { position: relative; z-index: 3; }
-
 
 /* ─── greeting hero (no car photo) ─── */
 .hero {
@@ -292,7 +263,6 @@ html, body { overscroll-behavior-y: none; }
 .hero .dial circle { stroke-width: 1; }
 .hero .dial .thin { stroke-dasharray: 2 6; }
 .hero .dial line { stroke-width: 1.2; }
-.hero .dial .major { stroke-width: 2.4; }
 .hero .dial .needle { stroke: #8fc0ff; stroke-width: 2.5; stroke-linecap: round; }
 .hero .dial .hub { fill: #fff; stroke: none; }
 .greet { position: relative; z-index: 1; margin-top: 24px; }
@@ -312,5 +282,3 @@ html, body { overscroll-behavior-y: none; }
 .glance .v { font-size: 18px; font-weight: 400; letter-spacing: -0.02em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-variant-numeric: tabular-nums; }
 .glance .d { display: flex; align-items: center; gap: 5px; font-size: 11px; opacity: 0.8; white-space: nowrap; overflow: hidden; }
 .glance .d i { width: 6px; height: 6px; border-radius: 50%; flex: none; background: var(--c); }
-.car-pick-img { color: #fff; }
-.car-pick-img svg.i { width: 26px; height: 26px; }

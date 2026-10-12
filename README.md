@@ -1,5 +1,7 @@
 # CarBoard · הרכב שלי
 
+<p align="center"><img src="docs/carboard.webp" alt="CarBoard: reminders, fuel and documents, all in one place" width="800" /></p>
+
 A Hebrew (RTL) PWA that keeps everything about your cars in one place: km, services, test (טסט), insurance and documents, with reminders by km or by date.
 
 - **Smart km.** The app estimates today's km from your last reading and your own daily average. A weekly card asks “is it about right?”.
@@ -50,4 +52,19 @@ src/
   lib/       plate lookup, .ics export, Hebrew formatting
   screens/   Home, Services, Documents, Settings + sheets
 firestore.rules   per-user access
+```
+
+## The ad (Remotion)
+
+[`promo/`](promo) holds the short ad (with a voice-over) and the moving picture above, made with [Remotion](https://www.remotion.dev) from real screenshots of the app. It is its own project, so the app does not depend on it.
+
+```bash
+cd promo
+npm install
+npx playwright install chromium
+npm run shoot    # with the app's dev server running: screenshots with example data
+npm run voice    # the voice-over from ElevenLabs (ELEVENLABS_API_KEY in promo/.env); optional
+                 # or your own recording of the whole script: public/voice/full.mp3, then npm run voice -- --split
+npm run render   # out/carboard-promo.mp4 (1920×1080, about 28 s, with sound)
+npm run webp     # docs/carboard.webp, the silent loop for this README (needs ffmpeg)
 ```

@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
-import type { Car } from '../types'
 import { useApp } from '../data/AppData'
 import type { Status } from '../domain/due'
 import { Icon } from './Icon'

@@ -7,6 +7,7 @@ export interface KmEstimate {
   value: number
   perDay: number
   learned: boolean // perDay comes from the user's own readings
+  basis: 'learned' | 'yearly' | 'average' // where perDay came from: readings, the owner's yearly km, or the national average
   checkedDaysAgo: number | null
   last: Reading | null
 }
@@ -27,17 +28,25 @@ export function kmPerDay(rs: Reading[]): number | null {
   return Math.max(0, (last.km - first.km) / days)
 }
 
-export function estimateKm(rs: Reading[], today = todayIso()): KmEstimate {
+/**
+ * Today's km, from the last reading and a pace: the owner's own readings once there are enough, before
+ * that the yearly km they told us (if any), and failing both the national average.
+ */
+export function estimateKm(rs: Reading[], today = todayIso(), yearlyKm?: number | null): KmEstimate {
   const sorted = sortReadings(rs)
   const last = sorted[sorted.length - 1] ?? null
-  if (!last) return { value: 0, perDay: DEFAULT_KM_PER_DAY, learned: false, checkedDaysAgo: null, last: null }
+  const told = yearlyKm && yearlyKm > 0 ? yearlyKm / 365 : null
+  const fallback = told ?? DEFAULT_KM_PER_DAY
+  const fallbackBasis = told ? 'yearly' : 'average'
+  if (!last) return { value: 0, perDay: fallback, learned: false, basis: fallbackBasis, checkedDaysAgo: null, last: null }
   const learnedRate = kmPerDay(sorted)
-  const perDay = learnedRate ?? DEFAULT_KM_PER_DAY
+  const perDay = learnedRate ?? fallback
   const days = Math.max(0, diffDays(today, last.date))
   return {
     value: Math.round(last.km + perDay * days),
     perDay,
     learned: learnedRate !== null,
+    basis: learnedRate !== null ? 'learned' : fallbackBasis,
     checkedDaysAgo: days,
     last,
   }

@@ -44,7 +44,7 @@ async function addMissing(store: Store, d: Data) {
   let added = 0
   for (const car of d.cars) {
     const have = new Set(d.items.filter(i => i.car_id === car.id).map(i => i.kind))
-    const km = estimateKm(d.readings.filter(r => r.car_id === car.id)).value
+    const km = estimateKm(d.readings.filter(r => r.car_id === car.id), undefined, car.yearly_km).value
     for (const it of defaultItems(car.id, km, null))
       if (!have.has(it.kind) && REQUIRED.includes(it.kind)) {
         await store.insert('items', it)
@@ -168,7 +168,7 @@ export function AppDataProvider({ store: raw, children }: { store: Store; childr
   const actions = useMemo(() => makeActions(store, () => dataRef.current, refresh), [store, refresh])
 
   const car = sorted.cars.find(c => c.id === carId) ?? sorted.cars[0] ?? null
-  const km = useMemo(() => estimateKm(data.readings.filter(r => r.car_id === car?.id)), [data.readings, car?.id])
+  const km = useMemo(() => estimateKm(data.readings.filter(r => r.car_id === car?.id), undefined, car?.yearly_km), [data.readings, car?.id, car?.yearly_km])
   const reminders = useMemo(
     () => buildReminders(data.items.filter(i => i.car_id === car?.id), km),
     [data.items, car?.id, km],

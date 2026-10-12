@@ -43,15 +43,16 @@ export function monthSummary(data: Data, carId: string, month: string): MonthSum
   const start = `${month}-01`
   const end = addDays(`${nextMonth(month)}-01`, -1) // the month's last day
   const readings = data.readings.filter(r => r.car_id === carId)
+  const yearly = data.cars.find(c => c.id === carId)?.yearly_km
   // km at each end of the month, from what was known by then
   const before = readings.filter(r => r.date <= start)
   const by = readings.filter(r => r.date <= end)
-  const km = before.length && by.length ? Math.max(0, Math.round(estimateKm(by, end).value - estimateKm(before, start).value)) : null
+  const km = before.length && by.length ? Math.max(0, Math.round(estimateKm(by, end, yearly).value - estimateKm(before, start, yearly).value)) : null
 
   const now = spentIn(data, carId, month)
   const prev = spentIn(data, carId, prevMonth(month))
   const liters = data.fuel.filter(f => f.car_id === carId && f.date.startsWith(month)).reduce((n, f) => n + (f.liters ?? 0), 0)
-  const kmNow = estimateKm(readings)
+  const kmNow = estimateKm(readings, undefined, yearly)
   const upcoming = data.items
     .filter(i => i.car_id === carId)
     .map(item => ({ item, days: dueInfo(item, kmNow).days }))

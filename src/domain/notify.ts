@@ -49,7 +49,7 @@ export function stepFor(days: number, prefs: NotifyPrefs): Step | null {
 }
 
 export function notesFor(car: Car, items: Item[], readings: Reading[], sent: Sent, today = todayIso(), prefs: NotifyPrefs = DEFAULT_PREFS): Note[] {
-  const km = estimateKm(readings.filter(r => r.car_id === car.id), today)
+  const km = estimateKm(readings.filter(r => r.car_id === car.id), today, car.yearly_km)
   const notes: Note[] = []
   for (const it of items.filter(i => i.car_id === car.id)) {
     const d = dueInfo(it, km, today)

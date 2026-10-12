@@ -1,9 +1,10 @@
-import { useEffect, useRef, useState } from 'react'
+import { useRef, useState } from 'react'
 import { userMessage } from '../lib/errors'
 import type { BodyType, Car } from '../types'
 import { Sheet, useDirty } from '../components/ui'
 import { useApp } from '../data/AppData'
-import { formatPlate, lookupPlate, plateDigits, typingPlate, type PlateInfo } from '../lib/govil'
+import { formatPlate, plateDigits } from '../lib/govil'
+import { PlateInput, usePlateLookup } from '../components/PlateField'
 import { fmtDate } from '../lib/i18n'
 import { Icon } from '../components/Icon'
 import { BODY_TYPES, PAINTS, ToyCar, bodyLabel, guessBody, paintFromRegistry } from '../components/CarAvatar'
@@ -12,11 +13,12 @@ import { BODY_TYPES, PAINTS, ToyCar, bodyLabel, guessBody, paintFromRegistry } f
 export function CarSheet({ car, onClose }: { car?: Car; onClose(): void }) {
   const { actions, setCarId, km } = useApp()
   const editing = Boolean(car)
-  const [plate, setPlate] = useState(car?.plate ?? '')
-  const [info, setInfo] = useState<PlateInfo | null>(null)
-  const [looking, setLooking] = useState(false)
-  const [lookErr, setLookErr] = useState<string | null>(null)
   const [name, setName] = useState(car?.name ?? '')
+  const { plate, info, looking, lookErr, digits, type } = usePlateLookup(car?.plate ?? '', {
+    // an existing car keeps its details until its number changes
+    skip: d => editing && d === plateDigits(car?.plate ?? ''),
+    onFound: r => setName(prev => prev || `${r.make} ${r.model}`.trim()),
+  })
   const [kmNow, setKmNow] = useState(editing ? String(km.value) : '')
   const [err, setErr] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
@@ -34,34 +36,6 @@ export function CarSheet({ car, onClose }: { car?: Car; onClose(): void }) {
   const dirty = useDirty([plateDigits(plate), name, kmNow, shownBody, shownPaint])
   const swipeX = useRef(0)
   const stepBody = (d: number) => setBody(BODY_TYPES[(BODY_TYPES.indexOf(shownBody) + d + BODY_TYPES.length) % BODY_TYPES.length])
-
-  // Look the plate up once typing stops; a reply for an older number is ignored.
-  const asked = useRef(0)
-  const digits = plateDigits(plate)
-  useEffect(() => {
-    if (editing && digits === plateDigits(car?.plate ?? '')) return
-    setLookErr(null)
-    if (digits.length < 7 || info) return setLooking(false)
-    setLooking(true)
-    const n = ++asked.current
-    const t = setTimeout(async () => {
-      try {
-        const r = await lookupPlate(digits)
-        if (n !== asked.current) return
-        if (!r) setLookErr('לא נמצא במאגר משרד התחבורה. אפשר להמשיך ידנית.')
-        else {
-          setInfo(r)
-          setPlate(r.plate)
-          setName(prev => prev || `${r.make} ${r.model}`.trim())
-        }
-      } catch {
-        if (n === asked.current) setLookErr('אין חיבור למשרד התחבורה כרגע. אפשר להמשיך ידנית.')
-      } finally {
-        if (n === asked.current) setLooking(false)
-      }
-    }, 700)
-    return () => clearTimeout(t)
-  }, [digits]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const [refreshing, setRefreshing] = useState(false)
   const [refreshNote, setRefreshNote] = useState<string | null>(null)
@@ -113,34 +87,7 @@ export function CarSheet({ car, onClose }: { car?: Car; onClose(): void }) {
     <Sheet title={editing ? 'עריכת רכב' : 'רכב חדש'} onClose={onClose} dirty={dirty}>
       <div className="card car-form">
         <div className="hint">הקלד מספר רכב. השאר מתמלא לבד.</div>
-        <label className="plate-il lg plate-input" dir="ltr">
-          <span className="band" aria-hidden="true">
-            <svg className="flag" viewBox="0 0 22 16">
-              <rect width="22" height="16" fill="#fff" />
-              <rect y="1.6" width="22" height="2.2" fill="#0038b8" />
-              <rect y="12.2" width="22" height="2.2" fill="#0038b8" />
-              <path d="M11 4.6 L14.2 10.1 H7.8 Z M11 11.4 L7.8 5.9 H14.2 Z" fill="none" stroke="#0038b8" strokeWidth="0.9" />
-            </svg>
-            <b>IL</b>
-            <small>ישראל</small>
-            <small className="ar">إسرائيل</small>
-          </span>
-          <input
-            className="num"
-            inputMode="numeric"
-            placeholder="12-345-67"
-            value={plate}
-            onChange={e => {
-              // backspace on a dash takes the digit before it (else the dash just comes back)
-              const v = e.target.value
-              const onlyDash = v.length < plate.length && plateDigits(v) === plateDigits(plate)
-              const at = e.target.selectionStart ?? v.length
-              setPlate(typingPlate(onlyDash ? v.slice(0, Math.max(0, at - 1)) + v.slice(at) : v))
-              if (plateDigits(e.target.value) !== plateDigits(plate)) setInfo(null)
-            }}
-            aria-label="מספר רכב"
-          />
-        </label>
+        <PlateInput value={plate} onChange={type} />
         {/* one short status line in a fixed slot, so the sheet does not jump */}
         <div className={`plate-status ${info ? 'ok' : lookErr ? 'bad' : ''}`} aria-live="polite">
           {looking ? (

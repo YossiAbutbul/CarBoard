@@ -76,7 +76,7 @@ export function HomeScreen({
       : 'הכל תקין'
 
   return (
-    <div className="reveal">
+    <div className="reveal home">
       <PageHero dial>
         <TopBar openCars={openCars} openSettings={openSettings} />
         <div className="greet">
@@ -99,22 +99,41 @@ export function HomeScreen({
         </Glance>
       </PageHero>
 
+      {/* on a PC the actions and the weekly check sit side by side under the status cards */}
+      <div className="home-duo">
       <div className="actions" data-tour="actions">
+        {/* the small line under each label shows on a PC only, where the buttons are larger */}
         <button onClick={() => open({ t: 'odo' })}>
-          <Icon name="gauge" />
-          עדכון ק״מ
+          <span className="a-ic">
+            <Icon name="gauge" />
+          </span>
+          <span className="a-l">
+            עדכון ק״מ<small>עכשיו {fmtNum(km.value)}</small>
+          </span>
         </button>
         <button onClick={() => open({ t: 'item' })}>
-          <Icon name="reminder" />
-          תזכורת
+          <span className="a-ic">
+            <Icon name="reminder" />
+          </span>
+          <span className="a-l">
+            תזכורת<small>טסט, שמן, צמיגים…</small>
+          </span>
         </button>
         <button onClick={() => open({ t: 'service' })}>
-          <Icon name="service" />
-          טיפול
+          <span className="a-ic">
+            <Icon name="service" />
+          </span>
+          <span className="a-l">
+            טיפול<small>רישום עם קבלה</small>
+          </span>
         </button>
         <button onClick={() => open({ t: 'doc' })}>
-          <Icon name="docs" />
-          מסמך
+          <span className="a-ic">
+            <Icon name="docs" />
+          </span>
+          <span className="a-l">
+            מסמך<small>צילום או קובץ</small>
+          </span>
         </button>
       </div>
 
@@ -123,7 +142,11 @@ export function HomeScreen({
           <div className="q">בדיקה שבועית: הרכב עומד בערך על</div>
           <div className="num">{fmtNum(km.value)} ק״מ?</div>
           <div className="hint" style={{ marginBottom: 10 }}>
-            {km.learned ? `לפי הממוצע שלך, ${fmtNum(km.perDay)} ק״מ ביום` : 'לפי ממוצע ארצי, עד שנלמד את שלך'}
+            {km.basis === 'learned'
+              ? `לפי הממוצע שלך, ${fmtNum(km.perDay)} ק״מ ביום`
+              : km.basis === 'yearly'
+                ? `לפי ${fmtNum(car.yearly_km ?? 0)} ק״מ בשנה, עד שנלמד את הקצב שלך`
+                : 'לפי ממוצע ארצי, עד שנלמד את שלך'}
           </div>
           <div className="row2">
             <button
@@ -151,6 +174,10 @@ export function HomeScreen({
         </div>
       )}
 
+      {/* PC only: what is coming up, in date order (the phone has no room for it beside the cards) */}
+      <Upcoming reminders={reminders} open={open} />
+      </div>
+
       <div className="sec">
         <h2>מצב הרכב</h2>
         <button className="add-btn" onClick={() => open({ t: 'item' })}>
@@ -163,6 +190,31 @@ export function HomeScreen({
           <Tile key={r.item.id} r={r} open={open} />
         ))}
       </div>
+    </div>
+  )
+}
+
+function Upcoming({ reminders, open }: { reminders: Reminder[]; open: OpenSheet }) {
+  const next = reminders
+    .filter(r => r.status !== 'unset' && r.dueOn)
+    .sort((a, b) => (a.dueOn! < b.dueOn! ? -1 : 1))
+    .slice(0, 5)
+  if (!next.length) return null
+  return (
+    <div className="upcoming">
+      <h3>בקרוב</h3>
+      {next.map(r => (
+        <button key={r.item.id} data-s={r.status} onClick={() => open({ t: 'item', item: r.item })}>
+          <span className="u-ic">
+            <Icon name={kindIcon(r.item.kind)} />
+          </span>
+          <span className="u-l">
+            <b>{r.item.label}</b>
+            <small>{r.by === 'km' ? `בערך ${fmtDate(r.dueOn!)}` : fmtDate(r.dueOn!)}</small>
+          </span>
+          <span className="u-v">{r.status === 'overdue' ? STATUS_TEXT.overdue : r.headline}</span>
+        </button>
+      ))}
     </div>
   )
 }

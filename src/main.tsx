@@ -10,6 +10,7 @@ import { NotFound } from './components/ErrorPage'
 import './styles.css'
 import './styles-pages.css'
 import './styles-avatar.css'
+import './styles-desk.css'
 
 // When a new deploy is downloaded, the update banner asks before reloading; an open app checks hourly.
 const updateSW = registerSW({

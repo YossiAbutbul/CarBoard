@@ -20,16 +20,21 @@ import { DocumentsScreen } from './screens/DocumentsScreen'
 import { FuelScreen } from './screens/FuelScreen'
 import { MonthSummarySheet, markSummarySeen, summaryDue } from './components/MonthSummary'
 import { FuelSheet } from './screens/FuelSheet'
-import { CarsDrawer, SettingsDrawer } from './screens/Drawers'
+import { CarsDrawer, CarsPane, SettingsDrawer } from './screens/Drawers'
+import { useWide } from './lib/wide'
+import { IconDial } from './components/Scene'
 import { getLocalName, loadCloudName, saveCloudName, storeLocalName } from './lib/profile'
 import { OdometerSheet } from './screens/OdometerSheet'
 import { ServiceSheet } from './screens/ServiceSheet'
 import { ItemSheet } from './screens/ItemSheet'
 import { DocumentSheet } from './screens/DocumentSheet'
 import { CarSheet } from './screens/CarSheet'
-import { Intro, Ready, Tour, isOnboarded, markOnboarded } from './screens/Onboarding'
+import { CarFix, ExtraCar, Intro, KmSurvey, Ready, Tour, isOnboarded, markOnboarded } from './screens/Onboarding'
 import { setExitHint, startBackHandling, useBackLayer } from './lib/back'
 import { ask, askText } from './components/Dialog'
+
+// first-run screens shown after the first car exists (no tab bar, no PC layout on them)
+const FIRST_RUN: string[] = ['name', 'car', 'km', 'ready', 'more', 'edit']
 
 export type SheetState =
   | { t: 'odo' }
@@ -143,16 +148,19 @@ function Main({ email, accountName, guest = false }: { email: string | null; acc
     const t = setTimeout(() => setSplashDone(true), Math.max(0, 1100 - sinceStart()))
     return () => clearTimeout(t)
   }, [])
+  // a PC-sized window: an icon strip and a cars pane beside the page, no bottom bar, no drawer swipes
+  const wide = useWide()
   const openCars = () => setDrawer('cars')
   const openSettings = () => setDrawer('settings')
 
   // First run: name and car (Intro), then a walk over the home screen (Tour).
-  const [guide, setGuide] = useState<'intro' | 'ready' | 'tour' | 'done'>(() => (isOnboarded() ? 'done' : 'intro'))
+  const [guide, setGuide] = useState<'intro' | 'name' | 'car' | 'km' | 'ready' | 'more' | 'edit' | 'tour' | 'done'>(() => (isOnboarded() ? 'done' : 'intro'))
   const addingFromIntro = useRef(false)
   useEffect(() => {
     if (loading || guide !== 'intro' || !car) return
-    // a car added from the intro leads to the "all set" screen; someone who already has cars skips the guide
-    if (addingFromIntro.current) setGuide('ready')
+    // a car added from the intro leads to the yearly-km question, then the "all set" screen; someone
+    // who already has cars skips the guide
+    if (addingFromIntro.current) setGuide('km')
     else {
       markOnboarded()
       setGuide('done')
@@ -239,7 +247,7 @@ function Main({ email, accountName, guest = false }: { email: string | null; acc
   }, [loading, store, family, reload, userName, email])
 
   // Swipe in from a screen edge to open a drawer: from the right for the cars, from the left for settings.
-  const canSwipe = Boolean(car) && !sheet && !drawer && guide === 'done'
+  const canSwipe = Boolean(car) && !sheet && !drawer && guide === 'done' && !wide
   useEffect(() => {
     if (!canSwipe) return
     const EDGE = 28
@@ -274,11 +282,57 @@ function Main({ email, accountName, guest = false }: { email: string | null; acc
   if (error && !data.cars.length)
     return <ErrorPage title="לא הצלחנו לטעון את הנתונים" text={error} action={{ label: 'נסו שוב', onClick: () => void reload() }} />
 
+  const desk = wide && Boolean(car) && !FIRST_RUN.includes(guide)
+  const tabs = [
+    ['home', 'car', 'הרכב'],
+    ['services', 'service', 'טיפולים'],
+    ['fuel', 'fuel', 'דלק'],
+    ['docs', 'docs', 'מסמכים'],
+  ] as [Tab, IconName, string][]
+  const goTab = (id: Tab) => {
+    setTab(id)
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+
   return (
-    <div className="shell">
+    <div className={`shell ${desk ? 'desk' : ''}`}>
+      {desk && (
+        <>
+          {/* PC: a narrow strip with the sections, and the cars always in view beside it */}
+          <nav className="rail" data-tour="nav">
+            <span className="rail-mark" aria-hidden="true">
+              <IconDial className="rail-dial" needle={-48} />
+            </span>
+            {tabs.map(([id, icon, label]) => (
+              <button key={id} className={tab === id ? 'on' : ''} onClick={() => goTab(id)} aria-current={tab === id}>
+                <Icon name={icon} />
+                {label}
+              </button>
+            ))}
+            <button className="rail-settings" onClick={openSettings} data-tour="settings">
+              <Icon name="settings" />
+              הגדרות
+            </button>
+          </nav>
+          <CarsPane open={setSheet} />
+        </>
+      )}
       {error && <ErrorBanner text={error} />}
-      <div className="page" key={car && guide === 'ready' ? 'ready' : car ? tab : 'empty'}>
-        {car && guide === 'ready' ? (
+      <div className="page" key={car && FIRST_RUN.includes(guide) ? guide : car ? tab : 'empty'}>
+        {car && (guide === 'more' || guide === 'edit') ? (
+          <ExtraCar key={guide} car={guide === 'edit' ? car : undefined} onDone={() => setGuide('ready')} />
+        ) : car && guide === 'name' ? (
+          <Intro name={userName ?? ''} onName={saveName} onAdding={() => {}} startAt={1} afterName={() => setGuide('car')} />
+        ) : car && guide === 'car' ? (
+          <CarFix car={car} name={userName ?? ''} onDone={() => setGuide('km')} onBack={() => setGuide('name')} />
+        ) : car && guide === 'km' ? (
+          <KmSurvey
+            car={car}
+            onPick={yearly => void actions.updateCar(car.id, { yearly_km: yearly }).catch(() => {})} // offline: the guess keeps the average
+            onNext={() => setGuide('ready')}
+            onBack={() => setGuide('car')} // the car is saved already: back means fixing its details
+          />
+        ) : car && guide === 'ready' ? (
           <Ready
             name={userName ?? ''}
             car={car}
@@ -287,14 +341,16 @@ function Main({ email, accountName, guest = false }: { email: string | null; acc
               setGuide('tour')
             }}
             onSkip={endTour}
+            onBack={() => setGuide('km')}
+            onAddAnother={() => setGuide('more')}
+            onEdit={() => setGuide('edit')}
           />
         ) : !car && guide === 'intro' ? (
           <Intro
             name={userName ?? ''}
             onName={saveName}
-            onAddCar={() => {
+            onAdding={() => {
               addingFromIntro.current = true
-              setSheet({ t: 'car' })
             }}
           />
         ) : tab === 'home' || !car ? (
@@ -310,25 +366,11 @@ function Main({ email, accountName, guest = false }: { email: string | null; acc
 
       {/* adding is a pill next to each list's title (no floating button over the content) */}
 
-      {car && guide !== 'ready' && (
+      {car && !FIRST_RUN.includes(guide) && !desk && (
         <nav className="nav" data-tour="nav">
           <div>
-          {(
-            [
-              ['home', 'car', 'הרכב'],
-              ['services', 'service', 'טיפולים'],
-              ['fuel', 'fuel', 'דלק'],
-              ['docs', 'docs', 'מסמכים'],
-            ] as [Tab, IconName, string][]
-          ).map(([id, icon, label]) => (
-            <button
-              key={id}
-              className={tab === id ? 'on' : ''}
-              onClick={() => {
-                setTab(id)
-                window.scrollTo({ top: 0, behavior: 'smooth' })
-              }}
-            >
+          {tabs.map(([id, icon, label]) => (
+            <button key={id} className={tab === id ? 'on' : ''} onClick={() => goTab(id)}>
               <span className="ico">
                 <Icon name={icon} />
               </span>
