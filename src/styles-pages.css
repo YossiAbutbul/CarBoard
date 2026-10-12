@@ -78,14 +78,8 @@
 
 /* ─── splash ─── */
 .splash { min-height: 100dvh; display: grid; place-items: center; align-content: center; gap: 18px; color: #fff; background: radial-gradient(90% 60% at 30% 0%, rgba(86, 140, 220, 0.3), transparent 60%), linear-gradient(180deg, #0a1424, #142440 70%, #1b2f52); }
-.splash-dial { width: 150px; height: 150px; fill: none; stroke: #fff; animation: fade 0.4s ease-out both var(--since, 0ms); }
-.splash-dial circle { stroke-width: 1.5; opacity: 0.5; }
-.splash-dial .thin { stroke-dasharray: 2 6; }
-.splash-dial line { stroke-width: 1.5; opacity: 0.6; }
-.splash-dial .needle { stroke: #8fc0ff; stroke-width: 4; stroke-linecap: round; }
-.splash-dial .hub { fill: #fff; stroke: none; opacity: 1; }
 @keyframes rev { from { transform: rotate(-150deg); } to { transform: rotate(25deg); } }
-.splash-name { font-size: 22px; font-weight: 600; letter-spacing: -0.02em; animation: rise 0.6s var(--ease) both calc(var(--since, 0ms) + 0.2s); }
+.splash-name { min-height: 52px; line-height: 28px; font-size: 22px; font-weight: 600; letter-spacing: -0.02em; animation: rise 0.6s var(--ease) both calc(var(--since, 0ms) + 0.2s); }
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; }

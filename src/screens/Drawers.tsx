@@ -116,51 +116,65 @@ export function CarsDrawer({ open, onClose }: { open: OpenSheet; onClose(): void
     setCarOrder(ids)
   })
   const cars = drag.ids.map(id => data.cars.find(c => c.id === id)!).filter(Boolean)
+  // a car with something to handle now (due or overdue) shows it on its card: the worse of the two
+  const urgency = (carId: string, yearly?: number | null) => {
+    const km = estimateKm(data.readings.filter(r => r.car_id === carId), undefined, yearly)
+    const s = buildReminders(data.items.filter(i => i.car_id === carId), km).map(r => r.status)
+    return s.includes('overdue') ? 'overdue' : s.includes('due') ? 'due' : null
+  }
   return (
     <Drawer title={family ? (family.title ? `הרכבים של מש' ${family.title.replace(/^(משפחת|מש['׳])\s*/, '')}` : 'רכבי המשפחה') : 'הרכבים שלי'} side="start" onClose={onClose}>
       {cars.length > 1 && <p className="car-order-hint">לחיצה ארוכה על רכב כדי להזיז אותו</p>}
       <div className="car-list" ref={drag.list}>
-        {cars.map(c => (
-          <div key={c.id} data-id={c.id} className={`car-row ${c.id === car?.id ? 'on' : ''} ${drag.dragging === c.id ? 'dragging' : ''}`} style={drag.dragging === c.id ? { transform: `translateY(${drag.dy}px)` } : undefined}>
-            <button
-              className="car-row-main"
-              onPointerDown={e => drag.press(e, c.id)}
-              onContextMenu={e => cars.length > 1 && e.preventDefault()} // the long press drags; no menu
-              onClick={() => {
-                if (drag.wasDrag()) return
-                setCarId(c.id)
-                onClose()
-              }}
-              aria-current={c.id === car?.id}
-            >
-              {/* the tile takes a faint wash of the car's own colour */}
-              <span className="car-row-pic" style={{ '--tint': carPaint(c) } as React.CSSProperties}>
-                <CarToy car={c} />
-              </span>
-              <span className="car-row-info">
-                <span className="t">{c.name}</span>
-                <span className="s">{[ownerName(c.owner) && `של ${ownerName(c.owner)}`, c.year, c.color].filter(Boolean).join(' · ')}</span>
-                {c.plate && <Plate number={c.plate} size="sm" />}
-              </span>
-            </button>
-            <span className="car-row-acts">
+        {cars.map(c => {
+          const urgent = urgency(c.id, c.yearly_km)
+          return (
+            <div key={c.id} data-id={c.id} className={`car-row ${c.id === car?.id ? 'on' : ''} ${urgent ? 'alerted' : ''} ${drag.dragging === c.id ? 'dragging' : ''}`} style={drag.dragging === c.id ? { transform: `translateY(${drag.dy}px)` } : undefined}>
               <button
-                className="icon-btn"
+                className="car-row-main"
+                onPointerDown={e => drag.press(e, c.id)}
+                onContextMenu={e => cars.length > 1 && e.preventDefault()} // the long press drags; no menu
                 onClick={() => {
+                  if (drag.wasDrag()) return
+                  setCarId(c.id)
                   onClose()
-                  open({ t: 'car', car: c })
                 }}
-                aria-label={`עריכת ${c.name}`}
+                aria-current={c.id === car?.id}
               >
-                <Icon name="edit" />
+                {/* the tile takes a faint wash of the car's own colour */}
+                <span className="car-row-pic" style={{ '--tint': carPaint(c) } as React.CSSProperties}>
+                  <CarToy car={c} />
+                </span>
+                <span className="car-row-info">
+                  <span className="t">{c.name}</span>
+                  <span className="s">{[ownerName(c.owner) && `של ${ownerName(c.owner)}`, c.year, c.color].filter(Boolean).join(' · ')}</span>
+                  {c.plate && <Plate number={c.plate} size="sm" />}
+                </span>
               </button>
-              {/* only the person who added a car can delete it */}
-              {!ownerName(c.owner) && (
-                <ConfirmButton icon label={`מחיקת ${c.name}`} question={`למחוק את ${c.name}?`} detail="הרכב וכל מה ששייך לו יימחקו: ק״מ, טיפולים, תזכורות ומסמכים." onConfirm={() => actions.deleteCar(c.id)} />
+              {urgent && (
+                <span className="car-alert" data-s={urgent} role="img" aria-label={urgent === 'overdue' ? 'יש משהו שעבר מועדו' : 'יש משהו לטפל בו'}>
+                  <Icon name="warn" />
+                </span>
               )}
-            </span>
-          </div>
-        ))}
+              <span className="car-row-acts">
+                <button
+                  className="icon-btn"
+                  onClick={() => {
+                    onClose()
+                    open({ t: 'car', car: c })
+                  }}
+                  aria-label={`עריכת ${c.name}`}
+                >
+                  <Icon name="edit" />
+                </button>
+                {/* only the person who added a car can delete it */}
+                {!ownerName(c.owner) && (
+                  <ConfirmButton icon label={`מחיקת ${c.name}`} question={`למחוק את ${c.name}?`} detail="הרכב וכל מה ששייך לו יימחקו: ק״מ, טיפולים, תזכורות ומסמכים." onConfirm={() => actions.deleteCar(c.id)} />
+                )}
+              </span>
+            </div>
+          )
+        })}
       </div>
       <button
         className="btn pri"

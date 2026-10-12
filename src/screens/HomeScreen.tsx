@@ -53,7 +53,9 @@ export function HomeScreen({
   const test = reminders.find(r => r.item.kind === 'test')
   const state = urgent.length ? (urgent.some(r => r.status === 'overdue') ? 'overdue' : 'due') : soon.length ? 'soon' : 'ok'
   const stateText = urgent.length
-    ? `${urgent.length === 1 ? 'דבר אחד' : `${urgent.length} דברים`} לטפל בהם: ${urgent.map(r => r.item.label).join(', ')}`
+    ? urgent.length === 1
+      ? `${urgent[0].item.label} · ${STATUS_TEXT[urgent[0].status]}`
+      : `${urgent.length} דברים לטפל בהם`
     : soon.length
       ? `הכל תקין · בקרוב ${soon[0].item.label}, ${soon[0].headline}`
       : 'הכל תקין'
@@ -65,9 +67,17 @@ export function HomeScreen({
         <div className="greet">
           <div className="date">{longDate()}</div>
           <h1>{userName ? `שלום, ${userName}` : greeting()}</h1>
-          <div className="state-pill" data-s={state}>
-            {stateText}
-          </div>
+          {/* when something needs action, the pill opens "when will you take care of it?" (into the calendar) */}
+          {urgent.length ? (
+            <button className="state-pill go" data-s={state} onClick={() => open({ t: 'schedule' })}>
+              {stateText}
+              <Icon name="forward" />
+            </button>
+          ) : (
+            <div className="state-pill" data-s={state}>
+              {stateText}
+            </div>
+          )}
         </div>
         <Glance>
           <GlanceCell

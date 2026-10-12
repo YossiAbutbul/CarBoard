@@ -628,7 +628,6 @@ html, body { overscroll-behavior-y: none; }
 .welcome.scenic, .onb, html.scenic-page, html.scenic-page body { background: #1c69d4; }
 .hero { background: #1c69d4; }
 .splash { background: #1c69d4; }
-.splash .splash-dial { opacity: 0.35; }
 /* the wordmark on blue: "Board" in a pale blue, no glow */
 .brand { color: #cfe2ff; text-shadow: none; }
 /* boxes and lines on blue */
@@ -690,7 +689,7 @@ html, body { overscroll-behavior-y: none; }
 @keyframes lit-fill { from { stroke-dashoffset: var(--len); } to { stroke-dashoffset: 0; } }
 @keyframes ticks-in { from { opacity: 0; } }
 /* the header dial: larger, reaching down behind the glance cards (they are see-through) */
-.scene .d-header { width: 230px; height: 230px; top: 64px; left: -46px; }
+.scene .d-header { width: 290px; height: 290px; top: 66px; left: -70px; }
 /* no tick ring after all: the dials stay as plain as the icon */
 .scene .dial-mark .ticks { display: none; }
 /* the loading dial is the icon itself: a dim track, the arc lit up to the needle, needle revving */
@@ -860,3 +859,106 @@ html, body { overscroll-behavior-y: none; }
 .ready-links { display: flex; justify-content: center; gap: 4px; flex-wrap: wrap; }
 /* the 'all set' screen has its own big car and a taller layout: no road behind the text */
 .onb:has(.onb-step.ready) .scene .road-mark { display: none; }
+/* km window: what the guess between updates runs on, and changing the yearly km */
+.pace { margin-top: 10px; display: flex; justify-content: center; align-items: baseline; gap: 8px; flex-wrap: wrap; font-size: 13px; color: var(--muted); text-align: center; }
+.pace button { font-size: 13px; font-weight: 600; color: var(--blue); padding: 2px 4px; }
+.pace-picks { justify-content: center; margin-top: 10px; }
+.pace-picks button { background: #fff; }
+.pace-picks button.on { background: var(--blue); color: #fff; box-shadow: none; }
+/* the phone's keyboard: sheets and dialogs sit above it (--kb is the height it covers, set in useKeyboardInset) */
+@media (max-width: 1023px) {
+  .overlay { padding-bottom: var(--kb, 0px); transition: padding-bottom 0.2s ease-out; }
+  .overlay .sheet { max-height: calc(92dvh - var(--kb, 0px)); }
+  .dialog-overlay { padding-bottom: calc(24px + var(--kb, 0px)); transition: padding-bottom 0.2s ease-out; }
+}
+/* the top bar's icons, and the drawers' close button in the same spot, both the same way:
+   1) the icon gathers to the centre (the menu's lines meet; the gear spins down to a point),
+   2) two lines swing out into the X, with a little overshoot. Closing runs it backwards. */
+.morph { position: relative; display: inline-block; width: 22px; height: 22px; }
+.morph svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+.morph line { transform-box: view-box; transform-origin: 12px 12px; }
+/* step 2 out (closing): unswing first, then the rest */
+.morph line { transition: rotate 0.22s cubic-bezier(0.4, 0, 0.2, 1), translate 0.2s cubic-bezier(0.4, 0, 0.2, 1) 0.2s, scale 0.18s ease 0.18s; }
+/* opening: gather, then swing */
+.morph.open line { transition: translate 0.2s cubic-bezier(0.4, 0, 0.2, 1) 0.06s, scale 0.16s ease-out 0.26s, rotate 0.36s cubic-bezier(0.5, 0, 0.3, 1.5) 0.28s; }
+.morph.open .l1 { rotate: 45deg; }
+.morph.open .l2 { rotate: -45deg; }
+/* the menu: its lines sit apart until they gather */
+.morph.menu .l1 { translate: 0 -3px; }
+.morph.menu .l2 { translate: 0 3px; }
+.morph.menu.open .l1, .morph.menu.open .l2 { translate: 0 0; }
+/* the gear: spins down to a point; the X's lines start as nothing at the centre */
+.morph.gear svg.gear { transform-origin: 50% 50%; transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1) 0.2s, opacity 0.15s ease 0.3s; }
+.morph.gear.open svg.gear { transform: rotate(270deg) scale(0); opacity: 0; transition: transform 0.32s cubic-bezier(0.5, 0, 0.75, 0) 0.02s, opacity 0.12s ease 0.22s; }
+.morph.gear svg.x line { scale: 0; }
+.morph.gear.open svg.x line { scale: 1; }
+/* the close button: just the icon (no circle), white on the blue bar at first, dark once the white drawer is under it,
+   blue on hover;
+   a small pop as it changes, so the eye catches it */
+.drawer-x { position: fixed; z-index: 60; display: grid; place-items: center; border-radius: 50%; color: #fff; transition: color 0.3s ease, background 0.3s ease; }
+.drawer-x.on { color: var(--ink); animation: x-pop 0.5s cubic-bezier(0.3, 0.9, 0.3, 1.3) 0.3s; } /* the pop lands as the X forms */
+.drawer-x.on:hover, .drawer-x.on:focus-visible { color: var(--blue); }
+@keyframes x-pop { 0% { transform: scale(1); } 40% { transform: scale(1.18); } 100% { transform: scale(1); } }
+/* the drawer's title leaves room for that button on its side */
+.drawer.start.anchored .drawer-head { padding-inline-start: 64px; min-height: 64px; }
+.drawer.end.anchored .drawer-head { padding-inline-end: 64px; min-height: 64px; }
+/* a little colour: the quick actions' icons in the brand blue (they read as buttons, and match the
+   header); a card that needs action keeps its grey, and only its value takes the status colour
+   (overdue is already red; due now in orange) */
+.actions button svg.i { color: var(--blue); }
+.tile[data-s='due'] .v { color: var(--due); }
+/* the status pill, when it leads somewhere: an arrow, and a press */
+.state-pill.go { color: inherit; font: inherit; font-size: 12px; text-align: right; cursor: pointer; transition: background 0.15s, transform 0.12s; }
+.state-pill.go:hover { background: rgba(255, 255, 255, 0.16); }
+.state-pill.go:active { transform: scale(0.97); }
+.state-pill.go svg.i { width: 14px; height: 14px; flex: none; margin-inline-start: 2px; opacity: 0.85; }
+/* "קביעת מועד": each thing that needs action, opened on its own to pick a day, a time and a place */
+.sched-tabs { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; }
+.sched-tabs button { flex: none; display: inline-flex; align-items: center; gap: 6px; height: 34px; padding: 0 12px; border-radius: 999px; background: #fff; box-shadow: inset 0 0 0 1.5px var(--line); font-size: 13.5px; font-weight: 600; color: var(--ink); cursor: pointer; transition: background 0.15s, color 0.15s, box-shadow 0.15s; }
+.sched-tabs .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--c); }
+.sched-tabs button.on { background: var(--ink); color: #fff; box-shadow: none; }
+.sched-tabs button.added svg.i { width: 15px; height: 15px; stroke-width: 2.4; color: var(--ok); }
+.sched-tabs button.on.added svg.i { color: #7ee2a8; }
+.sched-now { margin-top: 10px; padding: 12px; border-radius: 18px; background: #fff; box-shadow: inset 0 0 0 1.5px var(--line); animation: rise 0.25s var(--ease) both; }
+.sched-head { display: flex; align-items: center; gap: 12px; margin-bottom: 4px; }
+.sched-now .ic, .sched-done .ic { width: 34px; height: 34px; flex: none; border-radius: 12px; display: grid; place-items: center; background: var(--card); color: var(--c); }
+.sched-now .t { flex: 1; min-width: 0; display: grid; gap: 2px; font-size: 15px; font-weight: 600; }
+.sched-now .t small { font-size: 12.5px; font-weight: 500; color: var(--c); }
+.sched-now.added .t small { color: var(--ok); }
+.sched-done { margin-top: 10px; display: flex; align-items: center; gap: 12px; padding: 14px 12px; border-radius: 18px; background: #fff; font-size: 14.5px; font-weight: 600; animation: rise 0.25s var(--ease) both; }
+.sched-done .ic { color: #fff; background: var(--ok); }
+.schedule .btn.pri svg.i, .schedule .btn svg.i { width: 18px; height: 18px; }
+.sched-other { display: block; margin: 8px 0 0 auto; padding: 4px 2px; font-size: 13px; font-weight: 600; color: var(--blue); }
+.sched-other:disabled { opacity: 0.4; }
+.schedule .row2 > div { min-width: 0; }
+.time-field { position: relative; }
+.time-field { width: 100%; font: inherit; color: var(--ink); }
+.time-field .tv { flex: 1; text-align: right; font-variant-numeric: tabular-nums; }
+.time-field .slot { flex: none; display: grid; place-items: center; width: 34px; height: 34px; color: var(--muted); pointer-events: none; }
+.time-field:focus-within { box-shadow: inset 0 0 0 1.5px var(--blue); }
+/* the time wheels (react-mobile-picker): hours and minutes, the chosen row in a band */
+.time-wheels { position: relative; margin: 6px auto 0; max-width: 260px; }
+.time-wheels::before { content: ''; position: absolute; left: 0; right: 0; top: 50%; height: 44px; margin-top: -22px; border-radius: 14px; background: #fff; box-shadow: inset 0 0 0 1px var(--line); pointer-events: none; }
+.time-wheels > div { position: relative; }
+.time-wheels span { font-size: 22px; font-weight: 500; color: #9aa3ae; font-variant-numeric: tabular-nums; transition: color 0.15s, font-size 0.15s; }
+.time-wheels span.on { font-size: 28px; font-weight: 700; color: var(--ink); }
+.time-wheels .colon { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -54%); font-size: 28px; font-weight: 700; color: var(--ink); pointer-events: none; }
+/* the schedule's one button, pinned to the bottom of the window while the list scrolls */
+.sched-foot { position: sticky; bottom: calc(-20px - env(safe-area-inset-bottom)); z-index: 2; margin: 14px -16px calc(-20px - env(safe-area-inset-bottom)); padding: 12px 16px calc(14px + env(safe-area-inset-bottom)); background: var(--card); box-shadow: 0 -1px 0 var(--line); }
+.sched-foot .btn { width: 100%; }
+/* a sheet always scrolls inside itself on phones (iOS needs this inside a fixed overlay) */
+.sheet { overscroll-behavior: contain; -webkit-overflow-scrolling: touch; }
+/* the time field opens the wheels: a hand on hover, over the whole field (the date field's rule says "text") */
+.date-field.time-field, .date-field.time-field * { cursor: pointer; }
+.date-field.time-field:hover .slot { color: var(--ink); }
+/* the date field: typing in it keeps the text cursor; its calendar button shows the hand */
+.date-field:not(.time-field) button, .date-field:not(.time-field) button * { cursor: pointer; }
+.place-chips { margin-top: 8px; }
+.place-chips button { background: #fff; }
+.place-chips button.on { background: var(--blue); color: #fff; box-shadow: none; }
+/* the cars drawer: a car with something to handle now, a small warning triangle in the top corner, above the card's own buttons */
+.car-alert { position: absolute; top: 10px; left: 12px; width: 24px; height: 24px; border-radius: 8px; display: grid; place-items: center; pointer-events: none; }
+.car-alert svg.i { width: 17px; height: 17px; stroke-width: 2; }
+.car-alert[data-s='overdue'] { color: #d4554f; }
+.car-alert[data-s='due'] { color: #d17a22; }
+.car-row.alerted .car-row-info .t { padding-inline-end: 26px; } /* a long name stops before the warning */

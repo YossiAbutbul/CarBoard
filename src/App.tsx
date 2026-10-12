@@ -7,7 +7,7 @@ import type { Car, CarDocument, Fuel, Item, ItemKind, ServiceRecord } from './ty
 import { AppDataProvider, useApp } from './data/AppData'
 import { localStore } from './data/localStore'
 import { firebaseStore } from './data/firebaseStore'
-import { auth, cloudEnabled, signInWithGoogle } from './data/firebase'
+import { auth, cloudEnabled, finishRedirect, returningFromRedirect, signInWithGoogle } from './data/firebase'
 import { Icon, type IconName } from './components/Icon'
 import { Splash, sinceStart } from './components/Chrome'
 import { GoogleMark } from './components/GoogleMark'
@@ -29,6 +29,7 @@ import { ServiceSheet } from './screens/ServiceSheet'
 import { ItemSheet } from './screens/ItemSheet'
 import { DocumentSheet } from './screens/DocumentSheet'
 import { CarSheet } from './screens/CarSheet'
+import { ScheduleSheet } from './screens/ScheduleSheet'
 import { CarFix, ExtraCar, Intro, KmSurvey, Ready, Tour, isOnboarded, markOnboarded } from './screens/Onboarding'
 import { setExitHint, startBackHandling, useBackLayer } from './lib/back'
 import { ask, askText } from './components/Dialog'
@@ -43,6 +44,7 @@ export type SheetState =
   | { t: 'doc'; doc?: CarDocument }
   | { t: 'car'; car?: Car }
   | { t: 'fuel'; record?: Fuel }
+  | { t: 'schedule' }
 export type OpenSheet = (s: SheetState) => void
 type Tab = 'home' | 'services' | 'fuel' | 'docs'
 
@@ -51,6 +53,11 @@ export default function App() {
   const [authReady, setAuthReady] = useState(!cloudEnabled)
   const [guest, setGuestState] = useState(isGuest)
   const [moving, setMoving] = useState(false)
+  // back from Google's page (redirect sign-in): the loading screen until the result is in
+  const [redirecting, setRedirecting] = useState(returningFromRedirect)
+  useEffect(() => {
+    if (redirecting) finishRedirect().catch(() => {}).finally(() => setRedirecting(false))
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     if (!auth) return
@@ -75,7 +82,7 @@ export default function App() {
       })
   }, [userId])
 
-  if (!authReady || moving) return <Splash />
+  if (!authReady || moving || (redirecting && !user)) return <Splash />
   if (!store && guest) {
     return (
       <AppDataProvider key="guest" store={localStore}>
@@ -393,6 +400,7 @@ function Main({ email, accountName, guest = false }: { email: string | null; acc
       {sheet?.t === 'doc' && <DocumentSheet doc={sheet.doc} onClose={close} />}
       {sheet?.t === 'fuel' && <FuelSheet record={sheet.record} onClose={close} />}
       {sheet?.t === 'car' && <CarSheet car={sheet.car} onClose={close} />}
+      {sheet?.t === 'schedule' && <ScheduleSheet onClose={close} />}
       {drawer === 'cars' && <CarsDrawer open={setSheet} onClose={() => setDrawer(null)} />}
       {drawer === 'settings' && <SettingsDrawer email={email} guest={guest} name={localName} onName={saveName} onTour={startTour} onSummary={() => { setDrawer(null); setSummary('open') }} onClose={() => setDrawer(null)} />}
       {summary && <MonthSummarySheet onClose={() => setSummary(null)} />}
@@ -405,6 +413,9 @@ function Main({ email, accountName, guest = false }: { email: string | null; acc
 
 function Login({ onGuest }: { onGuest(): void }) {
   const [err, setErr] = useState<string | null>(null)
+  // signed in: the loading screen from here until the account's data is in (no flash of this screen)
+  const [signedIn, setSignedIn] = useState(false)
+  if (signedIn) return <Splash />
   return (
     <div className="shell">
       <div className="login2">
@@ -437,7 +448,14 @@ function Login({ onGuest }: { onGuest(): void }) {
             ))}
           </ul>
           <div className="login2-actions">
-            <button className="login2-google" onClick={() => signInWithGoogle().catch(e => setErr(userMessage(e)))}>
+            <button
+              className="login2-google"
+              onClick={() =>
+                signInWithGoogle()
+                  .then(ok => ok && setSignedIn(true))
+                  .catch(e => setErr(userMessage(e)))
+              }
+            >
               <span className="mark">
                 <GoogleMark />
               </span>

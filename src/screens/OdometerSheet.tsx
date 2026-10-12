@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { userMessage } from '../lib/errors'
 import { Sheet, useDirty } from '../components/ui'
 import { useApp } from '../data/AppData'
-import { readingError } from '../domain/odometer'
+import { YEARLY_CHOICES, readingError } from '../domain/odometer'
 import { agoText, fmtDate, fmtNum } from '../lib/i18n'
 import { sortReadings } from '../domain/odometer'
 import { ConfirmButton } from '../components/ConfirmButton'
@@ -15,6 +15,7 @@ export function OdometerSheet({ onClose }: { onClose(): void }) {
   const [busy, setBusy] = useState(false)
   const source = 'manual' as const
   const [showHistory, setShowHistory] = useState(false)
+  const [pickYearly, setPickYearly] = useState(false)
   const dirty = useDirty([value])
   const inputRef = useRef<HTMLInputElement>(null)
 
@@ -82,6 +83,37 @@ export function OdometerSheet({ onClose }: { onClose(): void }) {
             ? `קודם: ${fmtNum(last.km)} · ${agoText(km.checkedDaysAgo ?? 0)}${n > last.km ? ` · +${fmtNum(n - last.km)} ק״מ` : ''}`
             : 'הקריאה הראשונה של הרכב'}
         </div>
+        {/* what the guess between updates runs on; the yearly km can be changed here (saved at once) */}
+        <div className="pace">
+          {km.basis === 'learned' ? (
+            <span>הניחוש לפי הקצב שלך, בערך {fmtNum(Math.round((km.perDay * 365) / 500) * 500)} ק״מ בשנה</span>
+          ) : (
+            <>
+              <span>הניחוש בין עדכונים: {car.yearly_km ? `${fmtNum(car.yearly_km)} ק״מ בשנה` : 'ממוצע ארצי'}</span>
+              <button onClick={() => setPickYearly(p => !p)} aria-expanded={pickYearly}>
+                {pickYearly ? 'סגירה' : 'שינוי'}
+              </button>
+            </>
+          )}
+        </div>
+        {pickYearly && km.basis !== 'learned' && (
+          <div className="chips pace-picks" role="radiogroup" aria-label="ק״מ בשנה">
+            {[...YEARLY_CHOICES, ['לא יודע', 0] as [string, number]].map(([label, v]) => (
+              <button
+                key={v}
+                role="radio"
+                aria-checked={(car.yearly_km ?? 0) === v}
+                className={(car.yearly_km ?? 0) === v ? 'on' : ''}
+                onClick={() => {
+                  actions.updateCar(car.id, { yearly_km: v || null }).catch(x => setErr(userMessage(x)))
+                  setPickYearly(false)
+                }}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+        )}
         <div className="chips" style={{ justifyContent: 'center', marginTop: 12 }}>
           <button onClick={() => bump(100)}>+100</button>
           <button onClick={() => bump(500)}>+500</button>

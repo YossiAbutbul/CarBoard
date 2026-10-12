@@ -4,7 +4,7 @@
 import { build } from 'esbuild'
 
 await build({
-  entryPoints: { reminders: 'server/reminders.ts', 'push-test': 'server/push-test.ts' },
+  entryPoints: { reminders: 'server/reminders.ts', 'push-test': 'server/push-test.ts', event: 'server/event.ts' },
   outdir: 'api',
   bundle: true,
   platform: 'node',
