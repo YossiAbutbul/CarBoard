@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { parseFuelReceipt } from './receiptScan'
+import { parseFuelReceipt, readFuel } from './receiptScan'
 
 // what Tesseract read from a real Sonol receipt (a PDF from the station's app), OCR slips included
 const SONOL = `מסמך ממוחשב
@@ -41,5 +41,49 @@ describe('fuel receipt', () => {
     expect(r.perLiter).toBe(7.1)
     expect(r.total).toBe(300)
     expect(r.liters).toBe(42.25)
+  })
+
+  // a photo of a paper receipt, half in shadow: the liters line came out garbled
+  it('ignores small numbers that fit by chance, and reads "כמות" and "תעריף"', () => {
+    const PHOTO = `דלק שלי אנרגיה
+טלפון: 054-2229112
+14/10/2026 19:00
+מסוף אשראי: 1724301015
+גרסת אשראי: 01.06.86
+ק"מ: 000001
+מוצר: בנזין 95 משאבה:03
+כמות: 83-21 ליטר
+תעריף: 7.530 ש"ח/ליטר 0
+סכום: 250.12 ש"ח .
+סה"כ: 250.12 m'"ow :
+ללא מעמ: 211.97 ש"ח 4
+סה"כ: 2 מ"ח .5`
+    expect(parseFuelReceipt(PHOTO)).toEqual({ liters: 33.22, perLiter: 7.53, total: 250.12, date: '2026-10-14', time: '19:00', station: 'דלק' })
+  })
+
+  it('takes the liters line when it reads well', () => {
+    const r = parseFuelReceipt('כמות: 33.217 ליטר\nתעריף: 7.530\nסה"כ: 250.12')
+    expect(r).toMatchObject({ liters: 33.217, perLiter: 7.53, total: 250.12 })
+  })
+
+  it('reads other stations: their own names for each line', () => {
+    // Paz-style: "כמות (ליטר)", "מחיר ליח'", "סה"כ לתשלום"
+    expect(parseFuelReceipt('פז\n01/08/2026 07:45\nכמות (ליטר): 41.36\nמחיר ליח\': 7.21\nסה"כ לתשלום: 298.21')).toMatchObject({ liters: 41.36, perLiter: 7.21, total: 298.21, station: 'פז', time: '07:45' })
+    // English labels, the total in ₪ before the number
+    expect(parseFuelReceipt('Ten\nDate 03.02.26\nQty 25.10 L\nPrice 7.40\nTotal ₪ 185.74')).toMatchObject({ liters: 25.1, perLiter: 7.4, total: 185.74, station: 'טן', date: '2026-02-03' })
+  })
+
+  it('reads numbers by their units, without labels', () => {
+    expect(parseFuelReceipt('דור אלון\n33.217 ליטר\n7.530 ש"ח/ליטר\n250.12')).toMatchObject({ liters: 33.217, perLiter: 7.53, total: 250.12, station: 'דור אלון' })
+  })
+
+  it('works the total out from the VAT lines when its own line is unreadable', () => {
+    const r = parseFuelReceipt('תעריף: 7.530\nסה"כ: 2?0.1?\nללא מעמ: 211.97\nמעמ % 18.0 : 38.15')
+    expect(r).toMatchObject({ perLiter: 7.53, total: 250.12, liters: 33.22 })
+  })
+
+  it('knows when the numbers check out, so a photo is read again only when they do not', () => {
+    expect(readFuel('כמות: 33.217\nתעריף: 7.530\nסה"כ: 250.12').sure).toBe(true)
+    expect(readFuel('כמות: 83-21\nתעריף: 7.530\nסה"כ: 250.12').sure).toBe(false)
   })
 })
