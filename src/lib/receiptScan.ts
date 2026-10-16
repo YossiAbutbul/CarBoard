@@ -65,6 +65,15 @@ function afterLabel(text: string, label: RegExp, ok: (n: number) => boolean) {
   return [...text.matchAll(re)].map(m => numbers(m[1])[0]).filter((n): n is number => n != null && ok(n))
 }
 
+/** Whether two words differ by one letter at most (one changed, added or dropped). */
+function oneOff(a: string, b: string) {
+  if (a === b) return true
+  if (Math.abs(a.length - b.length) > 1) return false
+  let i = 0
+  while (i < a.length && a[i] === b[i]) i++
+  return a.slice(i + 1) === b.slice(i + 1) || a.slice(i) === b.slice(i + 1) || a.slice(i + 1) === b.slice(i)
+}
+
 /** The receipt's numbers and details from its text, and whether they check out (liters × price = total). */
 export function readFuel(text: string): { fuel: ScannedFuel; sure: boolean } {
   const nums = numbers(text)
@@ -163,16 +172,31 @@ export function readFuel(text: string): { fuel: ScannedFuel; sure: boolean } {
   const tm = text.match(/\b([01]?\d|2[0-3]):([0-5]\d)(?::[0-5]\d)?\b/)
   const time = tm ? `${tm[1].padStart(2, '0')}:${tm[2]}` : null
   // the station: the first line with its brand as a word of its own (not inside "שתדלקתם"), in full
-  // when the line is short ("דלק שלי אנרגיה"), else the brand alone
-  let station: string | null = null
-  for (const line of text.split('\n')) {
-    const brand = STATIONS.find(s => new RegExp(`(^|[^א-תa-z])${s}($|[^א-תa-z])`, 'i').test(line))
-    if (!brand) continue
+  // when the line is short ("דלק שלי אנרגיה"), else the brand alone. A photo may garble a letter of
+  // the name at the top ("רלק שלי אנרגיה"): there, a word one letter off a brand counts too.
+  const lines = text.split('\n')
+  const named = (line: string, brand: string) => {
     const name = line.replace(/[^א-תa-z\s"'״׳-]/gi, ' ').replace(/\s+/g, ' ').trim()
     const plain = name.length <= 30 && name.toLowerCase() !== brand.toLowerCase() ? name : brand
-    station = plain.toLowerCase() === 'ten' ? 'טן' : plain.toLowerCase() === 'yellow' ? 'ילו' : plain
-    break
+    return plain.toLowerCase() === 'ten' ? 'טן' : plain.toLowerCase() === 'yellow' ? 'ילו' : plain
   }
+  let station: string | null = null
+  for (const line of lines) {
+    const brand = STATIONS.find(s => new RegExp(`(^|[^א-תa-z])${s}($|[^א-תa-z])`, 'i').test(line))
+    if (brand) {
+      station = named(line, brand)
+      break
+    }
+  }
+  if (!station)
+    for (const line of lines.filter(l => l.trim()).slice(0, 6)) {
+      const words = line.toLowerCase().match(/[א-תa-z]+/g) ?? []
+      const brand = STATIONS.find(s => s.length >= 3 && !s.includes(' ') && words.some(w => oneOff(w, s.toLowerCase())))
+      if (brand) {
+        station = brand === 'ten' ? 'טן' : brand === 'yellow' ? 'ילו' : brand // the line itself is garbled
+        break
+      }
+    }
 
   return { fuel: { liters, perLiter, total, date, time, station }, sure }
 }
