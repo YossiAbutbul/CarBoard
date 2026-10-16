@@ -34,11 +34,11 @@ function numbers(text: string) {
 
 // what a fuel receipt's numbers can be
 const isLiters = (n: number) => n >= 1.5 && n <= 200
-const isPrice = (n: number) => n >= 3 && n <= 15
+const isPrice = (n: number) => n >= 4 && n <= 12 // what a liter has cost, and will (₪): not the pump's "03"
 const isTotal = (n: number) => n >= 5 && n <= 3000
 const round = (n: number, d: number) => Math.round(n * 10 ** d) / 10 ** d
-const fits = (l: number, p: number, t: number) => Math.abs(l * p - t) <= Math.max(0.06, t * 0.003)
-const isFuelPrice = (n: number) => n >= 4 && n <= 12 // what a liter has cost, and will (₪)
+// to the receipt's own rounding (a few agorot), not roughly: 83.217 × 3 = 249.65 is not 250.12
+const fits = (l: number, p: number, t: number) => Math.abs(l * p - t) <= Math.max(0.06, t * 0.001)
 
 // digits OCR mixes up on receipts (a pale 3 reads as 8, a 7 as 0 or 1...)
 const LOOKALIKE: Record<string, string> = { '0': '78', '1': '7', '3': '8', '5': '6', '6': '58', '7': '01', '8': '306', '9': '4' }
@@ -114,7 +114,7 @@ export function readFuel(text: string): { fuel: ScannedFuel; sure: boolean } {
     let fix: { l: number; p: number; swaps: number } | null = null
     let tie = false
     for (const l of all.filter(v => isLiters(v.n) && !Number.isInteger(v.n)))
-      for (const p of all.filter(v => isFuelPrice(v.n))) {
+      for (const p of all.filter(v => isPrice(v.n))) {
         if (l.i === p.i || Math.abs(l.n * p.n - want) > 0.03) continue
         const swaps = l.swaps + p.swaps
         if (!fix || swaps < fix.swaps) [fix, tie] = [{ l: l.n, p: p.n, swaps }, false]
@@ -140,13 +140,15 @@ export function readFuel(text: string): { fuel: ScannedFuel; sure: boolean } {
     } else if (total != null && perLiter != null) liters = round(total / perLiter, 2)
     else if (total != null && liters != null) perLiter = round(total / liters, 3)
     else if (liters != null && perLiter != null) total = round(liters * perLiter, 2)
-    // a price no liter costs means the liters (or the price) were misread: both are left empty, to fill in
-    if (perLiter != null && !isFuelPrice(perLiter)) {
-      perLiter = null
-      liters = null
-    }
-    if (liters != null && !isLiters(liters)) liters = null
   }
+  // whatever the path, a price no liter costs means the liters (or the price) were misread: both are
+  // left empty, to fill in
+  if (perLiter != null && !isPrice(perLiter)) {
+    perLiter = null
+    liters = null
+    sure = false
+  }
+  if (liters != null && !isLiters(liters)) liters = null
 
   // date: 16/09/26 or 16.09.2026
   let date: string | null = null

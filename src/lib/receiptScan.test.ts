@@ -107,4 +107,12 @@ describe('fuel receipt', () => {
   it('finds the station as a word of its own, not inside "שתדלקתם"', () => {
     expect(parseFuelReceipt('ורס שסף\nסה"כ: 250.12\nתודה שתדלקתם').station).toBeNull()
   })
+
+  // the phone's reading: the price line lost, a pale 3 read as 8, and the pump number "03" on the slip
+  it('never takes the pump number for the price (83.217 × 3 ≈ 250.12 is a chance fit)', () => {
+    const r = parseFuelReceipt('דלק שלי אנרגיה\n14/10/2026 19:00\nגרסת אשראי: 01.06.86\nמוצר: בנזין 95 משאבה:03\nכמות: 83.217 ליטר\nתעריף: ‏ ש"ח/ליטר\nסכום: 250.12 ש"ח\nסה"כ: 250.12 ש"ח\nללא מעמ: 211.97 ש"ח')
+    expect(r.perLiter).toBeNull()
+    expect(r.liters).toBeNull()
+    expect(r.total).toBe(250.12)
+  })
 })
