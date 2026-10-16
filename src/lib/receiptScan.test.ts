@@ -58,7 +58,7 @@ describe('fuel receipt', () => {
 סה"כ: 250.12 m'"ow :
 ללא מעמ: 211.97 ש"ח 4
 סה"כ: 2 מ"ח .5`
-    expect(parseFuelReceipt(PHOTO)).toEqual({ liters: 33.22, perLiter: 7.53, total: 250.12, date: '2026-10-14', time: '19:00', station: 'דלק' })
+    expect(parseFuelReceipt(PHOTO)).toEqual({ liters: 33.22, perLiter: 7.53, total: 250.12, date: '2026-10-14', time: '19:00', station: 'דלק שלי אנרגיה' })
   })
 
   it('takes the liters line when it reads well', () => {
@@ -85,5 +85,26 @@ describe('fuel receipt', () => {
   it('knows when the numbers check out, so a photo is read again only when they do not', () => {
     expect(readFuel('כמות: 33.217\nתעריף: 7.530\nסה"כ: 250.12').sure).toBe(true)
     expect(readFuel('כמות: 83-21\nתעריף: 7.530\nסה"כ: 250.12').sure).toBe(false)
+  })
+
+  // what the phone read from the photo of the same paper receipt: a pale 3 read as 8, the 7 of the price as 0
+  it('fixes look-alike digits, so liters × price = total again', () => {
+    const r = parseFuelReceipt('דלק שלי אנרגיה\n14/10/2026 19:00\nכמות: 83.217 ליטר\nתעריף: 0.530 ש"ח/ליטר\nסה"כ: 250.12 ש"ח')
+    expect(r).toMatchObject({ liters: 33.217, perLiter: 7.53, total: 250.12, station: 'דלק שלי אנרגיה' })
+  })
+
+  it('never shows a price no liter costs: without a readable price, liters and price are left to fill in', () => {
+    const r = parseFuelReceipt('כמות: 83.217 ליטר\nסה"כ: 250.12')
+    expect(r).toMatchObject({ liters: null, perLiter: null, total: 250.12 })
+  })
+
+  it('tries each total the receipt gives: a misread total line, then the VAT lines', () => {
+    // the total line came out as "250-112", another "total" as 172; before VAT 211.97 + 18% = 250.12
+    const r = parseFuelReceipt('כמות: 33.217 קפשר\nתעריף: 0.530 ש"ח/ליטר\nסכות: 250-112 ש"ח\nסה"כ: 172 שש"ח\nללא מעמ: 211.97 ש"ח\nnon % 18.0 : 39.15 שי\nסה"כ: 2 ₪"ח\nתודה שתדלקתם')
+    expect(r).toMatchObject({ liters: 33.217, perLiter: 7.53, total: 250.12 })
+  })
+
+  it('finds the station as a word of its own, not inside "שתדלקתם"', () => {
+    expect(parseFuelReceipt('ורס שסף\nסה"כ: 250.12\nתודה שתדלקתם').station).toBeNull()
   })
 })
