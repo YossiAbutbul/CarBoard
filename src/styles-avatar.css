@@ -183,7 +183,6 @@
 .studio-paints .paint { flex: none; width: 28px; height: 28px; }
 .studio-paints .paint.auto { grid-column: span 2; width: auto; height: 28px; justify-self: stretch; justify-content: center; }
 .car-form > .btn.pri { margin-top: 12px !important; }
-.car-form .in { padding-top: 11px; padding-bottom: 11px; }
 
 /* swipe a sheet down by its handle */
 .drag-zone { touch-action: none; cursor: grab; -webkit-user-select: none; user-select: none; }
@@ -596,7 +595,7 @@ html, body { overscroll-behavior-y: none; }
 .car-row-pic, .car-row.on .car-row-pic { background: color-mix(in srgb, var(--tint, #8a94a1) 18%, #e2e7ee); }
 .studio-toy { margin-bottom: 8px; } /* the wheels on the asphalt, in the near lane */
 /* a date typed by hand, with the calendar one tap away */
-.date-field { cursor: text; padding-inline-end: 4px; }
+.date-field { cursor: text; padding-inline-end: 4px; padding-block: 5px; } /* its 34px button + 5 + 5 = 44px, the height of every other field */
 .date-field input { flex: 1; min-width: 0; border: 0; outline: 0; background: none; font: inherit; color: inherit; text-align: right; padding: 0; font-variant-numeric: tabular-nums; }
 .date-field input::placeholder { color: #b3bac3; }
 .date-field button { flex: none; display: grid; place-items: center; width: 34px; height: 34px; border-radius: 10px; color: var(--muted); }

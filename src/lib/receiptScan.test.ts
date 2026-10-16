@@ -115,4 +115,12 @@ describe('fuel receipt', () => {
     expect(r.liters).toBeNull()
     expect(r.total).toBe(250.12)
   })
+
+  it('knows the station when a photo garbles a letter of its name at the top', () => {
+    expect(parseFuelReceipt('רלק שלי אנרגיה\nטלפון: 054-2229112\nסה"כ: 250.12').station).toBe('דלק')
+    expect(parseFuelReceipt('סונוך\nצומת אליקים\nסה"כ: 239.08').station).toBe('סונול')
+    // only at the top, and not for two-letter names (פז, טן), which too many words are one letter off
+    expect(parseFuelReceipt('קבלה\nא\nב\nג\nד\nה\nרלק\nסה"כ: 10.50').station).toBeNull()
+    expect(parseFuelReceipt('פו\nסה"כ: 10.50').station).toBeNull()
+  })
 })
