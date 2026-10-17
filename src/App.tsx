@@ -16,6 +16,7 @@ import { Brand } from './components/Brand'
 import { isGuest, moveGuestData, setGuest } from './data/guest'
 import { HomeScreen } from './screens/HomeScreen'
 import { ServicesScreen } from './screens/ServicesScreen'
+import { PriceScreen } from './screens/PriceScreen'
 import { DocumentsScreen } from './screens/DocumentsScreen'
 import { FuelScreen } from './screens/FuelScreen'
 import { MonthSummarySheet, markSummarySeen, summaryDue } from './components/MonthSummary'
@@ -46,7 +47,7 @@ export type SheetState =
   | { t: 'fuel'; record?: Fuel }
   | { t: 'schedule' }
 export type OpenSheet = (s: SheetState) => void
-type Tab = 'home' | 'services' | 'fuel' | 'docs'
+type Tab = 'home' | 'services' | 'fuel' | 'docs' | 'price'
 
 export default function App() {
   const [user, setUser] = useState<User | null>(null)
@@ -297,6 +298,7 @@ function Main({ email, accountName, guest = false }: { email: string | null; acc
     ['services', 'service', 'טיפולים'],
     ['fuel', 'fuel', 'דלק'],
     ['docs', 'docs', 'מסמכים'],
+    ['price', 'price', 'מחירון'],
   ] as [Tab, IconName, string][]
   const goTab = (id: Tab) => {
     setTab(id)
@@ -370,8 +372,10 @@ function Main({ email, accountName, guest = false }: { email: string | null; acc
           <ServicesScreen open={setSheet} openCars={openCars} openSettings={openSettings} />
         ) : tab === 'fuel' ? (
           <FuelScreen open={setSheet} openCars={openCars} openSettings={openSettings} />
-        ) : (
+        ) : tab === 'docs' ? (
           <DocumentsScreen open={setSheet} openCars={openCars} openSettings={openSettings} />
+        ) : (
+          <PriceScreen openCars={openCars} openSettings={openSettings} />
         )}
       </div>
 

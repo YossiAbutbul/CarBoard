@@ -66,3 +66,76 @@ export async function lookupPlate(plate: string): Promise<PlateInfo | null> {
     lastTest: r.mivchan_acharon_dt ? String(r.mivchan_acharon_dt).slice(0, 10) : null,
   }
 }
+
+// the registry's history of each car, and its changes of ownership (also data.gov.il, no key)
+const HISTORY = '56063a99-8a3e-4ff4-912e-5966c0279bad'
+const OWNERS = 'bb2355dc-9ec7-4f06-9c3f-3344672171da'
+
+/** What a buyer (or a price list) asks about a car: its trim, its past owners, its km at the last test. */
+export interface CarProfile extends PlateInfo {
+  trim: string | null
+  onRoad: string | null // YYYY-MM
+  ownership: string | null // now: פרטי, ליסינג, השכרה...
+  firstRegistered: string | null // YYYY-MM-DD
+  origin: string | null // how it started: פרטי, החכר (leasing)...
+  testKm: number | null // the odometer at its last yearly test
+  changes: string[] // structural change, LPG, colour, tyres
+  owners: { date: string; type: string }[] // each change of ownership, oldest first (YYYY-MM)
+}
+
+async function records(resource: string, digits: string, limit = 1) {
+  const q = new URLSearchParams({ resource_id: resource, filters: JSON.stringify({ mispar_rechev: Number(digits) }), limit: String(limit) })
+  const res = await fetch(`https://data.gov.il/api/3/action/datastore_search?${q}`)
+  if (!res.ok) throw new Error(`data.gov.il ${res.status}`)
+  return ((await res.json())?.result?.records ?? []) as Record<string, unknown>[]
+}
+
+/** Everything the public registry knows about a car, by its plate (null: no such private car). */
+export async function lookupProfile(plate: string): Promise<CarProfile | null> {
+  const digits = plateDigits(plate)
+  if (digits.length < 5) return null
+  const [main, history, owners] = await Promise.all([records(RESOURCE, digits), records(HISTORY, digits), records(OWNERS, digits, 50)])
+  const r = main[0]
+  if (!r) return null
+  const h = history[0] ?? {}
+  const str = (v: unknown) => (v == null || String(v).trim() === '' ? null : String(v).trim())
+  // a month as YYYY-MM, from 202410, "2021-8" or "2021-08-01"
+  const ym = (v: unknown) => {
+    const s = String(v ?? '')
+    const m = /^(\d{4})-?(\d{1,2})/.exec(s)
+    return m ? `${m[1]}-${m[2].padStart(2, '0')}` : ''
+  }
+  // the registry's words for how a car is owned, as people say them
+  const owned = (v: unknown) => {
+    const s = str(v)
+    return s === 'החכר' ? 'ליסינג' : s
+  }
+  const changes = [
+    h.shinui_mivne_ind === 1 && 'שינוי מבנה',
+    h.gapam_ind === 1 && 'הסבה לגפ״מ',
+    h.shnui_zeva_ind === 1 && 'שינוי צבע',
+    h.shinui_zmig_ind === 1 && 'שינוי מידת צמיגים',
+  ].filter((x): x is string => Boolean(x))
+  return {
+    plate: formatPlate(digits),
+    make: cleanMake(String(r.tozeret_nm ?? '').trim()),
+    model: String(r.kinuy_mishari ?? r.degem_nm ?? '').trim(),
+    year: r.shnat_yitzur ? Number(r.shnat_yitzur) : null,
+    color: str(r.tzeva_rechev),
+    fuel: str(r.sug_delek_nm),
+    tyres: str(r.zmig_kidmi),
+    licenceUntil: r.tokef_dt ? String(r.tokef_dt).slice(0, 10) : null,
+    lastTest: r.mivchan_acharon_dt ? String(r.mivchan_acharon_dt).slice(0, 10) : null,
+    trim: str(r.ramat_gimur),
+    onRoad: str(r.moed_aliya_lakvish) ? ym(r.moed_aliya_lakvish) : null,
+    ownership: owned(r.baalut),
+    firstRegistered: h.rishum_rishon_dt ? String(h.rishum_rishon_dt).slice(0, 10) : null,
+    origin: owned(h.mkoriut_nm),
+    testKm: typeof h.kilometer_test_aharon === 'number' && h.kilometer_test_aharon > 0 ? h.kilometer_test_aharon : null,
+    changes,
+    owners: owners
+      .map(o => ({ date: ym(o.baalut_dt), type: owned(o.baalut) ?? '' }))
+      .filter(o => o.date)
+      .sort((a, b) => (a.date < b.date ? -1 : 1)),
+  }
+}

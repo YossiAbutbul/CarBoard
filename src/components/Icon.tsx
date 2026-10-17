@@ -45,6 +45,7 @@ import {
   Sparkles,
   KeyRound,
   TriangleAlert,
+  Tag,
   createLucideIcon,
   type LucideIcon,
 } from 'lucide-react'
@@ -99,6 +100,7 @@ const ICONS = {
   home: House,
   list: List,
   docs: Files,
+  price: Tag,
   settings: Settings,
   camera: Camera,
   gauge: Gauge,
