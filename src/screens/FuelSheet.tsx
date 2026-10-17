@@ -7,7 +7,7 @@ import type { Fuel } from '../types'
 import { todayIso } from '../lib/dates'
 import { fmtDate, fmtNum } from '../lib/i18n'
 import { ask } from '../components/Dialog'
-import { userMessage } from '../lib/errors'
+import { copyText, userMessage } from '../lib/errors'
 import { uid } from '../lib/uid'
 import { Icon } from '../components/Icon'
 
@@ -32,6 +32,7 @@ export function FuelSheet({ record, onClose }: { record?: Fuel; onClose(): void 
   const dirty = useDirty([date, time, liters, price, kmV, station, full])
   const [scan, setScan] = useState<{ p: number } | null>(null)
   const [scanNote, setScanNote] = useState<string | null>(null)
+  const [readText, setReadText] = useState<{ text: string; copied: boolean } | null>(null) // what the scan read, to send when it reads wrong
   if (!car) return null
 
   // Read a receipt (the station app's PDF, or a photo) on the phone and fill in what it says.
@@ -45,6 +46,7 @@ export function FuelSheet({ record, onClose }: { record?: Fuel; onClose(): void 
       const { scanFuelReceipt } = await import('../lib/receiptScan')
       const r = await scanFuelReceipt(file, p => setScan({ p }))
       setScan(null)
+      setReadText({ text: r.text, copied: false })
       const useDate = r.date && r.date <= todayIso() ? r.date : null
       const lines = [
         r.liters != null && `ליטרים: ${r.liters}`,
@@ -124,6 +126,12 @@ export function FuelSheet({ record, onClose }: { record?: Fuel; onClose(): void 
           }} />
         </label>
         <div className="scan-note">{scanNote ?? 'הקבלה נקראת בטלפון ולא נשמרת.'}</div>
+        {/* a receipt read wrong: its text, to paste to the developer (no photo needed) */}
+        {readText && (
+          <button className="scan-copy" onClick={async () => (await copyText(readText.text)) && setReadText({ ...readText, copied: true })}>
+            {readText.copied ? '✓ הטקסט הועתק' : 'נקרא לא נכון? העתקת הטקסט שנקרא'}
+          </button>
+        )}
         <div className="row2">
           <div>
             <label className="lbl">ליטרים</label>
