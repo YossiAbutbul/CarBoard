@@ -70,6 +70,8 @@ export async function lookupPlate(plate: string): Promise<PlateInfo | null> {
 // the registry's history of each car, and its changes of ownership (also data.gov.il, no key)
 const HISTORY = '56063a99-8a3e-4ff4-912e-5966c0279bad'
 const OWNERS = 'bb2355dc-9ec7-4f06-9c3f-3344672171da'
+// the importers' official price of each model when new, by year (Ministry of Transport, also open data)
+const NEW_PRICES = '39f455bf-6db0-4926-859d-017f34eacbcb'
 
 /** What a buyer (or a price list) asks about a car: its trim, its past owners, its km at the last test. */
 export interface CarProfile extends PlateInfo {
@@ -81,10 +83,14 @@ export interface CarProfile extends PlateInfo {
   testKm: number | null // the odometer at its last yearly test
   changes: string[] // structural change, LPG, colour, tyres
   owners: { date: string; type: string }[] // each change of ownership, oldest first (YYYY-MM)
+  newPrice: { price: number; year: number; importer: string | null } | null // its list price when new
 }
 
 async function records(resource: string, digits: string, limit = 1) {
-  const q = new URLSearchParams({ resource_id: resource, filters: JSON.stringify({ mispar_rechev: Number(digits) }), limit: String(limit) })
+  return search(resource, { mispar_rechev: Number(digits) }, limit)
+}
+async function search(resource: string, filters: Record<string, unknown>, limit: number) {
+  const q = new URLSearchParams({ resource_id: resource, filters: JSON.stringify(filters), limit: String(limit) })
   const res = await fetch(`https://data.gov.il/api/3/action/datastore_search?${q}`)
   if (!res.ok) throw new Error(`data.gov.il ${res.status}`)
   return ((await res.json())?.result?.records ?? []) as Record<string, unknown>[]
@@ -97,6 +103,12 @@ export async function lookupProfile(plate: string): Promise<CarProfile | null> {
   const [main, history, owners] = await Promise.all([records(RESOURCE, digits), records(HISTORY, digits), records(OWNERS, digits, 50)])
   const r = main[0]
   if (!r) return null
+  // the same model's price list, by the registry's own codes: its year, or the nearest one listed
+  const year = r.shnat_yitzur ? Number(r.shnat_yitzur) : null
+  const prices = r.tozeret_cd != null && r.degem_cd != null ? await search(NEW_PRICES, { tozeret_cd: r.tozeret_cd, degem_cd: r.degem_cd }, 100).catch(() => []) : []
+  const listed = prices
+    .filter(x => typeof x.mehir === 'number' && (x.mehir as number) > 0)
+    .sort((a, b) => Math.abs(Number(a.shnat_yitzur) - (year ?? 0)) - Math.abs(Number(b.shnat_yitzur) - (year ?? 0)))[0]
   const h = history[0] ?? {}
   const str = (v: unknown) => (v == null || String(v).trim() === '' ? null : String(v).trim())
   // a month as YYYY-MM, from 202410, "2021-8" or "2021-08-01"
@@ -137,5 +149,6 @@ export async function lookupProfile(plate: string): Promise<CarProfile | null> {
       .map(o => ({ date: ym(o.baalut_dt), type: owned(o.baalut) ?? '' }))
       .filter(o => o.date)
       .sort((a, b) => (a.date < b.date ? -1 : 1)),
+    newPrice: listed ? { price: listed.mehir as number, year: Number(listed.shnat_yitzur), importer: str(listed.shem_yevuan) } : null,
   }
 }

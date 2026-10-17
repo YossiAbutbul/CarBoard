@@ -20,7 +20,10 @@ export function ServiceSheet({ onClose, kind = 'service', record }: { onClose():
   const [type, setType] = useState<ItemKind>(record?.type ?? kind)
   const [title, setTitle] = useState(record?.title ?? '')
   const [date, setDate] = useState(record?.date ?? todayIso())
-  const [kmV, setKm] = useState(String(record?.km ?? (km.value || '')))
+  // the km is the one typed (or the estimate, when picked): never the estimate by itself, since saving
+  // a service also saves its km as a reading of the odometer
+  const [kmV, setKm] = useState(record?.km != null ? String(record.km) : '')
+  const guess = !record && km.value ? Math.round(km.value) : null
   const [price, setPrice] = useState(record?.price != null ? String(record.price) : '')
   const [garage, setGarage] = useState(record?.garage ?? lastGarage)
   const [notes, setNotes] = useState(record?.notes ?? '')
@@ -78,9 +81,14 @@ export function ServiceSheet({ onClose, kind = 'service', record }: { onClose():
           </div>
           <div>
             <label className="lbl">ק״מ</label>
-            <input className="in" inputMode="numeric" value={kmV ? fmtNum(Number(kmV)) : ''} onChange={e => setKm(e.target.value.replace(/\D/g, ''))} />
+            <input className="in" inputMode="numeric" value={kmV ? fmtNum(Number(kmV)) : ''} onChange={e => setKm(e.target.value.replace(/\D/g, ''))} placeholder={guess ? `כ־${fmtNum(guess)}` : 'מהלוח'} />
           </div>
         </div>
+        {guess && !kmV && (
+          <button className="km-guess" onClick={() => setKm(String(guess))}>
+            להשתמש בהערכה: {fmtNum(guess)} ק״מ
+          </button>
+        )}
         <div className="row2">
           <div>
             <label className="lbl">מחיר (₪)</label>

@@ -137,7 +137,7 @@ svg.i { width: 20px; height: 20px; flex: none; stroke: currentColor; fill: none;
 .btn.danger { background: #fdecea; color: var(--overdue); }
 .btn:disabled { opacity: 0.45; }
 .btn svg.i { width: 18px; height: 18px; }
-.row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.row2 { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 8px; } /* two equal halves, whatever is inside (a date field would widen its half) */
 .stack > * + * { margin-top: 8px; }
 
 /* ─── forms ─── */
