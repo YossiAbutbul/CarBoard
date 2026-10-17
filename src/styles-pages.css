@@ -278,16 +278,19 @@
 .po-row + .po-row { border-top: 1px solid var(--line); }
 .po-n { width: 24px; height: 24px; flex: none; display: grid; place-items: center; border-radius: 50%; background: var(--card); font-size: 12px; color: var(--ink-2); }
 .po-row small { margin-inline-start: auto; font-size: 12.5px; font-weight: 500; color: var(--muted); font-variant-numeric: tabular-nums; }
-.price-levi p { margin: 0 0 12px; font-size: 13.5px; line-height: 1.5; color: var(--ink-2); }
-.price-levi small { display: block; margin-top: 8px; font-size: 12px; color: var(--muted); text-align: center; }
 .price-src { margin: 10px 4px 0; font-size: 11.5px; color: var(--muted); text-align: center; }
-.pv-saved { display: grid; gap: 3px; margin-bottom: 12px; text-align: center; }
-.pv-saved b { font-size: 30px; font-weight: 700; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
-.pv-saved span { font-size: 12.5px; color: var(--muted); }
-.pv-saved .pv-stale { color: var(--due); font-weight: 600; }
-.pv-edit { display: block; margin: 10px auto 0; padding: 4px 8px; font-size: 13px; font-weight: 600; color: var(--blue); cursor: pointer; }
-.pv-form { margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--line); }
-.pv-form .lbl { margin-top: 0; }
-.pv-row { display: flex; gap: 8px; }
-.pv-row .in { flex: 1; min-width: 0; font-variant-numeric: tabular-nums; }
-.pv-row .btn { width: auto; flex: none; padding: 0 18px; height: 44px; }
+/* a new service: the km estimate offered, not filled in (saving it is a reading of the odometer) */
+.km-guess { display: block; margin: 6px 0 0 auto; padding: 4px 2px; font-size: 12.5px; font-weight: 600; color: var(--blue); cursor: pointer; }
+.pv-main { display: grid; justify-items: center; gap: 4px; margin: 2px 0 12px; text-align: center; }
+.pv-main b { font-size: 32px; font-weight: 700; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; line-height: 1.1; }
+.pv-main span { font-size: 12.5px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.pv-tag { padding: 3px 10px; border-radius: 99px; background: #e8f0fc; color: var(--blue) !important; font-size: 11.5px !important; font-weight: 700; }
+.pv-lines { margin: 0 0 12px; padding: 0 2px; border-top: 1px solid var(--line); }
+.pv-note { margin: 0 0 12px !important; font-size: 12.5px !important; color: var(--muted) !important; text-align: center; }
+.price-value { padding-bottom: 4px; }
+.pv-lines { margin-bottom: 4px; }
+/* typing on a phone: the keyboard shrinks the page (so fields stay above it), and the tab bar would ride
+   up on top of the keyboard; it steps aside while a text field has the focus */
+@media (max-width: 1023px) {
+  body:has(:is(input:not([type='checkbox'], [type='radio'], [type='file'], [type='range']), textarea, [contenteditable='true']):focus) .nav { display: none; }
+}

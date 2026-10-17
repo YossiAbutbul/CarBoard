@@ -18,7 +18,6 @@ export interface Car {
   body?: BodyType | null // avatar body type; null = guess from the model
   paint?: string | null // avatar colour (hex); null = from the registry colour
   yearly_km?: number | null // how far the car goes in a year, as the owner said (until readings show it)
-  value?: { price: number; date: string; km: number | null } | null // what it is worth, as checked at לוי יצחק (by the owner)
   owner?: string // in a family: the uid of whoever added the car (shown, not stored)
 }
 

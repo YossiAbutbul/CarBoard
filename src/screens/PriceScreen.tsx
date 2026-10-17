@@ -2,36 +2,28 @@ import { useEffect, useState } from 'react'
 import { useApp } from '../data/AppData'
 import { Glance, GlanceCell, PageHero, TopBar } from '../components/Chrome'
 import { Icon } from '../components/Icon'
-import { copyText, userMessage } from '../lib/errors'
+import { userMessage } from '../lib/errors'
 import { fmtDate, fmtMoney, fmtNum } from '../lib/i18n'
-import { diffDays, todayIso } from '../lib/dates'
 import { lookupProfile, plateDigits, typingPlate, type CarProfile } from '../lib/govil'
-
-const LEVI = 'https://www.levi-itzhak.co.il'
+import { estimateValue } from '../domain/value'
 
 /** "2019-04" → "04/2019" */
 const monthYear = (ym: string | null) => (ym && /^\d{4}-\d{2}/.test(ym) ? `${ym.slice(5, 7)}/${ym.slice(0, 4)}` : ym ?? '')
 
 /**
- * "מחירון": what a price list asks about a car, from the public registry by its plate (this car's, or
- * any car being looked at): trim, year, owners and how it was owned, the km at its last test. The
- * price itself is checked at לוי יצחק (a paid service, with no public data to show here): one tap
- * copies the plate and opens it.
+ * "מחירון": a car by its plate (this car's, or any car being looked at), from the Ministry of
+ * Transport's open data: trim, year, owners and how it was owned, the km at its last test, its official
+ * price when new, and from all that a ballpark of what it is worth now.
  */
 export function PriceScreen({ openCars, openSettings }: { openCars(): void; openSettings(): void }) {
-  const { car, km, actions } = useApp()
-  // the price checked at לוי יצחק, typed in by the owner: saved on the car with the day and the km
-  const [priceDraft, setPriceDraft] = useState<string | null>(null) // null: not editing
-  const [saving, setSaving] = useState(false)
+  const { car, km } = useApp()
   const [plate, setPlate] = useState(car?.plate ? typingPlate(car.plate) : '')
   const [state, setState] = useState<{ busy: boolean; profile: CarProfile | null; err: string | null; asked: string | null }>({ busy: false, profile: null, err: null, asked: null })
-  const [copied, setCopied] = useState(false)
 
   async function check(p = plate) {
     const digits = plateDigits(p)
     if (digits.length < 7) return setState(s => ({ ...s, err: 'מספר רכב: 7 או 8 ספרות' }))
     setState({ busy: true, profile: null, err: null, asked: digits })
-    setCopied(false)
     try {
       const profile = await lookupProfile(digits)
       setState({ busy: false, profile, err: profile ? null : 'הרכב לא נמצא במאגר משרד התחבורה (רכב פרטי בלבד).', asked: digits })
@@ -47,26 +39,20 @@ export function PriceScreen({ openCars, openSettings }: { openCars(): void; open
 
   if (!car) return null
   const p = state.profile
-  const value = car.value ?? null
-  const stale = value ? diffDays(todayIso(), value.date) > 182 : false // half a year: prices move
-  async function savePrice() {
-    const price = Number((priceDraft ?? '').replace(/\D/g, ''))
-    if (!car || !price) return
-    setSaving(true)
-    try {
-      await actions.updateCar(car.id, { value: { price, date: todayIso(), km: Math.round(km.value) || null } })
-      setPriceDraft(null)
-    } finally {
-      setSaving(false)
-    }
-  }
   const hands = p ? p.owners.filter(o => o.type !== 'סוחר').length : 0
   const mine = Boolean(car.plate) && plateDigits(car.plate ?? '') === state.asked
-
-  async function openLevi() {
-    if (p && (await copyText(plateDigits(p.plate)))) setCopied(true)
-    window.open(LEVI, '_blank', 'noopener')
-  }
+  // a ballpark from the official new price, the age, the km (this car's own, else at its last test),
+  // the owners and a leasing or rental past
+  const estimate =
+    p?.newPrice && p.year
+      ? estimateValue({
+          newPrice: p.newPrice.price,
+          year: p.year,
+          km: mine && km.value ? km.value : p.testKm,
+          hands,
+          fleet: [p.origin, ...p.owners.map(o => o.type)].some(t => t === 'ליסינג' || t === 'השכרה'),
+        })
+      : null
 
   const rows: [string, string | null][] = p
     ? [
@@ -91,8 +77,8 @@ export function PriceScreen({ openCars, openSettings }: { openCars(): void; open
           <h1>מחירון</h1>
         </div>
         <Glance>
-          {mine && value ? (
-            <GlanceCell k="שווי" v={fmtMoney(value.price)} d={`לוי יצחק · ${fmtDate(value.date)}`} />
+          {estimate ? (
+            <GlanceCell k="שווי" v={fmtMoney(estimate.value)} d="הערכה" />
           ) : (
             <GlanceCell k="שנה" v={p?.year ? String(p.year) : '–'} d={p?.onRoad ? `על הכביש ${monthYear(p.onRoad)}` : 'שנת ייצור'} />
           )}
@@ -157,61 +143,34 @@ export function PriceScreen({ openCars, openSettings }: { openCars(): void; open
             </>
           )}
 
-          {/* the price: at לוי יצחק (paid, no public data): the plate goes with you on the clipboard */}
+          {/* what it is worth: a ballpark from the official new price, and that price itself */}
           <div className="sec">
             <h2>כמה הוא שווה?</h2>
           </div>
-          <div className="card price-levi">
-            {/* this car's price, as checked: big, with when and at what km */}
-            {mine && value && priceDraft === null && (
-              <div className="pv-saved">
-                <b>{fmtMoney(value.price)}</b>
+          <div className="card price-value">
+            {estimate && (
+              <div className="pv-main">
+                <span className="pv-tag">הערכה</span>
+                <b>{fmtMoney(estimate.value)}</b>
+                {/* each sum in its own run, so right-to-left text keeps them in order */}
                 <span>
-                  לפי לוי יצחק · נבדק ב־{fmtDate(value.date)}
-                  {value.km ? ` · ב־${fmtNum(value.km)} ק״מ` : ''}
+                  בין <bdi>{fmtMoney(estimate.low)}</bdi> ל־<bdi>{fmtMoney(estimate.high)}</bdi>
                 </span>
-                {stale && <span className="pv-stale">עברו יותר מחצי שנה. כדאי לבדוק שוב.</span>}
               </div>
             )}
-            {!(mine && value) && <p>המחיר נבדק במחירון לוי יצחק. הוא מתחשב בק״מ, במספר הבעלויות ובסוג הבעלות, שמופיעים כאן.</p>}
-            <button className={`btn ${mine && value && !stale ? '' : 'pri'}`} onClick={() => void openLevi()}>
-              {mine && value ? 'בדיקה מחדש בלוי יצחק' : 'למחירון לוי יצחק'} <Icon name="forward" />
-            </button>
-            <small>{copied ? `✓ מספר הרכב (${p.plate}) הועתק. הדביקו אותו שם.` : 'מספר הרכב יועתק, כדי להדביק אותו שם.'}</small>
-            {/* back from there: the price goes here (only for this car; another plate is just looked at) */}
-            {mine &&
-              (priceDraft === null ? (
-                <button className="pv-edit" onClick={() => setPriceDraft(value ? String(value.price) : '')}>
-                  {value ? 'עדכון המחיר' : 'קיבלתם מחיר? שמרו אותו כאן'}
-                </button>
-              ) : (
-                <form
-                  className="pv-form"
-                  onSubmit={e => {
-                    e.preventDefault()
-                    void savePrice()
-                  }}
-                >
-                  <label className="lbl">המחיר לפי לוי יצחק (₪)</label>
-                  <div className="pv-row">
-                    <input
-                      className="in"
-                      inputMode="numeric"
-                      autoFocus
-                      value={priceDraft ? fmtNum(Number(priceDraft.replace(/\D/g, '')) || 0).replace(/^0$/, '') : ''}
-                      onChange={e => setPriceDraft(e.target.value.replace(/\D/g, '').slice(0, 8))}
-                      placeholder="למשל: 85,000"
-                      enterKeyHint="done"
-                    />
-                    <button className="btn pri" disabled={saving || !Number(priceDraft)}>
-                      {saving ? <span className="spin inline" /> : 'שמירה'}
-                    </button>
-                  </div>
-                  <button type="button" className="pv-edit" onClick={() => setPriceDraft(null)}>
-                    ביטול
-                  </button>
-                </form>
-              ))}
+            {p.newPrice && (
+              <div className="pv-lines">
+                <div className="pf-row">
+                  <span>מחיר כחדש ({p.newPrice.year})</span>
+                  <b>{fmtMoney(p.newPrice.price)}</b>
+                </div>
+              </div>
+            )}
+            <p className="pv-note">
+              {estimate
+                ? 'ההערכה מחושבת ממחיר הרכב כחדש (מחירון היבואן), לפי הגיל, הק״מ, היד וסוג הבעלות. היא לא מחירון, והמחיר בפועל יכול להיות שונה.'
+                : 'לדגם הזה אין מחיר כחדש במאגר, ולכן אין הערכה.'}
+            </p>
           </div>
           <p className="price-src">הפרטים: מאגר הרכב הפתוח של משרד התחבורה (data.gov.il).</p>
         </>

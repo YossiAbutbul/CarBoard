@@ -929,7 +929,6 @@ html, body { overscroll-behavior-y: none; }
 .schedule .btn.pri svg.i, .schedule .btn svg.i { width: 18px; height: 18px; }
 .sched-other { display: block; margin: 8px 0 0 auto; padding: 4px 2px; font-size: 13px; font-weight: 600; color: var(--blue); }
 .sched-other:disabled { opacity: 0.4; }
-.schedule .row2 > div { min-width: 0; }
 .time-field { position: relative; }
 .time-field { width: 100%; font: inherit; color: var(--ink); }
 .time-field .tv { flex: 1; text-align: right; font-variant-numeric: tabular-nums; }
