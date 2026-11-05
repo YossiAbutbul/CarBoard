@@ -1,11 +1,12 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useApp } from '../data/AppData'
 import { Glance, GlanceCell, PageHero, TopBar } from '../components/Chrome'
 import { Icon } from '../components/Icon'
 import { userMessage } from '../lib/errors'
 import { fmtDate, fmtMoney, fmtNum } from '../lib/i18n'
-import { lookupProfile, plateDigits, typingPlate, type CarProfile } from '../lib/govil'
+import { formatPlate, lookupProfile, plateDigits, typingPlate, type CarProfile } from '../lib/govil'
 import { estimateValue } from '../domain/value'
+import { isSaved, listSaved, saveCar, unsaveCar } from '../lib/priceSaved'
 
 /** "2019-04" → "04/2019" */
 const monthYear = (ym: string | null) => (ym && /^\d{4}-\d{2}/.test(ym) ? `${ym.slice(5, 7)}/${ym.slice(0, 4)}` : ym ?? '')
@@ -19,6 +20,12 @@ export function PriceScreen({ openCars, openSettings }: { openCars(): void; open
   const { car, km } = useApp()
   const [plate, setPlate] = useState(car?.plate ? typingPlate(car.plate) : '')
   const [state, setState] = useState<{ busy: boolean; profile: CarProfile | null; err: string | null; asked: string | null }>({ busy: false, profile: null, err: null, asked: null })
+  // the cars kept for later; on this device only (a lookup is not a car in the garage)
+  const [saved, setSaved] = useState(listSaved)
+  const [leaving, setLeaving] = useState<string | null>(null) // the card on its way off the row
+  const [editing, setEditing] = useState(false) // the row in edit: every card wears a "−"
+  const field = useRef<HTMLInputElement>(null)
+  const row = useRef<HTMLDivElement>(null)
 
   async function check(p = plate) {
     const digits = plateDigits(p)
@@ -37,6 +44,65 @@ export function PriceScreen({ openCars, openSettings }: { openCars(): void; open
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [car?.id])
 
+  /*
+   * The row keeps the order things were saved in — the first car stays at the start (the right, here)
+   * and the newest sits at the far end — so it only moves when the car being looked at is out of
+   * view, and then by the least it can. Only the row scrolls; the page never moves under the reader.
+   * The sums come from the live layout in plain left and right, so right-to-left needs no special case.
+   */
+  useEffect(() => {
+    // a frame later, so the row is laid out: on the first lookup the cards are drawn in the same pass
+    const f = requestAnimationFrame(() => {
+      const el = row.current
+      const card = el?.querySelector<HTMLElement>('.ps-card.on')
+      if (!el || !card) return
+      const style = getComputedStyle(el)
+      const box = el.getBoundingClientRect()
+      const c = card.getBoundingClientRect()
+      const past = (v: number) => (v > 1 ? v : 0)
+      // how far the card hangs over each edge, inside the row's own padding
+      const right = past(c.right - (box.right - (parseFloat(style.paddingRight) || 0)))
+      const left = past(box.left + (parseFloat(style.paddingLeft) || 0) - c.left)
+      const step = right || -left // a positive step moves the cards left, a negative one right
+      if (!step) return
+      el.scrollBy({ left: step, behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' })
+    })
+    return () => cancelAnimationFrame(f)
+  }, [state.asked, saved])
+
+  /** Empties the field and puts the caret back in it; what is already on screen stays to be read. */
+  function clearPlate() {
+    setPlate('')
+    setState(s => ({ ...s, err: null }))
+    field.current?.focus()
+  }
+
+  /** A saved car: looked up again from its plate. */
+  function openSaved(digits: string) {
+    setPlate(typingPlate(digits))
+    void check(digits)
+  }
+
+  /**
+   * Takes a car off the row. The card shrinks away on the press and the rest close the gap after it,
+   * so nothing jumps out from under the finger. Nothing is lost that a search cannot bring back,
+   * so it goes without asking.
+   */
+  function removeSaved(plate: string) {
+    if (leaving) return
+    const done = () => {
+      setSaved(s => {
+        const left = unsaveCar(s, plate)
+        if (!left.length) setEditing(false) // an empty row has nothing left to edit
+        return left
+      })
+      setLeaving(null)
+    }
+    if (matchMedia('(prefers-reduced-motion: reduce)').matches) return done()
+    setLeaving(plate)
+    setTimeout(done, 180)
+  }
+
   if (!car) return null
   const p = state.profile
   const hands = p ? p.owners.filter(o => o.type !== 'סוחר').length : 0
@@ -53,6 +119,25 @@ export function PriceScreen({ openCars, openSettings }: { openCars(): void; open
           fleet: [p.origin, ...p.owners.map(o => o.type)].some(t => t === 'ליסינג' || t === 'השכרה'),
         })
       : null
+
+  const shownDigits = p ? plateDigits(p.plate) : ''
+  const on = Boolean(p) && isSaved(saved, shownDigits)
+  /** Keeps the car on screen in the list, or takes it off it. */
+  const toggleSaved = () => {
+    if (!p) return
+    setSaved(
+      on
+        ? unsaveCar(saved, shownDigits)
+        : saveCar(saved, {
+            plate: shownDigits,
+            shown: formatPlate(shownDigits),
+            name: [p.make, p.model].filter(Boolean).join(' ') || formatPlate(shownDigits),
+            year: p.year,
+            value: estimate?.value ?? null,
+            at: new Date().toISOString().slice(0, 10),
+          }),
+    )
+  }
 
   const rows: [string, string | null][] = p
     ? [
@@ -97,17 +182,88 @@ export function PriceScreen({ openCars, openSettings }: { openCars(): void; open
           void check()
         }}
       >
-        <input className="in" inputMode="numeric" value={plate} onChange={e => setPlate(typingPlate(e.target.value))} placeholder="מספר רכב" aria-label="מספר רכב" enterKeyHint="search" />
+        <div className="in-wrap">
+          <input
+            ref={field}
+            className="in"
+            inputMode="numeric"
+            value={plate}
+            onChange={e => setPlate(typingPlate(e.target.value))}
+            onKeyDown={e => {
+              if (e.key === 'Escape' && plate) {
+                e.preventDefault()
+                clearPlate()
+              }
+            }}
+            placeholder="מספר רכב"
+            aria-label="מספר רכב"
+            enterKeyHint="search"
+          />
+          {/* clears the field, and only it: the details already on screen stay to be read */}
+          {plate && (
+            <button
+              type="button"
+              className="in-x"
+              // on the press itself, and without taking the focus: the keyboard stays up, as it does
+              // in a native field (the click is kept for a keyboard's Enter; clearing twice is the same)
+              onPointerDown={e => {
+                e.preventDefault()
+                clearPlate()
+              }}
+              onClick={clearPlate}
+              aria-label="ניקוי מספר הרכב"
+            >
+              <Icon name="close" />
+            </button>
+          )}
+        </div>
         <button className="btn pri" disabled={state.busy}>
           {state.busy ? <span className="spin inline" /> : <Icon name="search" />} בדיקה
         </button>
       </form>
       {state.err && <p className="price-err">{state.err}</p>}
 
+      {/* the cars kept for later: a tap looks one up again */}
+      {saved.length > 0 && (
+        <>
+          <div className="ps-head">
+            <span>שמורים</span>
+            <button type="button" className="ps-edit" onClick={() => setEditing(e => !e)} aria-pressed={editing}>
+              {editing ? 'סיום' : 'עריכה'}
+            </button>
+          </div>
+          <div className={`price-saved ${editing ? 'editing' : ''}`} ref={row}>
+            {saved.map(c => (
+              // the card and its "−" are two buttons side by side, not one inside the other: a tap on
+              // the "−" takes the car off the row and never starts a lookup. While the row is being
+              // edited the card itself does nothing, so a thumb aiming at the "−" cannot open a car.
+              <div key={c.plate} className={`ps-card ${c.plate === state.asked ? 'on' : ''} ${leaving === c.plate ? 'leaving' : ''}`}>
+                <button type="button" className="ps-open" onClick={() => openSaved(c.plate)} disabled={editing}>
+                  <span className="ps-name">{c.name}</span>
+                  <span className="ps-plate">
+                    <bdi>{c.shown}</bdi>
+                    {c.year ? ` · ${c.year}` : ''}
+                  </span>
+                  {c.value ? <span className="ps-val">{fmtMoney(c.value)}</span> : null}
+                </button>
+                {editing && (
+                  <button type="button" className="ps-minus" onClick={() => removeSaved(c.plate)} aria-label={`הסרה מהשמורים: ${c.name}`}>
+                    <Icon name="minus" />
+                  </button>
+                )}
+              </div>
+            ))}
+          </div>
+        </>
+      )}
+
       {p && (
         <>
           <div className="sec">
             <h2>פרטי הרכב</h2>
+            <button className={`add-btn ${on ? 'on' : ''}`} onClick={toggleSaved} aria-pressed={on}>
+              {on ? 'שמור' : 'שמירה'} <Icon name={on ? 'saved' : 'save'} />
+            </button>
           </div>
           <div className="card price-facts">
             {rows

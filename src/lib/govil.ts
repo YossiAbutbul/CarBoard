@@ -40,7 +40,7 @@ export function typingPlate(s: string) {
 }
 
 /** Manufacturer names come with a country suffix: "קיה ד. קוריאה" → "קיה". */
-const cleanMake = (s: string) => s.split(/\s+/).filter(w => !w.includes('.') && !/יפן|קוריאה|גרמניה|צרפת|ארה"ב|סין|צ'כיה|ספרד|אנגליה|איטליה|טורקיה|הודו|תאילנד|רומניה|שוודיה|מכסיקו|סלובקיה|הונגריה|פולין|בלגיה|הולנד|אוסטריה|פורטוגל|דרום|אפריקה/.test(w)).join(' ') || s
+const cleanMake = (s: string) => s.split(/\s+/).filter(w => !w.includes('.') && !/יפן|קורי(אה)?|גרמניה|צרפת|ארה"ב|סין|צ'כיה|ספרד|אנגליה|איטליה|טורקיה|הודו|תאילנד|רומניה|שוודיה|מ[כק]סיקו|סלובקיה|הונגריה|פולין|בלגיה|הולנד|אוסטריה|פורטוגל|דרום|אפריקה/.test(w)).join(' ') || s
 
 export async function lookupPlate(plate: string): Promise<PlateInfo | null> {
   const digits = plateDigits(plate)
