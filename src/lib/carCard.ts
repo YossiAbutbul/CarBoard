@@ -3,31 +3,33 @@ import { formatPlate, plateDigits, type CarProfile } from './govil'
 import type { ValueEstimate } from '../domain/value'
 
 /*
- * "מחירון" as a picture to send, made for a phone: the shape of a phone's screen (9:19.5; taller only
- * when a long ownership history needs the room), laid out in iOS points and drawn at 1080 px wide, so
- * opened full screen it reads at the sizes iOS reads at — 17 pt text, 13 pt labels.
- * Set the way iOS sets details: a quiet grey ground, the car's name at the top, then grouped white
- * lists under small titles — what it is worth, every fact the registry gives, the whole ownership
- * history in order. One accent colour; order and spacing carry the hierarchy, not size.
+ * "מחירון" as a picture to send, made for a chat: 4:5 (1080 × 1350), the portrait shape WhatsApp shows
+ * whole in the conversation, taller only when a long ownership history needs the room. Laid out in
+ * points and drawn at 1080 px wide.
+ * Set the way iOS sets details: a quiet grey ground, the car's name across the top, then grouped
+ * white lists under small titles in two columns — on the right (read first) what it is worth and the
+ * whole ownership history in order, on the left every fact the registry gives. One accent colour;
+ * order and spacing carry the hierarchy, not size.
  * The link sent beside it opens the same lookup in the app.
  */
 
 const PX = 1080 // the photo's width in pixels
-const PT = 390 // …and in points: a phone's width
+const PT = 520 // …and in points
 const S = PX / PT
-const MIN_PT = Math.round((PT * 19.5) / 9) // a phone screen's height
+const MIN_PT = Math.round((PT * 5) / 4) // 4:5
 
 const PAD = 16 // the margin
-const GW = PT - PAD * 2 // a group's width
+const COL_GAP = 14 // between the two columns
+const COL = (PT - PAD * 2 - COL_GAP) / 2 // a column's width
 const RIGHT = PT - PAD
-const IN = 16 // inside a group
-const RADIUS = 20
-const PAIR = 54 // a two-up cell: a label over its value
-const LINE = 46 // a list row
-const SEC_HEAD = 34 // a section title's room above its group
+const IN = 14 // inside a group
+const RADIUS = 18
+const PAIR = 50 // a two-up cell: a label over its value
+const LINE = 40 // a list row
+const SEC_HEAD = 30 // a section title's room above its group
 const SEC_GAP = 14 // between one group and the next title
-const TOP = 178 // where the first section starts, under the name
-const FOOT = 46 // the closing note
+const TOP = 148 // where the columns start, under the name
+const FOOT = 40 // the closing note
 
 const FONT = "'Noto Sans Hebrew', 'Noto Sans', 'Segoe UI', sans-serif"
 const LATIN = "'Noto Sans', 'Segoe UI', sans-serif"
@@ -192,21 +194,29 @@ interface Cell {
   v: string
   tone?: 'accent' | 'warn' | 'quiet'
 }
-/** A group: facts two-up (a label over its value), or the ownership history as a numbered list. */
-type Section = { title: string; kind: 'pairs'; cells: Cell[] } | { title: string; kind: 'owners'; owners: { type: string; from: string; to: string }[] }
+/**
+ * A group: rows of a label and its value (`list`), facts two-up with the label over the value
+ * (`pairs`), or the ownership history as a numbered list.
+ */
+type Section =
+  | { title: string; kind: 'list'; cells: Cell[] }
+  | { title: string; kind: 'pairs'; cells: Cell[] }
+  | { title: string; kind: 'owners'; owners: { type: string; from: string; to: string }[] }
 
-const height = (s: Section, pair: number, line: number) =>
-  s.kind === 'pairs' ? Math.ceil(s.cells.length / 2) * pair : Math.max(1, s.owners.length) * line
+const bodyHeight = (s: Section, pair: number, line: number) =>
+  s.kind === 'pairs' ? Math.ceil(s.cells.length / 2) * pair : s.kind === 'list' ? s.cells.length * line : Math.max(1, s.owners.length) * line
+const columnHeight = (col: Section[], pair: number, line: number) =>
+  col.reduce((h, s) => h + SEC_HEAD + bodyHeight(s, pair, line), 0) + Math.max(0, col.length - 1) * SEC_GAP
 
-/** What goes on the card, in order: the worth, every fact, the whole ownership history. */
-function sections({ profile: p, estimate, hands }: CardInput): Section[] {
+/** What goes on the card: on the right the worth and the ownership history, on the left every fact. */
+function columns({ profile: p, estimate, hands }: CardInput): [Section[], Section[]] {
   const keep = (cells: (Cell | null | false)[]) => cells.filter((c): c is Cell => Boolean(c && c.v))
   const worth = keep([
     estimate && { k: 'הערכת שווי', v: fmtMoney(estimate.value), tone: 'accent' },
     estimate && { k: 'טווח', v: `${fmtMoney(estimate.low)} – ${fmtMoney(estimate.high)}` },
     p.newPrice && { k: `מחיר כחדש (${p.newPrice.year})`, v: fmtMoney(p.newPrice.price) },
     p.newPrice?.importer ? { k: 'יבואן', v: p.newPrice.importer } : null,
-    !estimate && !p.newPrice && { k: 'הערכת שווי', v: 'אין מחיר כחדש במאגר', tone: 'quiet' },
+    !estimate && !p.newPrice && { k: 'אין מחיר כחדש במאגר', v: '–', tone: 'quiet' },
   ])
   const facts = keep([
     { k: 'רמת גימור', v: p.trim ?? '' },
@@ -224,12 +234,89 @@ function sections({ profile: p, estimate, hands }: CardInput): Section[] {
   ])
   // each owner from the month they took it to the month the next one did; the last one to today
   const owners = p.owners.map((o, i) => ({ type: o.type || 'בעלות', from: monthYear(o.date), to: p.owners[i + 1] ? monthYear(p.owners[i + 1].date) : 'היום' }))
-  const out: Section[] = [
-    { title: 'שווי', kind: 'pairs', cells: worth },
-    { title: 'פרטי הרכב', kind: 'pairs', cells: facts },
+  const right: Section[] = [
+    { title: 'שווי', kind: 'list', cells: worth },
     { title: owners.length ? `היסטוריית בעלות · ${owners.length}` : 'היסטוריית בעלות', kind: 'owners', owners },
   ]
-  return out.filter(s => s.kind === 'owners' || s.cells.length)
+  const left: Section[] = facts.length ? [{ title: 'פרטי הרכב', kind: 'pairs', cells: facts }] : []
+  return [right, left]
+}
+
+const hair = (2 / PX) * PT // a 2 px hairline, in points
+
+/** Draws one group (its title above it) with its right edge at `right`; returns where it ends. */
+function drawSection(ctx: Ctx, s: Section, right: number, y: number, pair: number, line: number) {
+  const x = right - COL
+  text(ctx, s.title, right - IN, y + 21, { size: 12.5, weight: 600, color: C.second, max: COL - IN * 2 })
+  y += SEC_HEAD
+  const gh = bodyHeight(s, pair, line)
+  rr(ctx, x, y, COL, gh, RADIUS)
+  ctx.fillStyle = C.group
+  ctx.fill()
+  const inR = right - IN
+  const inL = x + IN
+  const rule = (ry: number, to = inR) => {
+    ctx.fillStyle = C.hair
+    ctx.fillRect(inL, ry - hair / 2, to - inL, hair)
+  }
+
+  if (s.kind === 'list') {
+    // a label on the right, its value on the left
+    s.cells.forEach((c, i) => {
+      const ry = y + i * line
+      const base = ry + line / 2 + 5
+      // the value keeps its room (up to a little over half); the label takes the rest
+      const vw = Math.min(measure(ctx, c.v, { size: c.tone === 'accent' ? 16 : 14.5, weight: 700 }), COL * 0.55)
+      text(ctx, c.k, inR, base, { size: 14, color: c.tone === 'quiet' ? C.third : C.second, max: COL - IN * 2 - vw - 12 })
+      text(ctx, c.v, inL, base, {
+        size: c.tone === 'accent' ? 16 : 14.5,
+        weight: c.tone === 'accent' ? 700 : 600,
+        color: c.tone === 'accent' ? C.blue : c.tone === 'quiet' ? C.third : C.label,
+        align: 'left',
+        dir: dirOf(c.v),
+        max: COL - IN * 2 - measure(ctx, c.k, { size: 14 }) - 12,
+      })
+      if (i > 0) rule(ry)
+    })
+  } else if (s.kind === 'pairs') {
+    // two-up: the right column read first; a label over its value
+    const cw = COL / 2
+    ctx.fillStyle = C.hair
+    ctx.fillRect(x + cw - hair / 2, y + 10, hair, gh - 20)
+    s.cells.forEach((c, i) => {
+      const r = Math.floor(i / 2)
+      const col = i % 2
+      const tx = right - col * cw - IN
+      const max = cw - IN * 2 + 4
+      const cy = y + r * pair
+      const mid = cy + pair / 2
+      text(ctx, c.k, tx, mid - 3, { size: 12, color: C.third, max })
+      text(ctx, c.v, tx, mid + 14, { size: 14.5, weight: 600, color: c.tone === 'warn' ? C.red : C.label, dir: dirOf(c.v), max })
+      if (r > 0 && col === 0) rule(cy)
+    })
+  } else if (!s.owners.length) {
+    text(ctx, 'אין נתוני בעלות במאגר', inR, y + line / 2 + 5, { size: 14, color: C.third })
+  } else {
+    // the history: a numbered disc, how it was owned, and from when to when; today's owner in blue
+    s.owners.forEach((o, i) => {
+      const ry = y + i * line
+      const mid = ry + line / 2
+      const d = 22
+      const cx = inR - d / 2
+      const now = i === s.owners.length - 1
+      ctx.beginPath()
+      ctx.arc(cx, mid, d / 2, 0, Math.PI * 2)
+      ctx.fillStyle = now ? C.blue : C.blueTint
+      ctx.fill()
+      text(ctx, String(i + 1), cx, mid + 4, { size: 11.5, weight: 700, color: now ? '#fff' : C.blue, align: 'center', dir: 'ltr' })
+      const tx = inR - d - 9
+      const period = `${o.from} – ${o.to}`
+      text(ctx, period, inL, mid + 5, { size: 13, color: C.second, align: 'left', dir: 'ltr' })
+      text(ctx, o.type, tx, mid + 5, { size: 14.5, weight: 600, max: tx - inL - measure(ctx, period, { size: 13 }) - 10 })
+      if (i > 0) rule(ry, tx)
+    })
+  }
+  return y + gh
 }
 
 /** Draws the card and returns it as a PNG. */
@@ -237,21 +324,23 @@ export async function renderCarCard(input: CardInput): Promise<Blob> {
   const { profile: p } = input
   // the page's fonts, so the picture is not drawn in a fallback face
   await Promise.all(
-    [`700 28px ${FONT}`, `600 16px ${FONT}`, `500 16px ${FONT}`, `400 13px ${FONT}`, `600 14px ${LATIN}`, `600 22px ${PLATE_FONT}`].map(f =>
+    [`700 28px ${FONT}`, `600 15px ${FONT}`, `500 15px ${FONT}`, `400 13px ${FONT}`, `600 14px ${LATIN}`, `600 20px ${PLATE_FONT}`].map(f =>
       document.fonts?.load(f).catch(() => null),
     ),
   )
   const icon = await loadImage('/icon.svg')
 
-  // the room the groups need; on a short card the rows open up a little to fill the screen, and a
-  // long history makes the photo taller rather than cramming it
-  const secs = sections(input)
-  const fixed = TOP + secs.length * SEC_HEAD + (secs.length - 1) * SEC_GAP + FOOT
-  const base = secs.reduce((n, s) => n + height(s, PAIR, LINE), 0)
-  const grow = Math.min(1.18, Math.max(1, (MIN_PT - fixed) / base))
-  const pair = PAIR * grow
-  const line = LINE * grow
-  const HPT = Math.max(MIN_PT, Math.ceil(fixed + base * grow))
+  // both columns end on one line: the 4:5's own bottom, or the taller column's when a long history
+  // needs more (then the photo grows rather than crams). Each column's rows open up to reach it.
+  const [right, left] = columns(input)
+  const target = Math.max(MIN_PT - TOP - FOOT, columnHeight(right, PAIR, LINE), columnHeight(left, PAIR, LINE))
+  const HPT = Math.ceil(TOP + target + FOOT)
+  const sizes = (col: Section[]) => {
+    const fixed = col.length * SEC_HEAD + Math.max(0, col.length - 1) * SEC_GAP
+    const body = col.reduce((h, s) => h + bodyHeight(s, PAIR, LINE), 0)
+    const g = body ? Math.min(1.6, Math.max(1, (target - fixed) / body)) : 1
+    return [PAIR * g, LINE * g] as const
+  }
 
   const canvas = document.createElement('canvas')
   canvas.width = PX
@@ -264,92 +353,37 @@ export async function renderCarCard(input: CardInput): Promise<Blob> {
   // ── the top line: the app on the left, the page and the day on the right ──
   if (icon) {
     ctx.save()
-    rr(ctx, PAD, 22, 22, 22, 5.5)
+    rr(ctx, PAD, 20, 20, 20, 5)
     ctx.clip()
-    ctx.drawImage(icon, PAD, 22, 22, 22)
+    ctx.drawImage(icon, PAD, 20, 20, 20)
     ctx.restore()
   }
-  text(ctx, 'CarBoard', PAD + (icon ? 29 : 0), 38, { size: 14, weight: 600, align: 'left', dir: 'ltr', font: LATIN })
-  text(ctx, `מחירון · ${fmtDate(new Date().toISOString().slice(0, 10))}`, RIGHT, 38, { size: 13, color: C.second })
+  text(ctx, 'CarBoard', PAD + (icon ? 27 : 0), 35, { size: 13.5, weight: 600, align: 'left', dir: 'ltr', font: LATIN })
+  text(ctx, `מחירון · ${fmtDate(new Date().toISOString().slice(0, 10))}`, RIGHT, 35, { size: 12.5, color: C.second })
 
-  // ── the name: make, then the model across the full width; trim and year, the plate beside them ──
+  // ── the name across the top: make, the model; trim and year with the plate beside them ──
+  const GW = PT - PAD * 2
   const model = p.model || p.make || formatPlate(p.plate)
   const make = p.model ? p.make : ''
-  if (make) text(ctx, make, RIGHT, 84, { size: 15, weight: 500, color: C.second, max: GW })
+  if (make) text(ctx, make, RIGHT, 70, { size: 14.5, weight: 500, color: C.second, max: GW })
   let size = 28
   while (size > 20 && measure(ctx, model, { size, weight: 700 }) > GW) size -= 1
-  text(ctx, model, RIGHT, 116, { size, weight: 700, max: GW })
-  const plateH = 30
+  text(ctx, model, RIGHT, 101, { size, weight: 700, max: GW })
+  const plateH = 26
   const plateW = plateWidth(ctx, p.plate, plateH)
-  drawPlate(ctx, p.plate, PAD, 130, plateH)
+  drawPlate(ctx, p.plate, PAD, 110, plateH)
   const sub = [p.trim, p.year ? String(p.year) : null].filter(Boolean).join(' · ')
-  if (sub) text(ctx, sub, RIGHT, 150, { size: 14, color: C.second, max: GW - plateW - 14 })
+  if (sub) text(ctx, sub, RIGHT, 129, { size: 13.5, color: C.second, max: GW - plateW - 14 })
 
-  // ── the groups ──
-  const hair = 1 / S * 2 // a 2 px hairline
-  let y = TOP
-  for (const s of secs) {
-    text(ctx, s.title, RIGHT - IN, y + 24, { size: 13, weight: 600, color: C.second })
-    y += SEC_HEAD
-    const gh = height(s, pair, line)
-    rr(ctx, PAD, y, GW, gh, RADIUS)
-    ctx.fillStyle = C.group
-    ctx.fill()
-
-    if (s.kind === 'pairs') {
-      // two-up: the right column read first; a label over its value (a lone cell takes the whole width)
-      const cols = s.cells.length > 1 ? 2 : 1
-      const cw = GW / cols
-      ctx.fillStyle = C.hair
-      if (cols === 2) ctx.fillRect(PAD + cw - hair / 2, y + 10, hair, gh - 20)
-      s.cells.forEach((c, i) => {
-        const r = Math.floor(i / cols)
-        const col = i % cols
-        const x = RIGHT - col * cw - IN
-        const max = cw - IN * 2
-        const cy = y + r * pair
-        const mid = cy + pair / 2
-        text(ctx, c.k, x, mid - 3, { size: 12.5, color: C.third, max })
-        text(ctx, c.v, x, mid + 16, {
-          size: c.tone === 'accent' ? 17 : 15.5,
-          weight: c.tone === 'accent' ? 700 : 600,
-          color: c.tone === 'accent' ? C.blue : c.tone === 'warn' ? C.red : c.tone === 'quiet' ? C.third : C.label,
-          dir: dirOf(c.v),
-          max,
-        })
-        if (r > 0 && col === 0) {
-          ctx.fillStyle = C.hair
-          ctx.fillRect(PAD + IN, cy - hair / 2, GW - IN * 2, hair)
-        }
-      })
-    } else if (!s.owners.length) {
-      text(ctx, 'אין נתוני בעלות במאגר', RIGHT - IN, y + line / 2 + 6, { size: 15.5, color: C.third })
-    } else {
-      // the history: a numbered disc, how it was owned, and from when to when
-      s.owners.forEach((o, i) => {
-        const ry = y + i * line
-        const mid = ry + line / 2
-        const d = 24
-        const cx = RIGHT - IN - d / 2
-        ctx.beginPath()
-        ctx.arc(cx, mid, d / 2, 0, Math.PI * 2)
-        ctx.fillStyle = i === s.owners.length - 1 ? C.blue : C.blueTint
-        ctx.fill()
-        text(ctx, String(i + 1), cx, mid + 4.5, { size: 12.5, weight: 700, color: i === s.owners.length - 1 ? '#fff' : C.blue, align: 'center', dir: 'ltr' })
-        const tx = RIGHT - IN - d - 10
-        text(ctx, o.type, tx, mid + 5.5, { size: 15.5, weight: 600, max: GW / 2 - d })
-        text(ctx, `${o.from} – ${o.to}`, PAD + IN, mid + 5.5, { size: 14, color: C.second, align: 'left', dir: 'ltr' })
-        if (i > 0) {
-          ctx.fillStyle = C.hair
-          ctx.fillRect(PAD + IN, ry - hair / 2, tx - PAD - IN, hair)
-        }
-      })
-    }
-    y += gh + SEC_GAP
+  // ── the two columns: the right one read first ──
+  for (const [col, edge] of [[right, RIGHT], [left, RIGHT - COL - COL_GAP]] as const) {
+    const [pair, line] = sizes(col)
+    let y = TOP
+    for (const s of col) y = drawSection(ctx, s, edge, y, pair, line) + SEC_GAP
   }
 
   // ── a closing note ──
-  text(ctx, 'הערכה בלבד ולא מחירון · מאגר הרכב הפתוח של משרד התחבורה', PT / 2, HPT - 20, { size: 11, color: C.third, align: 'center' })
+  text(ctx, 'הערכה בלבד ולא מחירון · מאגר הרכב הפתוח של משרד התחבורה', PT / 2, HPT - 16, { size: 10.5, color: C.third, align: 'center' })
 
   const blob = await new Promise<Blob | null>(res => canvas.toBlob(res, 'image/png'))
   if (!blob) throw new Error('card render failed')
