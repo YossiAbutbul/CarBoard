@@ -146,7 +146,14 @@ function Main({ email, accountName, guest = false }: { email: string | null; acc
       live = false
     }
   }, [uid]) // eslint-disable-line react-hooks/exhaustive-deps
-  const [tab, setTab] = useState<Tab>('home')
+  // a shared car link (?price=…) opens on מחירון
+  const [tab, setTab] = useState<Tab>(() => {
+    try {
+      return sessionStorage.getItem('car-records:price') ? 'price' : 'home'
+    } catch {
+      return 'home'
+    }
+  })
   const [sheet, setSheet] = useState<SheetState | null>(null)
   const [drawer, setDrawer] = useState<null | 'cars' | 'settings'>(null)
   const close = () => setSheet(null)

@@ -37,6 +37,17 @@ if (join) {
   history.replaceState(null, '', location.pathname)
 }
 
+// A shared car (?price=PLATE): open it in מחירון, and tidy the address.
+const sharedPlate = new URLSearchParams(location.search).get('price')
+if (sharedPlate) {
+  try {
+    sessionStorage.setItem('car-records:price', sharedPlate.replace(/\D/g, ''))
+  } catch {
+    // storage blocked: the app opens as usual
+  }
+  history.replaceState(null, '', location.pathname)
+}
+
 // The app lives at one address; every other one (Vercel sends them all here) is a 404 page.
 const knownPath = ['/', '/index.html'].includes(location.pathname)
 

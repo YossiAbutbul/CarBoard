@@ -7,6 +7,22 @@ import { fmtDate, fmtMoney, fmtNum } from '../lib/i18n'
 import { formatPlate, lookupProfile, plateDigits, typingPlate, type CarProfile } from '../lib/govil'
 import { estimateValue } from '../domain/value'
 import { isSaved, listSaved, saveCar, unsaveCar } from '../lib/priceSaved'
+import { shareCarCard } from '../lib/carCard'
+
+/** A plate from a shared link (?price=…), kept by main.tsx: read once, cleared once a page has used it. */
+let sharedPlate: string | null | undefined
+function readSharedPlate() {
+  if (sharedPlate === undefined) {
+    try {
+      const d = sessionStorage.getItem('car-records:price')
+      sessionStorage.removeItem('car-records:price')
+      sharedPlate = d && /^\d{7,8}$/.test(d) ? d : null
+    } catch {
+      sharedPlate = null
+    }
+  }
+  return sharedPlate
+}
 
 /** "2019-04" → "04/2019" */
 const monthYear = (ym: string | null) => (ym && /^\d{4}-\d{2}/.test(ym) ? `${ym.slice(5, 7)}/${ym.slice(0, 4)}` : ym ?? '')
@@ -18,7 +34,8 @@ const monthYear = (ym: string | null) => (ym && /^\d{4}-\d{2}/.test(ym) ? `${ym.
  */
 export function PriceScreen({ openCars, openSettings }: { openCars(): void; openSettings(): void }) {
   const { car, km } = useApp()
-  const [plate, setPlate] = useState(car?.plate ? typingPlate(car.plate) : '')
+  const [shared] = useState(readSharedPlate)
+  const [plate, setPlate] = useState(shared ? typingPlate(shared) : car?.plate ? typingPlate(car.plate) : '')
   const [state, setState] = useState<{ busy: boolean; profile: CarProfile | null; err: string | null; asked: string | null }>({ busy: false, profile: null, err: null, asked: null })
   // the cars kept for later; on this device only (a lookup is not a car in the garage)
   const [saved, setSaved] = useState(listSaved)
@@ -38,9 +55,14 @@ export function PriceScreen({ openCars, openSettings }: { openCars(): void; open
       setState({ busy: false, profile: null, err: navigator.onLine ? userMessage(e) : 'אין חיבור לאינטרנט.', asked: digits })
     }
   }
-  // this car's details right away
+  const [sharing, setSharing] = useState(false)
+  const [note, setNote] = useState<string | null>(null)
+  // this car's details right away (or the one a shared link opened)
+  const sharedFor = useRef(car?.id) // the shared car is shown until another of one's own cars is picked
   useEffect(() => {
-    if (car?.plate) void check(car.plate)
+    const plate = shared && car?.id === sharedFor.current ? shared : car?.plate
+    sharedPlate = null // used: the next visit to the page starts from this car again
+    if (plate) void check(plate)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [car?.id])
 
@@ -137,6 +159,21 @@ export function PriceScreen({ openCars, openSettings }: { openCars(): void; open
             at: new Date().toISOString().slice(0, 10),
           }),
     )
+  }
+
+  /** The page as one portrait picture, through the phone's share sheet. */
+  async function share() {
+    if (!p || sharing) return
+    setSharing(true)
+    setNote(null)
+    try {
+      const how = await shareCarCard({ profile: p, estimate, hands })
+      if (how === 'saved') setNote('התמונה נשמרה, והקישור הועתק.')
+    } catch (e) {
+      setNote(userMessage(e))
+    } finally {
+      setSharing(false)
+    }
   }
 
   const rows: [string, string | null][] = p
@@ -261,10 +298,16 @@ export function PriceScreen({ openCars, openSettings }: { openCars(): void; open
         <>
           <div className="sec">
             <h2>פרטי הרכב</h2>
-            <button className={`add-btn ${on ? 'on' : ''}`} onClick={toggleSaved} aria-pressed={on}>
-              {on ? 'שמור' : 'שמירה'} <Icon name={on ? 'saved' : 'save'} />
-            </button>
+            <div className="sec-btns">
+              <button className="add-btn" onClick={() => void share()} disabled={sharing} aria-label="שיתוף פרטי הרכב כתמונה">
+                שיתוף {sharing ? <span className="spin inline" /> : <Icon name="share" />}
+              </button>
+              <button className={`add-btn ${on ? 'on' : ''}`} onClick={toggleSaved} aria-pressed={on}>
+                {on ? 'שמור' : 'שמירה'} <Icon name={on ? 'saved' : 'save'} />
+              </button>
+            </div>
           </div>
+          {note && <p className="price-note">{note}</p>}
           <div className="card price-facts">
             {rows
               .filter((r): r is [string, string] => Boolean(r[1]))

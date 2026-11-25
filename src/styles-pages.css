@@ -313,6 +313,10 @@
   .ps-card.leaving { transition: none; }
   .ps-minus { animation: none; }
 }
+.sec-btns { display: flex; gap: 6px; }
+.sec .add-btn:disabled { opacity: 0.6; }
+.sec .add-btn .spin.inline { width: 14px; height: 14px; }
+.price-note { margin: -2px 4px 8px; font-size: 12.5px; color: var(--muted); }
 .price-err { margin: 8px 4px 0; font-size: 13px; color: var(--overdue); }
 .price-facts { padding: 4px 14px; }
 .pf-row { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; padding: 10px 0; font-size: 14px; }
